@@ -43,7 +43,7 @@ import java.util.List;
 
 public class DAFi extends R_Algorithm {
 
-    private static final String pluginVersion = "0.3";
+    private static final String pluginVersion = "0.1";
     public static String pluginName = "DAFi";
     public static boolean runAgain = false;
     public static boolean nameSet = false;
