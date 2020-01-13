@@ -1,7 +1,7 @@
-# ez-DAFi
+# ezDAFi
 Have you ever wanted to bridge automated clustering techniques and 
-human-driven gating strategies? Now you can, with the new DAFi
-plugin for FlowJo!
+human-driven gating strategies? Now you can with ezDAFi, the new 
+FlowJo plugin for DAFi!
 
 DAFi stands for **D**irected **A**utomated **F**iltering and
 **I**dentification of cell populations in polychromatic
@@ -15,7 +15,7 @@ datasets.
 There are several advantages to this approach, including a 
 gating strategy that follows a much more natural distribution of
 the data! For more reasons why you should be using DAFi,
-please see: [https://doi.org/10.1002/cyto.a.23371]( https://doi.org/10.1002/cyto.a.23371). 
+please see: [ https://doi.org/10.1002/cyto.a.23371]( https://doi.org/10.1002/cyto.a.23371). 
 
 Under the hood, the FlowJo plugin extracts your manual gating
 strategy to set the boundaries of regions of interest in your
