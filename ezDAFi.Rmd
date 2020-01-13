@@ -26,7 +26,7 @@ The algorithm works like this:
 * Merge clusters if their centroids are inside a given gate;
 * Cells whose nearest neighbors is one of merged clusters belong to one merged population.
 
-![**Fig1**: How DAFi aims at bridging manual gating and automated clustering techniques](Fig1.png)
+![**Fig1**: How DAFi aims at bridging manual gating and automated clustering techniques.](Fig1.png)
 
 ## Reported advantages of DAFi
 

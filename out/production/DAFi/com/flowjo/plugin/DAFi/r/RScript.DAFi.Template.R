@@ -481,6 +481,11 @@ colnames(labels) <- foreach(DAFi_node = DAFi_nodes,
                                      x = .,
                                      fixed = TRUE)
                             }
+colnames(labels) <- gsub(x = colnames(labels),
+                         pattern = ",",
+                         replacement = ".",
+                         fixed = TRUE)
+
 #sanity check
 apply(labels,
       2,
@@ -551,6 +556,11 @@ foreach(pop = colnames(all.labels)) %do% {
              pop) %>%
     mean(.)
 } %>% unlist(.)
+
+colnames(all.labels) <- gsub(x = colnames(all.labels),
+                             pattern = ",",
+                             replacement = ".",
+                             fixed = TRUE)
 
 flowEnv <- new.env()
 
