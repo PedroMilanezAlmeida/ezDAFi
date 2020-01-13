@@ -1,3 +1,6 @@
+#
+*.DS_store
+
 # Compiled class file
 *.class
 
