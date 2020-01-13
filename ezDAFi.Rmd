@@ -1,0 +1,43 @@
+---
+title: "ezDAFi"
+author: "Pedro Milanez Almeida"
+date: "1/13/2020"
+output: html_document
+---
+
+## Executive Summary
+
+The objective of this report is to present ezDAFi, a easy to use FlowJo plugin for DAFi. DAFi stands for **D**irected **A**utomated **F**iltering and **I**dentification of cell populations in polychromatic flow cytometry data (see [original publication]( https://doi.org/10.1002/cyto.a.23371)). The plugin imports single-cell data and FlowJo-derived gating strategies into R, builds single cell representations with self-organizing maps (SOM), and updates single cell identities according to the location of their nearest SOM within the gating tree. The plugin can be used to refine gated populations on the fly, allowing for the visual check and re-use of DAFi gated cells in downstream analysis, such as building stats, plots and more gates. 
+
+## Short introduction
+
+With the advent of high dimensional single cell interrogation technologies, bidimensional manual gating became obsolete. This led to a quick rise in the number of automatic clustering algorithms for biological and immunological research but several problems are associated with automated gating strategies, such as:
+
+* Combining automated data analysis with human knowledge about gene/protein expression levels in specific cell types that perform a certain function of interest.
+* Validate the results of automatic clustering.
+* Dealing with batch effects. If manual gating is used, one can subjectively (or semi-automatically) shift a gate, but with if clustering is used, one often finds new “populations”.
+
+DAFi tries to solve some of these problems. The basic idea behind DAFi is to gate the centroids of clustering results with the manual gating strategy and update single cell identity according to which gate the nearest neighboring centroid is located, if any.
+
+The algorithm works like this:
+
+* Cluster single cells using a high number of clusters;
+* Gate the cluster centroids using manual gates;
+* Merge clusters if their centroids are inside a given gate;
+* Cells whose nearest neighbors is one of merged clusters belong to one merged population.
+
+![**Fig1**: How DAFi aims at bridging manual gating and automated clustering techniques](Fig1.png)
+
+## Reported advantages of DAFi
+
+Several advantages of DAFi have been reported (see [original publication]( https://doi.org/10.1002/cyto.a.23371)):
+
+* Better separation of poorly-resolved populations
+# Abrupt cut in manual gating vs “natural” shape of data distribution
+* Higher interpretability of automated clustering
+* When used recursively, higher chances of finding smaller populations than in automated clustering
+* Effective use of human knowledge in guiding automated algorithms
+
+
+## ezDAFi in action
+

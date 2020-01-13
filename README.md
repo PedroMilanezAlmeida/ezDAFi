@@ -15,7 +15,7 @@ datasets.
 There are several advantages to this approach, including a 
 gating strategy that follows a much more natural distribution of
 the data! For more reasons why you should be using DAFi,
-please see: [ https://doi.org/10.1002/cyto.a.23371]( https://doi.org/10.1002/cyto.a.23371). 
+please see: [https://doi.org/10.1002/cyto.a.23371]( https://doi.org/10.1002/cyto.a.23371). 
 
 Under the hood, the FlowJo plugin extracts your manual gating
 strategy to set the boundaries of regions of interest in your
