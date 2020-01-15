@@ -1,7 +1,7 @@
 #
-14-Jan-2020/
+14-Jan-2020
 out/
-.png
+*.png
 *.pptx
 *.DS_store
 .idea
