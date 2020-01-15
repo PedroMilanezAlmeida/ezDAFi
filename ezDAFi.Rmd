@@ -7,9 +7,9 @@ output: html_document
 
 ### Executive Summary
 
-The objective of this report is to present ezDAFi, a easy to use FlowJo plugin for DAFi. DAFi stands for **D**irected **A**utomated **F**iltering and **I**dentification of cell populations in polychromatic flow cytometry data (see [original publication]( https://doi.org/10.1002/cyto.a.23371)). The plugin imports single-cell data and FlowJo-derived gating strategies into R, builds single cell representations with self-organizing maps (SOM), and updates single cell identities according to the location of their nearest SOM within the gating tree. The plugin can be used to refine gated populations on the fly, allowing for the visual check and re-use of DAFi gated cells in downstream analysis, such as building stats, plots and more gates. 
+The objective of this report is to present ezDAFi, an easy-to-use FlowJo plugin for DAFi. DAFi stands for **D**irected **A**utomated **F**iltering and **I**dentification of cell populations in polychromatic flow cytometry data (see [original publication]( https://doi.org/10.1002/cyto.a.23371)). The plugin automatically imports single-cell data and FlowJo-derived gating strategies into R, builds single cell representations with self-organizing maps (SOM), and updates single cell identities according to the location of their nearest SOM within the gating tree. The plugin can be used to refine gated populations on the fly in FlowJo, allowing for the visual check and re-use of DAFi gated cells in downstream analysis, such as building stats, plots and more gates. 
 
-### Short introduction
+### Motivation
 
 With the advent of high dimensional single cell interrogation technologies, bidimensional manual gating became obsolete. This led to a quick rise in the number of automatic clustering algorithms for biological and immunological research but several problems are associated with automated gating strategies, such as:
 
@@ -39,15 +39,15 @@ Several advantages of DAFi have been reported (see [original publication]( https
 * Effective use of human knowledge in guiding automated algorithms
 
 
-### DAFi from inside Flowjo: ezDAFi in action
+### ezDAFi in action: DAFi from inside Flowjo
 
 Our new implementation of DAFi relies on R and several R packages, in particular flowWorkspace and FlowSOM, to bring DAFi to FlowJo in the form of an easy-to-use plugin.
 
-While building the gating tree, the user can call the plugin to refine any gated population using DAFi. The DAFi-gated population is automatically imported back to FlowJo for futher downstream analysis, including plotting, stats and further gating.
+While building the gating tree, the user can select a parent population, call the plugin and refine any child population using DAFi. The DAFi-refined gates are automatically imported back to FlowJo for futher downstream analysis, including plotting, stats and further gating. 
 
 ![**Fig2**: Selecting "Single Cells" and running the plugin will refine all gates down the hierarchy from "Single Cells". In this case, we only show one example, the "CD3, CD45 subset". Please note how the DAFi-refined population shows a much more natural distribution of the parameters after gating.](Fig2.png)
 
-Importantly, if the user decides to build the whole gating tree first and only apply DAFi to an upstream gate, the plugin can apply DAFi to all children and children of children of a gate. This feature allows for DAFi to be used recursively throughout several levels of the gating tree without addtional human interaction. This way, all sub-populations downstream of the selected gate will be refined by DAFi.
+Importantly, if the user decides to build the whole gating tree first and to apply DAFi to an upstream gate, the plugin can be used refine all children and children of children of a seleted population. This feature allows for DAFi to be used recursively throughout several levels of the gating tree without addtional human interaction. This way, all sub-populations downstream of the selected gate will be refined by DAFi.
 
 ## Conclusion
 
@@ -61,8 +61,12 @@ Our new plugin brings the power of DAFi to FlowJo, the most widely used single c
 * First run can take a few minutes to install required R packages
 * Since data are saved to hard disk, it may run slow on some older systems
 
-#### Wishlist
+#### Known Bugs
 
-* The plugin creates derived parameters, which are used to DAFi gate cells in FlowJo. Derived parameters are not imported into flowWorkspace, such that DAFi gates are not recognized in R for DAFi analysis of children of DAFi gates. Make derived parameters exportable/readable in R.
-* Import derived parameters as one for each DAFi run (currently every DAFi pop generates one derived parameter, overpopulating the view)
-* Make R error messages visible to the user
+* DAFi-ing children of DAFi gates does not work. The plugin creates derived parameters (zeros and ones), which are used to DAFi-gate cells in FlowJo. FlowJo-derived parameters are not imported into flowWorkspace in R, such that DAFi gates are not recognized in R for DAFi analysis of children of DAFi gates. TODO: make derived parameters exportable/readable in R.
+* Every DAFi-gate generates one derived parameter, overpopulating the view. TODO: Import derived parameters from R into FlowJo as one parameter for each DAFi run.
+* R error messages are not visible to the user. TODO: Make R error messages visible to the user
+
+#### Github Page:
+
+[github.com/PedroMilanezAlmeida/DAFi](https://github.com/PedroMilanezAlmeida/DAFi)

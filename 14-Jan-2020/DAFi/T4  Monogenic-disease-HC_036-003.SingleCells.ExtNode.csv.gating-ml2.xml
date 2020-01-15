@@ -12,6 +12,16 @@
       <data-type:fcs-dimension data-type:name="DAFi_CD3..CD45.subset"/>
     </gating:dimension>
   </gating:RectangleGate>
+  <gating:RectangleGate gating:id="DAFi_CD3..CD45.subset_DAFi_CD8neg.CD4pos">
+    <gating:dimension gating:min="0.5" gating:max="1.5" gating:compensation-ref="uncompensated">
+      <data-type:fcs-dimension data-type:name="DAFi_CD3..CD45.subset_DAFi_CD8neg.CD4pos"/>
+    </gating:dimension>
+  </gating:RectangleGate>
+  <gating:RectangleGate gating:id="DAFi_CD3..CD45.subset_DAFi_CD8pos.CD4neg">
+    <gating:dimension gating:min="0.5" gating:max="1.5" gating:compensation-ref="uncompensated">
+      <data-type:fcs-dimension data-type:name="DAFi_CD3..CD45.subset_DAFi_CD8pos.CD4neg"/>
+    </gating:dimension>
+  </gating:RectangleGate>
   <gating:RectangleGate gating:id="DAFi_CD3negCD45pos">
     <gating:dimension gating:min="0.5" gating:max="1.5" gating:compensation-ref="uncompensated">
       <data-type:fcs-dimension data-type:name="DAFi_CD3negCD45pos"/>

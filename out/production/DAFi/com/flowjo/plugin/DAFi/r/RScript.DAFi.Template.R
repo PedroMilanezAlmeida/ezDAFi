@@ -128,39 +128,40 @@ nameSearchRes <- names(nameSearch)[nameSearch %>%
                                      which.max(.)]
 sampleFCS <- paste0(nameSearchRes,
                     ".fcs")
-#sampleFCS <- basename("FJ_DATA_FILE_PATH") %>%
-#  gsub(pattern = excess.sampleFCS,
-#       replacement = "",
-#       x = .,
-#       fixed = TRUE) %>%
-#  paste0(.,
-#         ".fcs")
-#sampleFCS
-#find path to fcs file used here
-sampleFCS_path <- sampleFCS_paths[basename(sampleFCS_paths) == sampleFCS]
-sampleFCS_path
 
-if(Sys.info()["sysname"] == "Windows"){
-  sampleFCS_path <- substring(sampleFCS_path, 2)
-}
+gsFileName <- paste0(dirname("FJ_DATA_FILE_PATH"),
+                     "/",
+                     basename(wspNames),
+                     ".",
+                     sampleFCS,
+                     ".gs")
 
-#parse wsp and fcs files into a GatingSet object
-
-pathFCS <- tryCatch(
-  data.frame(sampleID = getSamples(ws)$sampleID[getSamples(ws)$name == sampleFCS],
-             file = sampleFCS_path),
-  error = function(e) {
-    FIL <- read.FCS(sampleFCS_path)@description$`$FIL`
-    data.frame(sampleID = getSamples(ws)$sampleID[getSamples(ws)$name == FIL],
-               file = sampleFCS_path)
-  })
-
-gs <- parseWorkspace(ws,
-                     name = 1,
-                     path = pathFCS,
-                     isNcdf = FALSE)
-
-#TODO: check for special characters in gates names and stop calc
+if(file.exists(gsFileName)){
+  gs <- load_gs(gsFileName)
+} else {
+  sampleFCS_path <- sampleFCS_paths[basename(sampleFCS_paths) == sampleFCS]
+  sampleFCS_path
+  
+  if(Sys.info()["sysname"] == "Windows"){
+    sampleFCS_path <- substring(sampleFCS_path, 2)
+  }
+  
+  #parse wsp and fcs files into a GatingSet object
+  
+  pathFCS <- tryCatch(
+    data.frame(sampleID = getSamples(ws)$sampleID[getSamples(ws)$name == sampleFCS],
+               file = sampleFCS_path),
+    error = function(e) {
+      FIL <- read.FCS(sampleFCS_path)@description$`$FIL`
+      data.frame(sampleID = getSamples(ws)$sampleID[getSamples(ws)$name == FIL],
+                 file = sampleFCS_path)
+    })
+  
+  gs <- parseWorkspace(ws,
+                       name = 1,
+                       path = pathFCS,
+                       isNcdf = FALSE)
+  }
 
 orig.parNames <- getData(gs[[1]]) %>%
   parameters(.) %>%
@@ -259,8 +260,9 @@ names_gates_SOM <- foreach(pop = seq_along(basename(popOfInt_full_path))) %do% {
   }
 names(names_gates_SOM) <- basename(popOfInt_full_path)
 names_gates_SOM
-#to add recursive analysis, run whole DAFi process for each
+#if doing recursive analysis, run whole DAFi process for each
 #non-terminal gate, adding the results to GatingSet as boolean filter
+#importantly, we can still run children only analysis despite these changes, see below
 
 #find all gates down the gating hierarchy starting from the selected pop
 names_gates_of_int <- foreach(pop = seq_along(basename(popOfInt_full_path)),
@@ -287,28 +289,55 @@ names_gates_non_term <- unlist(names_gates_of_int,
                                                            any) %>%
                                                     unlist]
 #change names of non-terminal gates to reflect the fact they will be DAFi-refined
-names_gates_non_term_to_SOM <- names_gates_non_term
-names_gates_non_term_to_SOM <- gsub(pattern = popOfInt_full_path,
-                                      replacement = "",
-                                      x = names_gates_non_term_to_SOM) %>%
-    strsplit(.,
-             split = "/") %>%
-    lapply(.,
-           function(pop)
-             pop[-1] %>%
-             paste0("DAFi_",
-                    .) %>%
-             paste0(.,
-                    collapse = "/") %>%
-             paste0(popOfInt_full_path,
-                    "/",
-                    .)) %>%
-    unlist(.)
+names_gates_non_term_to_SOM <- list(names_gates_non_term)
+
+names(names_gates_non_term_to_SOM) <-  unlist(names_gates_non_term_to_SOM) %>%
+  gsub(pattern = popOfInt_full_path,
+       replacement = "",
+       x = names_gates_non_term_to_SOM) %>%
+  strsplit(.,
+           split = "/") %>%
+  lapply(.,
+         function(pop)
+           pop[-1]  %>%
+           gsub(pattern = "^/",
+                replacement = "",
+                x = .) %>%
+           gsub(pattern = "/",
+                replacement = "_",
+                x = .,
+                fixed = TRUE) %>%
+           gsub(pattern = ",",
+                replacement = ".",
+                x = .,
+                fixed = TRUE) %>%
+           gsub(pattern = " ",
+                replacement = ".",
+                x = .,
+                fixed = TRUE) %>%
+           gsub(pattern = "+",
+                replacement = "pos",
+                x = .,
+                fixed = TRUE) %>%
+           gsub(pattern = "-",
+                replacement = "neg",
+                x = .,
+                fixed = TRUE) %>%
+           paste0("DAFi_",
+                  .) %>%
+           paste0(.,
+                  collapse = "/") %>%
+           paste0(popOfInt_full_path,
+                  "/",
+                  .)) %>%
+  unlist(.)
 #gates that will be used in clustering and whose children will be refined
 names_gates_to_SOM <- c(popOfInt_full_path,
                         names_gates_non_term_to_SOM)
+names(names_gates_to_SOM)[1] <- popOfInt_full_path
 #find their position in the hiearchy
-tree_pos_gate_to_SOM <- strsplit(x = names_gates_to_SOM,
+tree_pos_gate_to_SOM <- strsplit(x = unlist(names_gates_to_SOM,
+                                            use.names = FALSE),
                                  split = "/",
                                  fixed = TRUE) %>%
   lapply(length) %>%
@@ -319,19 +348,19 @@ if(FJ_PAR_CHILDREN){
   pops_to_SOM <- names_gates_to_SOM[order(tree_pos_gate_to_SOM)] #order is very important to ensure hierarchy of gates
   }
 #actual DAFi
-for(pop_to_SOM in pops_to_SOM){
-  print(pop_to_SOM)
+for(pop_to_SOM in seq_along(pops_to_SOM)){
+  print(pops_to_SOM[pop_to_SOM] %>% names(.))
   for(fSample in seq_along(gs)) {
     if(dim(getData(gs[[fSample]],
-                   pop_to_SOM)[,parIndices])[1] > minPopSize) { # in case a subpop is smaller than min #events, SOM is not applied
-## Code to read the GatingSet data from each population that will be analyzed with DAFi
+                   pops_to_SOM[pop_to_SOM] %>% names(.))[,parIndices])[1] > minPopSize) { # in case a subpop is smaller than min #events, SOM is not applied
+      ## Code to read the GatingSet data from each population that will be analyzed with DAFi
       if (nchar("FJ_PAR_APPLY_ON_PREV") > 5) { ## Expected either "None" or a valid file path
         load("FJ_PAR_APPLY_ON_PREV")
         fSOM <- NewData(fSOM, getData(gs[[fSample]],
-                                      pop_to_SOM)[,parIndices]);
+                                      pops_to_SOM[pop_to_SOM] %>% names(.))[,parIndices]);
         } else {
           fSOM <- ReadInput(getData(gs[[fSample]],
-                                    pop_to_SOM)[,parIndices],
+                                    pops_to_SOM[pop_to_SOM] %>% names(.))[,parIndices],
                             compensate = FALSE,
                             transform = FALSE,
                             scale = FJ_PAR_SCALE,
@@ -373,18 +402,14 @@ for(pop_to_SOM in pops_to_SOM){
           lapply(strsplit(x = dirname(getNodes(gs[[fSample]])),
                           split = "/"),
                  function(nodes)
-                   tail(nodes, n = 1) == gsub(pattern = "DAFi_",
-                                              replacement = "",
-                                              basename(pop_to_SOM))) %>%
+                   tail(nodes, n = 1) == basename(pops_to_SOM[[pop_to_SOM]])) %>%
             unlist %>%
             which]
         for(gate in gates) {
           suppressMessages(add(gs_SOM,
                                getGate(gs[[fSample]],
-                                       gsub(pattern = "DAFi_",
-                                            replacement = "",
-                                            paste0(pop_to_SOM,
-                                                   "/", gate)))))
+                                       paste0(pops_to_SOM[[pop_to_SOM]],
+                                              "/", gate))))
         }
         suppressMessages(recompute(gs_SOM))
         ## Code to update assignment of cell identity according to DAFi results
@@ -411,18 +436,41 @@ for(pop_to_SOM in pops_to_SOM){
         for(gate in gates) {
           all_cells_DAFi_label[[gate]] <- rep(FALSE,
                                               length(getIndices(gs[[fSample]],
-                                                                y = pop_to_SOM)))
+                                                                y = pops_to_SOM[pop_to_SOM] %>% names(.))))
           all_cells_DAFi_label[[gate]][
             getIndices(gs[[fSample]],
-                       y = pop_to_SOM)] <- cell_DAFi_label[[gate]]
+                       y = pops_to_SOM[pop_to_SOM] %>% names(.))] <- cell_DAFi_label[[gate]]
           all_cells_DAFi_label[[gate]] <- list(all_cells_DAFi_label[[gate]])
           names(all_cells_DAFi_label[[gate]]) <- sampleNames(gs[[fSample]])
         }
         for(gate in gates) {
           add(gs[[fSample]],
               all_cells_DAFi_label[[gate]],
-              parent = pop_to_SOM,
-              name = paste0("DAFi_", gate))
+              parent = pops_to_SOM[pop_to_SOM] %>% names(.),
+              name = paste0("DAFi_", gate) %>%
+                gsub(pattern = "^/",
+                     replacement = "",
+                     x = .) %>%
+                gsub(pattern = "/",
+                     replacement = "_",
+                     x = .,
+                     fixed = TRUE) %>%
+                gsub(pattern = ",",
+                     replacement = ".",
+                     x = .,
+                     fixed = TRUE) %>%
+                gsub(pattern = " ",
+                     replacement = ".",
+                     x = .,
+                     fixed = TRUE) %>%
+                gsub(pattern = "+",
+                     replacement = "pos",
+                     x = .,
+                     fixed = TRUE) %>%
+                gsub(pattern = "-",
+                     replacement = "neg",
+                     x = .,
+                     fixed = TRUE))
         }
         suppressMessages(recompute(gs[[fSample]]))
       } else {
@@ -430,27 +478,55 @@ for(pop_to_SOM in pops_to_SOM){
           lapply(strsplit(x = dirname(getNodes(gs[[fSample]])),
                           split = "/"),
                  function(nodes)
-                   tail(nodes, n = 1) == gsub(pattern = "DAFi_",
-                                              replacement = "",
-                                              basename(pop_to_SOM))) %>%
+                   tail(nodes, n = 1) == basename(pops_to_SOM[[pop_to_SOM]])) %>%
             unlist %>%
             which]
         for(gate in gates) {
           add(gs[[fSample]],
               getGate(gs[[fSample]],
-                      gsub(pattern = "DAFi_",
-                           replacement = "",
-                           paste0(pop_to_SOM,
-                                  "/", gate))),
-              parent = pop_to_SOM,
+                      paste0(pops_to_SOM[[pop_to_SOM]],
+                             "/", gate)),
+              parent = pops_to_SOM[pop_to_SOM] %>% names(.),
               name = paste0("DAFi_",
-                            gate))
+                            gate) %>%
+                gsub(pattern = "^/",
+                     replacement = "",
+                     x = .) %>%
+                gsub(pattern = "/",
+                     replacement = "_",
+                     x = .,
+                     fixed = TRUE) %>%
+                gsub(pattern = ",",
+                     replacement = ".",
+                     x = .,
+                     fixed = TRUE) %>%
+                gsub(pattern = " ",
+                     replacement = ".",
+                     x = .,
+                     fixed = TRUE) %>%
+                gsub(pattern = "+",
+                     replacement = "pos",
+                     x = .,
+                     fixed = TRUE) %>%
+                gsub(pattern = "-",
+                     replacement = "neg",
+                     x = .,
+                     fixed = TRUE))
         }
         suppressMessages(recompute(gs[[fSample]]))
       }
     }
   }
-  
+
+# BUG: when running the plugin on a population down the tree from a previously DAFi-ed pop
+# flowWorkspace does not import the derived paramenters (used in FlowJo to gate DAFi) and 
+# descendant gates
+# Failed solution: saving the GatingSet with DAFi gates to load in a second run. The DAFi
+# gates are saved and loaded correctly, but the descendant gates are missing!
+
+save_gs(gs,
+        path = gsFileName)
+
 DAFi_nodes <- getNodes(gs)[grep(pattern = "DAFi_",
                                 x = basename(getNodes(gs)),
                                 fixed = TRUE)]

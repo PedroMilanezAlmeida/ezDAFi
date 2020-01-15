@@ -623,10 +623,10 @@ public class DAFi extends R_Algorithm {
             SElement option = iterator.next();
 
             int savedDimx = option.getInt(xDimOptionName, -1);
-            if (savedDimx >= 3 && savedDimx <= 30) fndimx = savedDimx;
+            if (savedDimx >= 3 && savedDimx <= 32) fndimx = savedDimx;
 
             int savedDimy = option.getInt(yDimOptionName, -1);
-            if (savedDimy >= 3 && savedDimy <= 30) fndimy = savedDimy;
+            if (savedDimy >= 3 && savedDimy <= 32) fndimy = savedDimy;
 
             int nApplyOnPrevComboItemsCount = fApplyOnPrevCombo.getItemCount();
             String savedApplyOnPrevOption = option.getString(applyOnPrevOptionName);
