@@ -25,8 +25,9 @@ nearest neighbors are centroids of interest. Finally, the plugin
 automatically gates each cell according to their updated
 identities, returning them to your FlowJo workspace.
 
-Give it try! Just download the __DAFi.jar__ file above (or find it
-on [FlowJo's Plugin page](https://www.flowjo.com/exchange/#/)) and
-copy the file to your FlowJo plugins folder!
+Give it try! Just download the __DAFi.jar__ file above (soon you will
+also find it on [FlowJo's Plugin page](https://www.flowjo.com/exchange/#/))
+and copy the file to your FlowJo plugins folder! Don't forget to
+restart FlowJo before using a new plugin.
   
   

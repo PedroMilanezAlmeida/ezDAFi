@@ -81,6 +81,7 @@ public class DAFi extends R_Algorithm {
     private RangedIntegerTextField fMinPopSizeField = null;
     private FJComboBox fApplyOnPrevCombo = null;
     private FJCheckBox fScaleOptionCheckbox = null;
+    private FJCheckBox fApplyOnChildrenCheckbox = null;
 
     private static final int fixedLabelWidth = 130;
     private static final int fixedFieldWidth = 75;
@@ -107,8 +108,11 @@ public class DAFi extends R_Algorithm {
     private static final String orPerformDAFiLabel = "or perform new DAFi";
     private static final String scaleLabel = "Scale";
     private static final String scaleTooltip = "Should the data be scaled by the FlowSOM function?";
+    private static final String applyOnChildrenLabel = "Apply on children only (otherwise on children and children of children)";
+    private static final String applyOnChildrenTooltip = "If checked, DAFi will refine only the children of the selected population. If unchecked, all children of children will be refined recursively (i.e., all sub-populations downstream of the selected one).";
 
     public static final String scaleOptionName = "scale";
+    public static final String applyOnChildrenOptionName = "childrenOnly";
     public static final String xDimOptionName = "xdim";
     public static final String yDimOptionName = "ydim";
     public static final String minPopSizeOptionName = "minPopSize";
@@ -124,8 +128,10 @@ public class DAFi extends R_Algorithm {
     public static final int defaultMinPopSize = 500;
     public static final String defaultApplyOnPrev = "None";
     public static final boolean defaultScale = true;
+    public static final boolean defaultApplyOnChildren = true;
 
     private boolean fScale = defaultScale;
+    private boolean fApplyOnChildren = defaultApplyOnChildren;
     private int fndimx = defaultXDim, fndimy = defaultYDim;
     private int fnMinPopSize = defaultMinPopSize;
 
@@ -604,6 +610,7 @@ public class DAFi extends R_Algorithm {
         fndimx = defaultXDim;
         fndimy = defaultYDim;
         fScale = defaultScale;
+        fApplyOnChildren = defaultApplyOnChildren;
         fnMinPopSize = defaultMinPopSize;
 
         // If there are option set already (e.g., from the workspace), then
@@ -630,6 +637,10 @@ public class DAFi extends R_Algorithm {
                         fApplyOnPrevCombo.setSelectedIndex(j);
                 }
 
+            String savedApplyOnChildren = option.getAttributeValue(applyOnChildrenOptionName);
+            if (savedApplyOnChildren != null && !savedApplyOnChildren.isEmpty())
+                fApplyOnChildren = One.equals(savedApplyOnChildren) || True.equals(savedApplyOnChildren);
+
             String savedScale = option.getAttributeValue(scaleOptionName);
             if (savedScale != null && !savedScale.isEmpty())
                 fScale = One.equals(savedScale) || True.equals(savedScale);
@@ -646,6 +657,11 @@ public class DAFi extends R_Algorithm {
                 refreshComponentsEnabled(fApplyOnPrevCombo);
             }
         });
+        fApplyOnChildrenCheckbox = new FJCheckBox(applyOnChildrenLabel);
+        fApplyOnChildrenCheckbox.setToolTipText("<html><p width=\"" + fixedToolTipWidth + "\">" + applyOnChildrenTooltip + "</p></html>");
+        fApplyOnChildrenCheckbox.setSelected(fApplyOnChildren);
+        componentList.add(new HBox(new Component[]{fApplyOnChildrenCheckbox}));
+
         refreshComponentsEnabled(fApplyOnPrevCombo);
 
         FJLabel LabelApplyOnPrev = new FJLabel(applyOnPrevLabel);
@@ -737,6 +753,7 @@ public class DAFi extends R_Algorithm {
                 if (fDimXField != null) fDimXField.setEnabled(false);
                 if (fDimYField != null) fDimYField.setEnabled(false);
                 if (fScaleOptionCheckbox != null) fScaleOptionCheckbox.setEnabled(false);
+                if (fApplyOnChildrenCheckbox != null) fApplyOnChildrenCheckbox.setEnabled(false);
 
                 // If we are selecting the application on existing map then let's select the same parameters
                 // in the parameter selector, and let's do so based on the CSV file that has those.
@@ -789,6 +806,7 @@ public class DAFi extends R_Algorithm {
                 if (fDimXField != null) fDimXField.setEnabled(true);
                 if (fDimYField != null) fDimYField.setEnabled(true);
                 if (fScaleOptionCheckbox != null) fScaleOptionCheckbox.setEnabled(true);
+                if (fApplyOnChildrenCheckbox != null) fApplyOnChildrenCheckbox.setEnabled(true);
                 if (fParameterNameList != null) fParameterNameList.setEnabled(true);
             }
         }
@@ -823,6 +841,7 @@ public class DAFi extends R_Algorithm {
         fOptions.put(xDimOptionName, Integer.toString(fDimXField.getInt()));
         fOptions.put(yDimOptionName, Integer.toString(fDimYField.getInt()));
         fOptions.put(scaleOptionName, fScaleOptionCheckbox.isSelected() ? One : Zero);
+        fOptions.put(applyOnChildrenOptionName, fApplyOnChildrenCheckbox.isSelected() ? One : Zero);
         if (fApplyOnPrevCombo.getSelectedIndex() <= 0) {
             fOptions.put(applyOnPrevOptionName, fApplyOnPrevCombo.getSelectedItem().toString());
         } else {

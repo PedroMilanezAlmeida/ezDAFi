@@ -1,4 +1,6 @@
 #
+*.png
+*.pptx
 *.DS_store
 .idea
 *.iml

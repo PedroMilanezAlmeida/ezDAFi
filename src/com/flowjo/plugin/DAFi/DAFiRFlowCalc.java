@@ -62,6 +62,7 @@ public class DAFiRFlowCalc extends RFlowCalculator {
         if(EngineManager.isWindows()) dataFilePath = dataFilePath.replaceAll("\\\\", "/");
 
         String sParScale = options.get(com.flowjo.plugin.DAFi.DAFi.scaleOptionName);
+        String sParApplyOnChildren = options.get(com.flowjo.plugin.DAFi.DAFi.applyOnChildrenOptionName);
         String sParMinPopSize = options.get(com.flowjo.plugin.DAFi.DAFi.minPopSizeOptionName);
         String sParXDim = options.get(com.flowjo.plugin.DAFi.DAFi.xDimOptionName);
         String sParYDim = options.get(com.flowjo.plugin.DAFi.DAFi.yDimOptionName);
@@ -74,6 +75,11 @@ public class DAFiRFlowCalc extends RFlowCalculator {
             sParScale = TRUE; // TRUE is the default
         else
             sParScale = FALSE;
+
+        if (sParApplyOnChildren == null || sParApplyOnChildren.isEmpty() || com.flowjo.plugin.DAFi.DAFi.One.equals(sParApplyOnChildren) || com.flowjo.plugin.DAFi.DAFi.True.equals(sParApplyOnChildren))
+            sParApplyOnChildren = TRUE; // TRUE is the default
+        else
+            sParApplyOnChildren = FALSE;
 
         if (sParApplyOnPrev == null || sParApplyOnPrev.isEmpty())
             sParApplyOnPrev = com.flowjo.plugin.DAFi.DAFi.defaultApplyOnPrev;
@@ -124,11 +130,13 @@ public class DAFiRFlowCalc extends RFlowCalculator {
             while((scriptLine = rTemplateReader.readLine()) != null)
             {
                 // Added to get runID in parameter - MVP
+                scriptLine = scriptLine.replace("FJ_PARM_SAMPLENAME", sampleName);
                 scriptLine = scriptLine.replace("FJ_PARM_NAME", parameterName);
                 scriptLine = scriptLine.replace("FJ_DATA_FILE_PATH", dataFilePath);
                 scriptLine = scriptLine.replace("FJ_CSV_OUPUT_FILE", outFileName);
                 scriptLine = scriptLine.replace("FJ_GATING_ML_OUTPUT_FILE", gatingMLOutFile.getAbsolutePath());
                 scriptLine = scriptLine.replace("FJ_PAR_SCALE", sParScale);
+                scriptLine = scriptLine.replace("FJ_PAR_CHILDREN", sParApplyOnChildren);
                 scriptLine = scriptLine.replace("FJ_PAR_MINPOPSIZE", sParMinPopSize);
                 scriptLine = scriptLine.replace("FJ_PAR_XDIM", sParXDim);
                 scriptLine = scriptLine.replace("FJ_PAR_YDIM", sParYDim);
