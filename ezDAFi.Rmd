@@ -15,7 +15,7 @@ With the advent of high dimensional single cell interrogation technologies, bidi
 
 * Combining automated data analysis with human knowledge about gene/protein expression levels in specific cell types that perform a certain function of interest.
 * Validate the results of automatic clustering.
-* Dealing with batch effects. If manual gating is used, one can subjectively (or semi-automatically) shift a gate, but with if clustering is used, one often finds new “populations”.
+* Dealing with batch effects. If manual gating is used, one can subjectively (or semi-automatically) shift a gate, but if clustering is used, one often finds new “populations”.
 
 DAFi tries to solve some of these problems. The basic idea behind DAFi is to gate the centroids of clustering results with the manual gating strategy and update single cell identity according to within which gate the nearest neighboring centroid is located, if any.
 
@@ -45,7 +45,7 @@ Our new implementation of DAFi relies on R and several R packages, in particular
 
 While building the gating tree, the user can select a parent population, call the plugin and refine any child population using DAFi. The DAFi-refined gates are automatically imported back to FlowJo for futher downstream analysis, including plotting, stats and further gating. 
 
-![**Fig2**: Selecting "Single Cells" and running the plugin will refine all gates down the hierarchy from "Single Cells". In this case, we only show one example, the "CD3, CD45 subset". Please note how the DAFi-refined population shows a much more natural distribution of the parameters after gating.](Fig2.png)
+![**Fig2**: Selecting "Single Cells" and running the plugin will refine either all gates down the hierarchy from "Single Cells" or only the immediate children, depending on user input. In this case, we only show one example of one immediate child gate, the "CD3, CD45 subset". Please note how the DAFi-refined population shows a much more natural distribution of the parameters after gating.](Fig2.png)
 
 Importantly, if the user decides to build the whole gating tree first and to apply DAFi to an upstream gate, the plugin can be used refine all children and children of children of a seleted population. This feature allows for DAFi to be used recursively throughout several levels of the gating tree without addtional human interaction. This way, all sub-populations downstream of the selected gate will be refined by DAFi.
 
@@ -53,7 +53,7 @@ Importantly, if the user decides to build the whole gating tree first and to app
 
 Our new plugin brings the power of DAFi to FlowJo, the most widely used single cell flow cytometry data analysis platform. This new implementation allows for the use of DAFi on the fly, giving the user the flexibility to re-use DAFi-refined populations with any of FlowJo's downstream analysis capabilities.
 
-## Notes
+## Notes and Source
 
 #### Processing time
 
