@@ -7,5 +7,16 @@ output: html_document
 
 ### Visual Guide On How To Use
 
-![Population that we will cluster: CD8-CD4+. Gate that we will refine with DAFi: Treg.](VisualGuide1.png)
+Population that we will cluster: CD8-CD4+. Gates that we will refine with DAFi: "nonTreg", "CD45-RA, CD185 subset" among nonTregs, and "Treg".
+
+![](VisualGuide1.png)
+
+
+After selecting population of interest, click on "Workspace", "plugins" and "DAFi". Select parameters for clustering among other options.
+
+![](VisualGuide2.png)
+
+After hitting OK, the plugin runs for a few seconds (about 10-20sec for default SOM size; the first run may take a few minutes to install packages). Derived parameters and gated populations are imported back into FlowJo automatically. Please Note how the plugin ran DAFi on the whole tree down from "CD8-CD4+" (this behavior can be turned off to DAFi only the immediate children).
+
+![](VisualGuide3.png)
 
