@@ -1,13 +1,19 @@
 ---
-title: "HowToUse"
-author: "PMA"
+title: "ezDAFi: How To Use"
+author: "Pedro Milanez-Almeida"
 date: "1/29/2020"
 output: html_document
 ---
 
-### Visual Guide On How To Use
+### Visual Guide On How To Use With Example
 
-Population that we will cluster: CD8-CD4+. Gates that we will refine with DAFi: "nonTreg", "CD45-RA, CD185 subset" among nonTregs, and "Treg".
+Population that we will cluster: CD8-CD4+.
+
+Gates that we will refine with DAFi:
+
+* "nonTreg"
+* "CD45-RA, CD185 subset" among nonTregs
+* "Treg"
 
 ![](VisualGuide1.png)
 
@@ -20,3 +26,6 @@ After hitting OK, the plugin runs for a few seconds (about 10-20sec for default 
 
 ![](VisualGuide3.png)
 
+DAFi populations behave just like FlowJo native populations! They can be plotted, gated, used in layouts and stats!
+
+![](VisualGuide4.png)
