@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
- <Workspace version="20.0"  modDate="Wed Jan 15 15:24:16 GFT 2020"  clientTimestamp="1579112656494"  flowJoVersion="10.6.1"  drawRowBorders="1"  drawColumnBorders="1"  hideCompNodes="1"  curGroup="All Samples"  pluginFolder="C:\Users\pedro\OneDrive\Desktop\DAFi\14-Jan-2020"  groupPaneHeight="80"  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"  xmlns:gating="http://www.isac-net.org/std/Gating-ML/v2.0/gating"  xmlns:transforms="http://www.isac-net.org/std/Gating-ML/v2.0/transformations"  xmlns:data-type="http://www.isac-net.org/std/Gating-ML/v2.0/datatypes"  xsi:schemaLocation="http://www.isac-net.org/std/Gating-ML/v2.0/gating http://www.isac-net.org/std/Gating-ML/v2.0/gating/Gating-ML.v2.0.xsd http://www.isac-net.org/std/Gating-ML/v2.0/transformations http://www.isac-net.org/std/Gating-ML/v2.0/gating/Transformations.v2.0.xsd http://www.isac-net.org/std/Gating-ML/v2.0/datatypes http://www.isac-net.org/std/Gating-ML/v2.0/gating/DataTypes.v2.0.xsd "  nonAutoSaveFileName="file:/C:/Users/pedro/OneDrive/Desktop/DAFi/14-Jan-2020.wsp" >
-   <WindowPosition x="-7"  y="0"  width="782"  height="831"  displayed="1"  panelState="" />
+ <Workspace version="20.0"  modDate="Wed Jan 29 09:32:57 GFT 2020"  clientTimestamp="1580301177507"  flowJoVersion="10.6.1"  drawRowBorders="1"  drawColumnBorders="1"  hideCompNodes="1"  curGroup="All Samples"  pluginFolder="C:\Users\pedro\OneDrive\Desktop\DAFi\14-Jan-2020"  groupPaneHeight="80"  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"  xmlns:gating="http://www.isac-net.org/std/Gating-ML/v2.0/gating"  xmlns:transforms="http://www.isac-net.org/std/Gating-ML/v2.0/transformations"  xmlns:data-type="http://www.isac-net.org/std/Gating-ML/v2.0/datatypes"  xsi:schemaLocation="http://www.isac-net.org/std/Gating-ML/v2.0/gating http://www.isac-net.org/std/Gating-ML/v2.0/gating/Gating-ML.v2.0.xsd http://www.isac-net.org/std/Gating-ML/v2.0/transformations http://www.isac-net.org/std/Gating-ML/v2.0/gating/Transformations.v2.0.xsd http://www.isac-net.org/std/Gating-ML/v2.0/datatypes http://www.isac-net.org/std/Gating-ML/v2.0/gating/DataTypes.v2.0.xsd "  nonAutoSaveFileName="file:/C:/Users/pedro/OneDrive/Desktop/DAFi/14-Jan-2020.wsp" >
+   <WindowPosition x="0"  y="0"  width="700"  height="729"  displayed="1"  panelState="" />
    <TextTraits font="SansSerif"  size="11"  name=""  style="plain"  color="#000000"  background="#00ffffff"  just="left" />
    <Columns>
-     <TColumn width="468" >
+     <TColumn width="517" >
        <Property key="fj.appnode.prop.name" />
      </TColumn>
-     <TColumn width="148" >
+     <TColumn width="82" >
        <Property key="fj.appnode.prop.statistic" />
      </TColumn>
-     <TColumn width="146" >
+     <TColumn width="81" >
        <Property key="fj.appnode.prop.ncells" />
      </TColumn>
    </Columns>
@@ -1132,7 +1132,7 @@
                  <WindowPosition x="960"  y="31"  width="390"  height="582"  displayed="0"  panelState="---" />
                </GraphEnvironment>
              </Graph>
-             <Gate gating:id="ID8000950" >
+             <Gate gating:id="ID30643392" >
                <gating:PolygonGate eventsInside="1"  annoOffsetX="209"  annoOffsetY="101"  tint="#000000"  isTinted="0"  lineWeight="Normal"  userDefined="1"  quadId="-1"  gateResolution="256" >
                  <gating:dimension>
                    <data-type:fcs-dimension data-type:name="FSC-A" />
@@ -1176,7 +1176,7 @@
                      <WindowPosition x="960"  y="31"  width="390"  height="582"  displayed="0"  panelState="---" />
                    </GraphEnvironment>
                  </Graph>
-                 <Gate gating:id="ID21467894"  gating:parent_id="ID8000950" >
+                 <Gate gating:id="ID32248293"  gating:parent_id="ID30643392" >
                    <gating:PolygonGate eventsInside="1"  annoOffsetX="258"  annoOffsetY="103"  tint="#000000"  isTinted="0"  lineWeight="Normal"  userDefined="1"  quadId="-1"  gateResolution="256" >
                      <gating:dimension>
                        <data-type:fcs-dimension data-type:name="FSC-A" />
@@ -1284,7 +1284,7 @@
                          <WindowPosition x="344"  y="38"  width="390"  height="696"  displayed="0"  panelState="+--" />
                        </GraphEnvironment>
                      </Graph>
-                     <Gate gating:id="ID4527322"  gating:parent_id="ID21467894" >
+                     <Gate gating:id="ID19660720"  gating:parent_id="ID32248293" >
                        <gating:PolygonGate eventsInside="1"  annoOffsetX="214"  annoOffsetY="153"  tint="#000000"  isTinted="0"  lineWeight="Normal"  userDefined="1"  quadId="-1"  gateResolution="256" >
                          <gating:dimension>
                            <data-type:fcs-dimension data-type:name="FSC-A" />
@@ -1396,7 +1396,7 @@
                              <WindowPosition x="1124"  y="38"  width="390"  height="696"  displayed="0"  panelState="+--" />
                            </GraphEnvironment>
                          </Graph>
-                         <Gate gating:id="ID8034509"  gating:parent_id="ID4527322" >
+                         <Gate gating:id="ID20587073"  gating:parent_id="ID19660720" >
                            <gating:PolygonGate eventsInside="1"  annoOffsetX="203"  annoOffsetY="188"  tint="#000000"  isTinted="0"  lineWeight="Normal"  userDefined="1"  quadId="-1"  gateResolution="256" >
                              <gating:dimension>
                                <data-type:fcs-dimension data-type:name="Comp-R780-A" />
@@ -1436,7 +1436,7 @@
                                  <WindowPosition x="1124"  y="38"  width="390"  height="696"  displayed="0"  panelState="+--" />
                                </GraphEnvironment>
                              </Graph>
-                             <Gate gating:id="ID26625423"  gating:parent_id="ID8034509" >
+                             <Gate gating:id="ID10788305"  gating:parent_id="ID20587073" >
                                <gating:PolygonGate eventsInside="1"  annoOffsetX="140"  annoOffsetY="87"  tint="#000000"  isTinted="0"  lineWeight="Normal"  userDefined="1"  quadId="-1"  gateResolution="256" >
                                  <gating:dimension>
                                    <data-type:fcs-dimension data-type:name="Comp-V605-A" />
@@ -1536,19 +1536,19 @@
                              </Gate>
                            </Population>
                            <Population name="CD8- CD4+"  annotation=""  owningGroup=""  expanded="1"  sortPriority="10"  count="23493" >
-                             <Graph smoothing="0"  backColor="#ffffff"  foreColor="#000000"  heatMapStatParameter="Comp-R710-A"  type="Pseudocolor"  fast="1" >
-                               <Axis dimension="x"  name="Comp-V605-A"  label=""  auto="auto" />
-                               <Axis dimension="y"  name="Comp-V450-A"  label=""  auto="auto" />
+                             <Graph smoothing="1"  backColor="#ffffff"  foreColor="#000000"  heatMapStatParameter="Comp-R710-A"  type="Histogram"  fast="1" >
+                               <Axis dimension="x"  name="DAFi_nonTreg"  label=""  auto="auto" />
+                               <Axis dimension="y"  name=""  label=""  auto="auto" />
                                <GraphSettings level="5%"  smoothingHighResolution="1"  contourHighResolution="1"  histogramSmoothingCount="0"  graphResolution="256"  showOutliers="1"  drawLargeDots="0"  dotsToDraw="8000"  tint="le.chartfill.tinted.40"  lineWeight="le.lineweight.normal"  lineStyle="le.linestyle.solid" />
                                <GraphEnvironment showGrid="0"  showAxes="tnlTNL"  showGates="1"  showFreqOnPlots="1"  showGateNameOnPlots="1"  showMedians="0"  showUncomped="0"  addEventParam="0"  lastYAxisName="" >
                                  <TextTraits font="SansSerif"  size="11"  name="Labels"  style="plain"  color="#000000"  background="#00ffffff"  just="left" />
                                  <TextTraits font="SansSerif"  size="11"  name="LayoutGates"  style="plain"  color="#000000"  background="#00ffffff"  just="left" />
                                  <TextTraits font="SansSerif"  size="9"  name="Numbers"  style="plain"  color="#000000"  background="#00ffffff"  just="left" />
                                  <TextTraits font="SansSerif"  size="9"  name="Legend"  style="plain"  color="#000000"  background="#00ffffff"  just="left" />
-                                 <WindowPosition x="1124"  y="38"  width="390"  height="696"  displayed="1"  panelState="+--" />
+                                 <WindowPosition x="734"  y="38"  width="390"  height="696"  displayed="0"  panelState="+--" />
                                </GraphEnvironment>
                              </Graph>
-                             <Gate gating:id="ID12418986"  gating:parent_id="ID8034509" >
+                             <Gate gating:id="ID3714722"  gating:parent_id="ID20587073" >
                                <gating:PolygonGate eventsInside="1"  annoOffsetX="-59"  annoOffsetY="-83"  tint="#000000"  isTinted="0"  lineWeight="Normal"  userDefined="1"  quadId="-1"  gateResolution="256" >
                                  <gating:dimension>
                                    <data-type:fcs-dimension data-type:name="Comp-V605-A" />
@@ -1642,6 +1642,194 @@
                                  </gating:vertex>
                                </gating:PolygonGate>
                              </Gate>
+                             <Subpopulations>
+                               <Population name="nonTreg"  annotation=""  owningGroup=""  expanded="1"  sortPriority="10"  count="21906" >
+                                 <Graph smoothing="1"  backColor="#ffffff"  foreColor="#000000"  heatMapStatParameter="Comp-R710-A"  type="Zebra"  fast="1" >
+                                   <Axis dimension="x"  name="Comp-G610-A"  label=""  auto="auto" />
+                                   <Axis dimension="y"  name="Comp-R660-A"  label=""  auto="auto" />
+                                   <GraphSettings level="5%"  smoothingHighResolution="1"  contourHighResolution="1"  histogramSmoothingCount="0"  graphResolution="256"  showOutliers="1"  drawLargeDots="0"  dotsToDraw="8000"  tint="le.chartfill.tinted.40"  lineWeight="le.lineweight.normal"  lineStyle="le.linestyle.solid" />
+                                   <GraphEnvironment showGrid="0"  showAxes="tnlTNL"  showGates="1"  showFreqOnPlots="1"  showGateNameOnPlots="1"  showMedians="0"  showUncomped="0"  addEventParam="0"  lastYAxisName="" >
+                                     <TextTraits font="SansSerif"  size="11"  name="Labels"  style="plain"  color="#000000"  background="#00ffffff"  just="left" />
+                                     <TextTraits font="SansSerif"  size="11"  name="LayoutGates"  style="plain"  color="#000000"  background="#00ffffff"  just="left" />
+                                     <TextTraits font="SansSerif"  size="9"  name="Numbers"  style="plain"  color="#000000"  background="#00ffffff"  just="left" />
+                                     <TextTraits font="SansSerif"  size="9"  name="Legend"  style="plain"  color="#000000"  background="#00ffffff"  just="left" />
+                                     <WindowPosition x="1124"  y="38"  width="390"  height="696"  displayed="1"  panelState="+--" />
+                                   </GraphEnvironment>
+                                 </Graph>
+                                 <Gate gating:id="ID26843114"  gating:parent_id="ID3714722" >
+                                   <gating:PolygonGate eventsInside="1"  annoOffsetX="-107"  annoOffsetY="-69"  tint="#000000"  isTinted="0"  lineWeight="Normal"  userDefined="1"  quadId="-1"  gateResolution="256" >
+                                     <gating:dimension>
+                                       <data-type:fcs-dimension data-type:name="Comp-G710-A" />
+                                     </gating:dimension>
+                                     <gating:dimension>
+                                       <data-type:fcs-dimension data-type:name="Comp-G660-A" />
+                                     </gating:dimension>
+                                     <gating:vertex>
+                                       <gating:coordinate data-type:value="749.3730278599" />
+                                       <gating:coordinate data-type:value="42558.1323652085" />
+                                     </gating:vertex>
+                                     <gating:vertex>
+                                       <gating:coordinate data-type:value="410.2340849801" />
+                                       <gating:coordinate data-type:value="35404.9134087596" />
+                                     </gating:vertex>
+                                     <gating:vertex>
+                                       <gating:coordinate data-type:value="92.0779639399" />
+                                       <gating:coordinate data-type:value="28167.8345235128" />
+                                     </gating:vertex>
+                                     <gating:vertex>
+                                       <gating:coordinate data-type:value="-171.9422585294" />
+                                       <gating:coordinate data-type:value="20514.039195717" />
+                                     </gating:vertex>
+                                     <gating:vertex>
+                                       <gating:coordinate data-type:value="-330.5124569218" />
+                                       <gating:coordinate data-type:value="13145.921864072" />
+                                     </gating:vertex>
+                                     <gating:vertex>
+                                       <gating:coordinate data-type:value="-353.7870574265" />
+                                       <gating:coordinate data-type:value="7203.1164068922" />
+                                     </gating:vertex>
+                                     <gating:vertex>
+                                       <gating:coordinate data-type:value="-261.7406813013" />
+                                       <gating:coordinate data-type:value="4243.0910768928" />
+                                     </gating:vertex>
+                                     <gating:vertex>
+                                       <gating:coordinate data-type:value="-105.5431009059" />
+                                       <gating:coordinate data-type:value="2886.8224269337" />
+                                     </gating:vertex>
+                                     <gating:vertex>
+                                       <gating:coordinate data-type:value="136.2036252244" />
+                                       <gating:coordinate data-type:value="2227.9205396198" />
+                                     </gating:vertex>
+                                     <gating:vertex>
+                                       <gating:coordinate data-type:value="483.1376401291" />
+                                       <gating:coordinate data-type:value="2227.9205396198" />
+                                     </gating:vertex>
+                                     <gating:vertex>
+                                       <gating:coordinate data-type:value="838.8546596649" />
+                                       <gating:coordinate data-type:value="2581.0055703068" />
+                                     </gating:vertex>
+                                     <gating:vertex>
+                                       <gating:coordinate data-type:value="1225.5586255804" />
+                                       <gating:coordinate data-type:value="3491.5461810057" />
+                                     </gating:vertex>
+                                     <gating:vertex>
+                                       <gating:coordinate data-type:value="1642.9830217506" />
+                                       <gating:coordinate data-type:value="4976.6084583984" />
+                                     </gating:vertex>
+                                     <gating:vertex>
+                                       <gating:coordinate data-type:value="2277.0214912452" />
+                                       <gating:coordinate data-type:value="6908.2175220272" />
+                                     </gating:vertex>
+                                     <gating:vertex>
+                                       <gating:coordinate data-type:value="3188.746784118" />
+                                       <gating:coordinate data-type:value="9288.6102245913" />
+                                     </gating:vertex>
+                                     <gating:vertex>
+                                       <gating:coordinate data-type:value="4219.2387130019" />
+                                       <gating:coordinate data-type:value="14356.9971593104" />
+                                     </gating:vertex>
+                                     <gating:vertex>
+                                       <gating:coordinate data-type:value="4532.3632116684" />
+                                       <gating:coordinate data-type:value="28167.8345235128" />
+                                     </gating:vertex>
+                                     <gating:vertex>
+                                       <gating:coordinate data-type:value="3416.7695334225" />
+                                       <gating:coordinate data-type:value="44567.6963595233" />
+                                     </gating:vertex>
+                                     <gating:vertex>
+                                       <gating:coordinate data-type:value="2131.854843775" />
+                                       <gating:coordinate data-type:value="53626.1795893286" />
+                                     </gating:vertex>
+                                     <gating:vertex>
+                                       <gating:coordinate data-type:value="1225.5586255804" />
+                                       <gating:coordinate data-type:value="51198.626965508" />
+                                     </gating:vertex>
+                                     <gating:vertex>
+                                       <gating:coordinate data-type:value="749.3730278599" />
+                                       <gating:coordinate data-type:value="42558.1323652085" />
+                                     </gating:vertex>
+                                   </gating:PolygonGate>
+                                 </Gate>
+                                 <Subpopulations>
+                                   <Population name="CD45-RA, CD185 subset"  annotation=""  owningGroup=""  expanded="1"  sortPriority="10"  count="2197" >
+                                     <Graph smoothing="0"  backColor="#ffffff"  foreColor="#000000"  heatMapStatParameter="Comp-R710-A"  type="Pseudocolor"  fast="1" >
+                                       <Axis dimension="x"  name="Comp-G610-A"  label=""  auto="auto" />
+                                       <Axis dimension="y"  name="Comp-R660-A"  label=""  auto="auto" />
+                                       <GraphSettings level="5%"  smoothingHighResolution="1"  contourHighResolution="1"  histogramSmoothingCount="0"  graphResolution="256"  showOutliers="1"  drawLargeDots="0"  dotsToDraw="8000"  tint="le.chartfill.tinted.40"  lineWeight="le.lineweight.normal"  lineStyle="le.linestyle.solid" />
+                                       <GraphEnvironment showGrid="0"  showAxes="tnlTNL"  showGates="1"  showFreqOnPlots="1"  showGateNameOnPlots="1"  showMedians="0"  showUncomped="0"  addEventParam="0"  lastYAxisName="" >
+                                         <TextTraits font="SansSerif"  size="11"  name="Labels"  style="plain"  color="#000000"  background="#00ffffff"  just="left" />
+                                         <TextTraits font="SansSerif"  size="11"  name="LayoutGates"  style="plain"  color="#000000"  background="#00ffffff"  just="left" />
+                                         <TextTraits font="SansSerif"  size="9"  name="Numbers"  style="plain"  color="#000000"  background="#00ffffff"  just="left" />
+                                         <TextTraits font="SansSerif"  size="9"  name="Legend"  style="plain"  color="#000000"  background="#00ffffff"  just="left" />
+                                         <WindowPosition x="810"  y="40"  width="390"  height="696"  displayed="0"  panelState="+--" />
+                                       </GraphEnvironment>
+                                     </Graph>
+                                     <Gate gating:id="ID10163805"  gating:parent_id="ID26843114" >
+                                       <gating:RectangleGate eventsInside="1"  annoOffsetX="-10"  annoOffsetY="-100"  tint="#000000"  isTinted="0"  lineWeight="Normal"  userDefined="1"  percentX="0"  percentY="0" >
+                                         <gating:dimension gating:min="-654.298778209949"  gating:max="808.4167808502322" >
+                                           <data-type:fcs-dimension data-type:name="Comp-G610-A" />
+                                         </gating:dimension>
+                                         <gating:dimension gating:min="2148.2034806693587"  gating:max="8173.75901327575" >
+                                           <data-type:fcs-dimension data-type:name="Comp-R660-A" />
+                                         </gating:dimension>
+                                       </gating:RectangleGate>
+                                     </Gate>
+                                   </Population>
+                                 </Subpopulations>
+                               </Population>
+                               <Population name="Treg"  annotation=""  owningGroup=""  expanded="1"  sortPriority="10"  count="742" >
+                                 <Graph smoothing="0"  backColor="#ffffff"  foreColor="#000000"  heatMapStatParameter="Comp-R710-A"  type="Pseudocolor"  fast="1" >
+                                   <Axis dimension="x"  name="Comp-G710-A"  label=""  auto="auto" />
+                                   <Axis dimension="y"  name="Comp-G660-A"  label=""  auto="auto" />
+                                   <GraphSettings level="5%"  smoothingHighResolution="1"  contourHighResolution="1"  histogramSmoothingCount="0"  graphResolution="256"  showOutliers="1"  drawLargeDots="0"  dotsToDraw="8000"  tint="le.chartfill.tinted.40"  lineWeight="le.lineweight.normal"  lineStyle="le.linestyle.solid" />
+                                   <GraphEnvironment showGrid="0"  showAxes="tnlTNL"  showGates="1"  showFreqOnPlots="1"  showGateNameOnPlots="1"  showMedians="0"  showUncomped="0"  addEventParam="0"  lastYAxisName="" >
+                                     <TextTraits font="SansSerif"  size="11"  name="Labels"  style="plain"  color="#000000"  background="#00ffffff"  just="left" />
+                                     <TextTraits font="SansSerif"  size="11"  name="LayoutGates"  style="plain"  color="#000000"  background="#00ffffff"  just="left" />
+                                     <TextTraits font="SansSerif"  size="9"  name="Numbers"  style="plain"  color="#000000"  background="#00ffffff"  just="left" />
+                                     <TextTraits font="SansSerif"  size="9"  name="Legend"  style="plain"  color="#000000"  background="#00ffffff"  just="left" />
+                                     <WindowPosition x="804"  y="37"  width="390"  height="696"  displayed="0"  panelState="+--" />
+                                   </GraphEnvironment>
+                                 </Graph>
+                                 <Gate gating:id="ID15556745"  gating:parent_id="ID3714722" >
+                                   <gating:EllipsoidGate eventsInside="1"  annoOffsetX="116"  annoOffsetY="97"  tint="#000000"  isTinted="0"  lineWeight="Normal"  userDefined="1"  gating:distance="93.40238481304218" >
+                                     <gating:dimension>
+                                       <data-type:fcs-dimension data-type:name="Comp-G710-A" />
+                                     </gating:dimension>
+                                     <gating:dimension>
+                                       <data-type:fcs-dimension data-type:name="Comp-G660-A" />
+                                     </gating:dimension>
+                                     <gating:foci>
+                                       <gating:vertex>
+                                         <gating:coordinate data-type:value="124.7831701168" />
+                                         <gating:coordinate data-type:value="132.9176127366" />
+                                       </gating:vertex>
+                                       <gating:vertex>
+                                         <gating:coordinate data-type:value="153.2168298832" />
+                                         <gating:coordinate data-type:value="89.0823872634" />
+                                       </gating:vertex>
+                                     </gating:foci>
+                                     <gating:edge>
+                                       <gating:vertex>
+                                         <gating:coordinate data-type:value="115" />
+                                         <gating:coordinate data-type:value="148" />
+                                       </gating:vertex>
+                                       <gating:vertex>
+                                         <gating:coordinate data-type:value="163" />
+                                         <gating:coordinate data-type:value="74" />
+                                       </gating:vertex>
+                                       <gating:vertex>
+                                         <gating:coordinate data-type:value="112" />
+                                         <gating:coordinate data-type:value="88" />
+                                       </gating:vertex>
+                                       <gating:vertex>
+                                         <gating:coordinate data-type:value="167" />
+                                         <gating:coordinate data-type:value="133" />
+                                       </gating:vertex>
+                                     </gating:edge>
+                                   </gating:EllipsoidGate>
+                                 </Gate>
+                               </Population>
+                             </Subpopulations>
                            </Population>
                          </Subpopulations>
                        </Population>
@@ -1658,7 +1846,7 @@
                              <WindowPosition x="410"  y="36"  width="390"  height="696"  displayed="0"  panelState="+--" />
                            </GraphEnvironment>
                          </Graph>
-                         <Gate gating:id="ID2424219"  gating:parent_id="ID4527322" >
+                         <Gate gating:id="ID21795809"  gating:parent_id="ID19660720" >
                            <gating:PolygonGate eventsInside="1"  annoOffsetX="-115"  annoOffsetY="-133"  tint="#000000"  isTinted="0"  lineWeight="Normal"  userDefined="1"  quadId="-1"  gateResolution="256" >
                              <gating:dimension>
                                <data-type:fcs-dimension data-type:name="Comp-R780-A" />

@@ -108,7 +108,7 @@ public class DAFi extends R_Algorithm {
     private static final String orPerformDAFiLabel = "or perform new DAFi";
     private static final String scaleLabel = "Scale";
     private static final String scaleTooltip = "Should the data be scaled by the FlowSOM function?";
-    private static final String applyOnChildrenLabel = "Apply on children only (otherwise on children and children of children)";
+    private static final String applyOnChildrenLabel = "Apply on children only (otherwise also on children of children, recursively)";
     private static final String applyOnChildrenTooltip = "If checked, DAFi will refine only the children of the selected population. If unchecked, all children of children will be refined recursively (i.e., all sub-populations downstream of the selected one).";
 
     public static final String scaleOptionName = "scale";
@@ -128,7 +128,7 @@ public class DAFi extends R_Algorithm {
     public static final int defaultMinPopSize = 500;
     public static final String defaultApplyOnPrev = "None";
     public static final boolean defaultScale = true;
-    public static final boolean defaultApplyOnChildren = true;
+    public static final boolean defaultApplyOnChildren = false;
 
     private boolean fScale = defaultScale;
     private boolean fApplyOnChildren = defaultApplyOnChildren;

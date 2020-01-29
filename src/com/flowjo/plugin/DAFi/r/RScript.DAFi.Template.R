@@ -347,6 +347,14 @@ if(FJ_PAR_CHILDREN){
 } else {
   pops_to_SOM <- names_gates_to_SOM[order(tree_pos_gate_to_SOM)] #order is very important to ensure hierarchy of gates
   }
+
+#drop empty gates
+pops_to_SOM <- pops_to_SOM[
+  lapply(pops_to_SOM,
+         function(pop_to_SOM)
+           !identical(pop_to_SOM, character(0))) %>%
+    unlist(., use.names = FALSE)]
+
 #actual DAFi
 for(pop_to_SOM in seq_along(pops_to_SOM)){
   print(pops_to_SOM[pop_to_SOM] %>% names(.))

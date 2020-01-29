@@ -1,0 +1,11 @@
+---
+title: "HowToUse"
+author: "PMA"
+date: "1/29/2020"
+output: html_document
+---
+
+### Visual Guide On How To Use
+
+![Population that we will cluster: CD8-CD4+. Gate that we will refine with DAFi: Treg.](VisualGuide1.png)
+
