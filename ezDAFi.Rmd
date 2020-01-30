@@ -7,7 +7,7 @@ output: html_document
 
 ### Executive Summary
 
-The objective of this report is to present ezDAFi, an easy-to-use FlowJo plugin for DAFi. DAFi stands for **D**irected **A**utomated **F**iltering and **I**dentification of cell populations in polychromatic flow cytometry data (see [original publication]( https://doi.org/10.1002/cyto.a.23371)). The plugin automatically imports single-cell data and FlowJo-derived gating strategies into R, builds single cell representations with self-organizing maps (SOM), and updates single cell identities according to the location of their nearest SOM within the gating tree. The plugin can be used to refine gated populations on the fly in FlowJo, allowing for the visual check and re-use of DAFi gated cells in downstream analysis, such as building stats, plots and more gates. 
+The objective of this report is to present ezDAFi, an easy-to-use FlowJo plugin for DAFi. DAFi stands for **D**irected **A**utomated **F**iltering and **I**dentification of cell populations in polychromatic flow cytometry data (see [original publication]( https://doi.org/10.1002/cyto.a.23371)). The plugin automatically imports single-cell data and FlowJo-derived gating strategies into R, builds single cell representations either with self-organizing maps (SOM) or k-means, and updates single cell identities according to the location of their nearest cluster centroid within the gating tree. The plugin can be used to refine gated populations on the fly in FlowJo, allowing for the visual check and re-use of DAFi gated cells in downstream analysis, such as building stats, plots and more gates. 
 
 ### Motivation
 
@@ -41,13 +41,13 @@ Several advantages of DAFi have been reported (see [original publication]( https
 
 ### ezDAFi in action: DAFi from inside Flowjo
 
-Our new implementation of DAFi relies on R and several R packages, in particular flowWorkspace and FlowSOM, to bring DAFi to FlowJo in the form of an easy-to-use plugin.
+Our new implementation of DAFi relies on R and several R packages, in particular flowWorkspace, to bring DAFi to FlowJo in the form of an easy-to-use plugin.
 
 While building the gating tree, the user can select a parent population, call the plugin and refine any child population using DAFi. The DAFi-refined gates are automatically imported back to FlowJo for futher downstream analysis, including plotting, stats and further gating. 
 
 ![**Fig2**: Selecting "Single Cells" and running the plugin will refine either all gates down the hierarchy from "Single Cells" or only the immediate children, depending on user input. In this case, we only show one example of one immediate child gate, the "CD3, CD45 subset". Please note how the DAFi-refined population shows a much more natural distribution of the parameters after gating.](Fig2.png)
 
-Importantly, if the user decides to build the whole gating tree first and to apply DAFi to an upstream gate, the plugin can be used refine all children and children of children of a seleted population. This feature allows for DAFi to be used recursively throughout several levels of the gating tree without addtional human interaction. This way, all sub-populations downstream of the selected gate will be refined by DAFi.
+Importantly, if the user decides to build the whole gating tree first and to apply DAFi to an upstream gate, the plugin can be used to refine all children and children of children of a seleted population. This feature allows for DAFi to be used recursively throughout several levels of the gating tree without additional human interaction. This way, all sub-populations downstream of the selected gate will be refined by DAFi.
 
 ## Conclusion
 
@@ -57,7 +57,7 @@ Our new plugin brings the power of DAFi to FlowJo, the most widely used single c
 
 #### Processing time
 
-* Depends on the size of the SOM (i.e., number of centroids) to be used
+* Depends on the number of centroids to be used
 * First run can take a few minutes to install required R packages
 * Since data are saved to hard disk, it may run slow on some older systems
 
@@ -70,3 +70,7 @@ Our new plugin brings the power of DAFi to FlowJo, the most widely used single c
 #### Github Page:
 
 [github.com/PedroMilanezAlmeida/DAFi](https://github.com/PedroMilanezAlmeida/DAFi)
+
+#### Google Drive:
+
+[https://drive.google.com/drive/folders/1fdTVdbz8S_v58oPX8jpYDudL4wRAge2a](https://drive.google.com/drive/folders/1fdTVdbz8S_v58oPX8jpYDudL4wRAge2a)

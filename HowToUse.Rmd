@@ -22,10 +22,10 @@ After selecting population of interest, click on "Workspace", "plugins" and "DAF
 
 ![](VisualGuide2.png)
 
-After hitting OK, the plugin runs for a few seconds (about 10-20sec for default SOM size; the first run may take a few minutes to install packages). Derived parameters and gated populations are imported back into FlowJo automatically. Please Note how the plugin ran DAFi on the whole tree down from "CD8-CD4+" (this behavior can be turned off to DAFi only the immediate children).
+After hitting OK, the plugin runs for a few seconds (about 10-20sec for default number of clusters; the first run may take a few minutes to install packages). Derived parameters and gated populations are imported back into FlowJo automatically. Please Note how the plugin ran DAFi on the whole tree down from "CD8-CD4+" (this behavior can be turned off to DAFi only the immediate children).
 
 ![](VisualGuide3.png)
 
-DAFi populations behave just like FlowJo native populations! They can be plotted, gated, used in layouts and stats!
+DAFi populations behave just like FlowJo native populations! They can be plotted, gated, used in layouts and stats! Please note, however, that one cannot call the plugin on a children or children of children of a previous DAFi gate, yet.
 
 ![](VisualGuide4.png)

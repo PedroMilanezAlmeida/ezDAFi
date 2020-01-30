@@ -107,9 +107,9 @@ public class DAFi extends R_Algorithm {
 
     private static final String displayLabel = "Display options";
     private static final String orPerformDAFiLabel = "or perform new DAFi";
-    private static final String scaleLabel = "Scale parameters to mean 0 and sd 1 (recommended)";
+    private static final String scaleLabel = "Scale parameters to mean = 0 and sd = 1 (recommended)";
     private static final String scaleTooltip = "Should the data be scaled prior to clustering";
-    private static final String kMeansSomLabel = "Self organizing maps (otherwise k-means with k = W x H, which can be faster)";
+    private static final String kMeansSomLabel = "Cluster with self organizing maps (otherwise with k-means [k = W x H], which can be faster)";
     private static final String kMeansSomTooltip = "Which algorithm should be used for clustering? If having speed issues, uncheck to use k-means (max iterations = 100)";
     private static final String applyOnChildrenLabel = "Apply on children only (otherwise also on children of children, recursively)";
     private static final String applyOnChildrenTooltip = "If checked, DAFi will refine only the children of the selected population. If unchecked, all children of children will be refined recursively (i.e., all sub-populations downstream of the selected one).";
@@ -141,8 +141,8 @@ public class DAFi extends R_Algorithm {
     private int fndimx = defaultXDim, fndimy = defaultYDim;
     private int fnMinPopSize = defaultMinPopSize;
 
-    private static final String channelsLabelLine1 = "FCS channels to be used by DAFi. Select multiple items by pressing the Shift";
-    private static final String channelsLabelLine2 = "key or toggle items by holding the Ctrl (or Cmd) keys.";
+    private static final String channelsLabelLine1 = "FCS channels to be used by DAFi. Select multiple items by pressing the Shift key or toggle";
+    private static final String channelsLabelLine2 = "items by holding the Ctrl (or Cmd) keys.";
     private static final String channelsLabelLine3 = "You must include FSC and SSC if these are used in any gates (e.g., CD14xSSC)!";
 
     private static final String citingLabelLine1 = "Required: if using DAFi, cite";

@@ -101,14 +101,14 @@ public class DAFiRFlowCalc extends RFlowCalculator {
         }
 
         try {
-            if ((Integer.parseInt(sParXDim) < 3) || (Integer.parseInt(sParXDim) > 30))
+            if ((Integer.parseInt(sParXDim) < 3) || (Integer.parseInt(sParXDim) > 32))
                 sParXDim = Integer.toString(com.flowjo.plugin.DAFi.DAFi.defaultXDim);
         } catch (Exception e) {
             sParXDim = Integer.toString(com.flowjo.plugin.DAFi.DAFi.defaultXDim);
         }
 
         try {
-            if ((Integer.parseInt(sParYDim) < 3) || (Integer.parseInt(sParYDim) > 30))
+            if ((Integer.parseInt(sParYDim) < 3) || (Integer.parseInt(sParYDim) > 32))
                 sParYDim = Integer.toString(com.flowjo.plugin.DAFi.DAFi.defaultYDim);
         } catch (Exception e) {
             sParYDim = Integer.toString(com.flowjo.plugin.DAFi.DAFi.defaultYDim);
