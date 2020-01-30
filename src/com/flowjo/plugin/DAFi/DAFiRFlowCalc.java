@@ -62,6 +62,7 @@ public class DAFiRFlowCalc extends RFlowCalculator {
         if(EngineManager.isWindows()) dataFilePath = dataFilePath.replaceAll("\\\\", "/");
 
         String sParScale = options.get(com.flowjo.plugin.DAFi.DAFi.scaleOptionName);
+        String sParkMeansSom = options.get(com.flowjo.plugin.DAFi.DAFi.kMeansSomOptionName);
         String sParApplyOnChildren = options.get(com.flowjo.plugin.DAFi.DAFi.applyOnChildrenOptionName);
         String sParMinPopSize = options.get(com.flowjo.plugin.DAFi.DAFi.minPopSizeOptionName);
         String sParXDim = options.get(com.flowjo.plugin.DAFi.DAFi.xDimOptionName);
@@ -75,6 +76,11 @@ public class DAFiRFlowCalc extends RFlowCalculator {
             sParScale = TRUE; // TRUE is the default
         else
             sParScale = FALSE;
+
+        if (sParkMeansSom == null || sParkMeansSom.isEmpty() || com.flowjo.plugin.DAFi.DAFi.One.equals(sParkMeansSom) || com.flowjo.plugin.DAFi.DAFi.True.equals(sParkMeansSom))
+            sParkMeansSom = TRUE; // TRUE is the default
+        else
+            sParkMeansSom = FALSE;
 
         if (sParApplyOnChildren == null || sParApplyOnChildren.isEmpty() || com.flowjo.plugin.DAFi.DAFi.One.equals(sParApplyOnChildren) || com.flowjo.plugin.DAFi.DAFi.True.equals(sParApplyOnChildren))
             sParApplyOnChildren = TRUE; // TRUE is the default
@@ -136,6 +142,7 @@ public class DAFiRFlowCalc extends RFlowCalculator {
                 scriptLine = scriptLine.replace("FJ_CSV_OUPUT_FILE", outFileName);
                 scriptLine = scriptLine.replace("FJ_GATING_ML_OUTPUT_FILE", gatingMLOutFile.getAbsolutePath());
                 scriptLine = scriptLine.replace("FJ_PAR_SCALE", sParScale);
+                scriptLine = scriptLine.replace("FJ_PAR_SOM", sParkMeansSom);
                 scriptLine = scriptLine.replace("FJ_PAR_CHILDREN", sParApplyOnChildren);
                 scriptLine = scriptLine.replace("FJ_PAR_MINPOPSIZE", sParMinPopSize);
                 scriptLine = scriptLine.replace("FJ_PAR_XDIM", sParXDim);

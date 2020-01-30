@@ -81,6 +81,7 @@ public class DAFi extends R_Algorithm {
     private RangedIntegerTextField fMinPopSizeField = null;
     private FJComboBox fApplyOnPrevCombo = null;
     private FJCheckBox fScaleOptionCheckbox = null;
+    private FJCheckBox fKMeansSomOptionCheckbox = null;
     private FJCheckBox fApplyOnChildrenCheckbox = null;
 
     private static final int fixedLabelWidth = 130;
@@ -106,12 +107,15 @@ public class DAFi extends R_Algorithm {
 
     private static final String displayLabel = "Display options";
     private static final String orPerformDAFiLabel = "or perform new DAFi";
-    private static final String scaleLabel = "Scale";
-    private static final String scaleTooltip = "Should the data be scaled by the FlowSOM function?";
+    private static final String scaleLabel = "Scale parameters to mean 0 and sd 1 (recommended)";
+    private static final String scaleTooltip = "Should the data be scaled prior to clustering";
+    private static final String kMeansSomLabel = "Self organizing maps (otherwise k-means with k = W x H, which can be faster)";
+    private static final String kMeansSomTooltip = "Which algorithm should be used for clustering? If having speed issues, uncheck to use k-means (max iterations = 100)";
     private static final String applyOnChildrenLabel = "Apply on children only (otherwise also on children of children, recursively)";
     private static final String applyOnChildrenTooltip = "If checked, DAFi will refine only the children of the selected population. If unchecked, all children of children will be refined recursively (i.e., all sub-populations downstream of the selected one).";
 
     public static final String scaleOptionName = "scale";
+    public static final String kMeansSomOptionName = "kMeansSom";
     public static final String applyOnChildrenOptionName = "childrenOnly";
     public static final String xDimOptionName = "xdim";
     public static final String yDimOptionName = "ydim";
@@ -128,9 +132,11 @@ public class DAFi extends R_Algorithm {
     public static final int defaultMinPopSize = 500;
     public static final String defaultApplyOnPrev = "None";
     public static final boolean defaultScale = true;
+    public static final boolean defaultKMeansSom = true;
     public static final boolean defaultApplyOnChildren = false;
 
     private boolean fScale = defaultScale;
+    private boolean fKMeansSom = defaultKMeansSom;
     private boolean fApplyOnChildren = defaultApplyOnChildren;
     private int fndimx = defaultXDim, fndimy = defaultYDim;
     private int fnMinPopSize = defaultMinPopSize;
@@ -610,6 +616,7 @@ public class DAFi extends R_Algorithm {
         fndimx = defaultXDim;
         fndimy = defaultYDim;
         fScale = defaultScale;
+        fKMeansSom = defaultKMeansSom;
         fApplyOnChildren = defaultApplyOnChildren;
         fnMinPopSize = defaultMinPopSize;
 
@@ -640,6 +647,10 @@ public class DAFi extends R_Algorithm {
             String savedApplyOnChildren = option.getAttributeValue(applyOnChildrenOptionName);
             if (savedApplyOnChildren != null && !savedApplyOnChildren.isEmpty())
                 fApplyOnChildren = One.equals(savedApplyOnChildren) || True.equals(savedApplyOnChildren);
+
+            String savedKMeansSom = option.getAttributeValue(kMeansSomOptionName);
+            if (savedKMeansSom != null && !savedKMeansSom.isEmpty())
+                fKMeansSom = One.equals(savedKMeansSom) || True.equals(savedKMeansSom);
 
             String savedScale = option.getAttributeValue(scaleOptionName);
             if (savedScale != null && !savedScale.isEmpty())
@@ -698,6 +709,11 @@ public class DAFi extends R_Algorithm {
         HBox hboxDimXY = new HBox(new Component[]{fjLabelDimX, fDimXField, /*fjLabelDimY,*/new FJLabel("x"), fDimYField});
         componentList.add(hboxDimXY);
 
+        fKMeansSomOptionCheckbox = new FJCheckBox(kMeansSomLabel);
+        fKMeansSomOptionCheckbox.setToolTipText("<html><p width=\"" + fixedToolTipWidth + "\">" + kMeansSomTooltip + "</p></html>");
+        fKMeansSomOptionCheckbox.setSelected(fKMeansSom);
+        componentList.add(new HBox(new Component[]{fKMeansSomOptionCheckbox}));
+
         fScaleOptionCheckbox = new FJCheckBox(scaleLabel);
         fScaleOptionCheckbox.setToolTipText("<html><p width=\"" + fixedToolTipWidth + "\">" + scaleTooltip + "</p></html>");
         fScaleOptionCheckbox.setSelected(fScale);
@@ -753,6 +769,7 @@ public class DAFi extends R_Algorithm {
                 if (fDimXField != null) fDimXField.setEnabled(false);
                 if (fDimYField != null) fDimYField.setEnabled(false);
                 if (fScaleOptionCheckbox != null) fScaleOptionCheckbox.setEnabled(false);
+                if (fKMeansSomOptionCheckbox != null) fKMeansSomOptionCheckbox.setEnabled(false);
                 if (fApplyOnChildrenCheckbox != null) fApplyOnChildrenCheckbox.setEnabled(false);
 
                 // If we are selecting the application on existing map then let's select the same parameters
@@ -806,6 +823,7 @@ public class DAFi extends R_Algorithm {
                 if (fDimXField != null) fDimXField.setEnabled(true);
                 if (fDimYField != null) fDimYField.setEnabled(true);
                 if (fScaleOptionCheckbox != null) fScaleOptionCheckbox.setEnabled(true);
+                if (fKMeansSomOptionCheckbox != null) fKMeansSomOptionCheckbox.setEnabled(true);
                 if (fApplyOnChildrenCheckbox != null) fApplyOnChildrenCheckbox.setEnabled(true);
                 if (fParameterNameList != null) fParameterNameList.setEnabled(true);
             }
@@ -841,6 +859,7 @@ public class DAFi extends R_Algorithm {
         fOptions.put(xDimOptionName, Integer.toString(fDimXField.getInt()));
         fOptions.put(yDimOptionName, Integer.toString(fDimYField.getInt()));
         fOptions.put(scaleOptionName, fScaleOptionCheckbox.isSelected() ? One : Zero);
+        fOptions.put(kMeansSomOptionName, fKMeansSomOptionCheckbox.isSelected() ? One : Zero);
         fOptions.put(applyOnChildrenOptionName, fApplyOnChildrenCheckbox.isSelected() ? One : Zero);
         if (fApplyOnPrevCombo.getSelectedIndex() <= 0) {
             fOptions.put(applyOnPrevOptionName, fApplyOnPrevCombo.getSelectedItem().toString());
