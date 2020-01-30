@@ -695,13 +695,13 @@ public class DAFi extends R_Algorithm {
         componentList.add(new HBox(new Component[]{new FJLabel(mustBeMinPopSizeLabel)}));
 
         FJLabel fjLabelDimX = new FJLabel(dimXLabel);
-        fDimXField = new RangedIntegerTextField(3, 30);
+        fDimXField = new RangedIntegerTextField(3, 32);
         fDimXField.setInt(fndimx);
         fDimXField.setToolTipText("<html><p width=\"" + fixedToolTipWidth + "\">" + dimXTooltip + "</p></html>");
         GuiFactory.setSizes(fDimXField, new Dimension(fixedFieldWidth, fixedFieldHeigth));
         GuiFactory.setSizes(fjLabelDimX, new Dimension(fixedLabelWidth, fixedLabelHeigth));
 
-        fDimYField = new RangedIntegerTextField(3, 30);
+        fDimYField = new RangedIntegerTextField(3, 32);
         fDimYField.setInt(fndimy);
         fDimYField.setToolTipText("<html><p width=\"" + fixedToolTipWidth + "\">" + dimYTooltip + "</p></html>");
         GuiFactory.setSizes(fDimYField, new Dimension(fixedFieldWidth, fixedFieldHeigth));
