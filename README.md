@@ -1,5 +1,5 @@
-“ezDAFi: easy to use Directed Automated Filtering and Identification of cell populations in single cell data”
-=============================================================================================================
+ezDAFi: easy to use Directed Automated Filtering and Identification of cell populations in single cell data
+===========================================================================================================
 
 Have you ever wanted to bridge automated clustering techniques and
 human-driven gating strategies? Now you can with ezDAFi, the new FlowJo
@@ -76,8 +76,8 @@ The algorithm works like this:
 -   Cells whose nearest neighbors is one of merged clusters belong to
     one merged population.
 
-![**Fig1**: How DAFi aims at bridging manual gating and automated
-clustering techniques.](figures/Fig1.png)
+![](figures/Fig1.png) **Fig1**: How DAFi aims at bridging manual gating
+and automated clustering techniques.
 
 ### Reported advantages of DAFi
 
@@ -103,12 +103,12 @@ call the plugin and refine any child population using DAFi. The
 DAFi-refined gates are automatically imported back to FlowJo for futher
 downstream analysis, including plotting, stats and further gating.
 
-![**Fig2**: Selecting “Single Cells” and running the plugin will refine
-either all gates down the hierarchy from “Single Cells” or only the
-immediate children, depending on user input. In this case, we only show
-one example of one immediate child gate, the “CD3, CD45 subset”. Please
-note how the DAFi-refined population shows a much more natural
-distribution of the parameters after gating.](figures/Fig2.png)
+![](figures/Fig2.png) **Fig2**: Selecting “Single Cells” and running the
+plugin will refine either all gates down the hierarchy from “Single
+Cells” or only the immediate children, depending on user input. In this
+case, we only show one example of one immediate child gate, the “CD3,
+CD45 subset”. Please note how the DAFi-refined population shows a much
+more natural distribution of the parameters after gating.
 
 Importantly, if the user decides to build the whole gating tree first
 and to apply DAFi to an upstream gate, the plugin can be used to refine
@@ -150,10 +150,35 @@ Notes and Source
 -   R error messages are not visible to the user. TODO: Make R error
     messages visible to the user
 
-#### Github Page:
+### Visual Guide On How To Use With Example
 
-[github.com/PedroMilanezAlmeida/DAFi](https://github.com/PedroMilanezAlmeida/DAFi)
+Population that we will cluster: CD8-CD4+.
 
-#### Google Drive:
+Gates that we will refine with DAFi:
 
-<https://drive.google.com/drive/folders/1fdTVdbz8S_v58oPX8jpYDudL4wRAge2a>
+-   “nonTreg”
+-   “CD45-RA, CD185 subset” among nonTregs
+-   “Treg”
+
+![](figures/VisualGuide1.png)
+
+After selecting population of interest, click on “Workspace”, “plugins”
+and “DAFi”. Select parameters for clustering among other options.
+
+![](figures/VisualGuide2.png)
+
+After hitting OK, the plugin runs for a few seconds (about 10-20sec for
+default number of clusters; the first run may take a few minutes to
+install packages). Derived parameters and gated populations are imported
+back into FlowJo automatically. Please Note how the plugin ran DAFi on
+the whole tree down from “CD8-CD4+” (this behavior can be turned off to
+DAFi only the immediate children).
+
+![](figures/VisualGuide3.png)
+
+DAFi populations behave just like FlowJo native populations! They can be
+plotted, gated, used in layouts and stats! Please note, however, that
+one cannot call the plugin on a children or children of children of a
+previous DAFi gate, yet.
+
+![](figures/VisualGuide4.png)

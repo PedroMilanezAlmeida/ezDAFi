@@ -15,17 +15,17 @@ Gates that we will refine with DAFi:
 * "CD45-RA, CD185 subset" among nonTregs
 * "Treg"
 
-![](VisualGuide1.png)
+![](figures/VisualGuide1.png)
 
 
 After selecting population of interest, click on "Workspace", "plugins" and "DAFi". Select parameters for clustering among other options.
 
-![](VisualGuide2.png)
+![](figures/VisualGuide2.png)
 
 After hitting OK, the plugin runs for a few seconds (about 10-20sec for default number of clusters; the first run may take a few minutes to install packages). Derived parameters and gated populations are imported back into FlowJo automatically. Please Note how the plugin ran DAFi on the whole tree down from "CD8-CD4+" (this behavior can be turned off to DAFi only the immediate children).
 
-![](VisualGuide3.png)
+![](figures/VisualGuide3.png)
 
 DAFi populations behave just like FlowJo native populations! They can be plotted, gated, used in layouts and stats! Please note, however, that one cannot call the plugin on a children or children of children of a previous DAFi gate, yet.
 
-![](VisualGuide4.png)
+![](figures/VisualGuide4.png)
