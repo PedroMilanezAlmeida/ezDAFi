@@ -3,7 +3,6 @@ FCS
 *.wsp
 14-Jan-2020
 out/
-*.png
 *.pptx
 *.DS_store
 .idea

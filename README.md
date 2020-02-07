@@ -77,7 +77,7 @@ The algorithm works like this:
     one merged population.
 
 ![**Fig1**: How DAFi aims at bridging manual gating and automated
-clustering techniques.](Fig1.png)
+clustering techniques.](figures/Fig1.png)
 
 ### Reported advantages of DAFi
 
@@ -108,7 +108,7 @@ either all gates down the hierarchy from “Single Cells” or only the
 immediate children, depending on user input. In this case, we only show
 one example of one immediate child gate, the “CD3, CD45 subset”. Please
 note how the DAFi-refined population shows a much more natural
-distribution of the parameters after gating.](Fig2.png)
+distribution of the parameters after gating.](figures/Fig2.png)
 
 Importantly, if the user decides to build the whole gating tree first
 and to apply DAFi to an upstream gate, the plugin can be used to refine
