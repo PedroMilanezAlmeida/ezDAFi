@@ -17,10 +17,13 @@ The major feature of DAFi is its ability to control unsupervised clustering tool
 There are several advantages to this approach, including a  gating strategy that follows a much more natural distribution of the data! For more reasons why you should be using DAFi,
 please see: [https://doi.org/10.1002/cyto.a.23371]( https://doi.org/10.1002/cyto.a.23371). 
 
-Under the hood, the FlowJo plugin extracts your manual gating strategy to set the boundaries of regions of interest in your parameter hyperspace. Then, it gates on learned cluster centroids
-located in the regions of interest and finds all cells whose nearest neighbors are centroids of interest. Finally, the plugin automatically gates each cell according to their updated identities, returning them to your FlowJo workspace.
+Under the hood, the FlowJo plugin extracts your manual gating strategy to set the boundaries of regions of interest in your parameter hyperspace. Then, it gates on learned cluster centroids located in the regions of interest and finds all cells whose nearest neighbors are centroids of interest. Finally, the plugin automatically gates each cell according to their updated identities, returning them to your FlowJo workspace.
 
-Give it a try! Just download the **DAFi.jar** file from [Google Drive](https://drive.google.com/drive/folders/1fdTVdbz8S_v58oPX8jpYDudL4wRAge2a) and copy the file to your FlowJo plugins folder! Don't forget to restart FlowJo before you can use a new plugin.
+### Installation
+
+*On a mac*, install [XCode](https://apps.apple.com/us/app/xcode/id497799835?mt=12) and [gfortran](https://github.com/fxcoudert/gfortran-for-macOS/releases) before the next step.
+
+On mac and windows, Download the **DAFi.jar** file from our [Google Drive](https://drive.google.com/drive/folders/1fdTVdbz8S_v58oPX8jpYDudL4wRAge2a) and copy the file to your FlowJo plugins folder! Don't forget to restart FlowJo before you can use a new plugin.
 
 <!---  (Give it try! Just download the __DAFi.jar__ file above (soon you will also find it on [FlowJo's Plugin page](https://www.flowjo.com/exchange/#/)) and copy the file to your FlowJo plugins folder! Don't forget to restart FlowJo before using a new plugin.) --->
 
@@ -74,7 +77,7 @@ Importantly, if the user decides to build the whole gating tree first and to app
 
 Our new plugin brings the power of DAFi to FlowJo, the most widely used single cell flow cytometry data analysis platform. This new implementation allows for the use of DAFi on the fly, giving the user the flexibility to re-use DAFi-refined populations with any of FlowJo's downstream analysis capabilities.
 
-## Notes and Source
+## Notes, Source and How To Use
 
 #### Processing time
 
@@ -95,7 +98,7 @@ date: "1/29/2020"
 output: html_document
 ---
 
-### Visual Guide On How To Use With Example
+#### Visual Guide On How To Use With Example
 
 Population that we will cluster: CD8-CD4+.
 

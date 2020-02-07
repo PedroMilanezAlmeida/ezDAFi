@@ -26,7 +26,14 @@ centroids of interest. Finally, the plugin automatically gates each cell
 according to their updated identities, returning them to your FlowJo
 workspace.
 
-Give it a try! Just download the **DAFi.jar** file from [Google
+### Installation
+
+*On a mac*, install
+[XCode](https://apps.apple.com/us/app/xcode/id497799835?mt=12) and
+[gfortran](https://github.com/fxcoudert/gfortran-for-macOS/releases)
+before the next step.
+
+On mac and windows, Download the **DAFi.jar** file from our [Google
 Drive](https://drive.google.com/drive/folders/1fdTVdbz8S_v58oPX8jpYDudL4wRAge2a)
 and copy the file to your FlowJo plugins folder! Don’t forget to restart
 FlowJo before you can use a new plugin.
@@ -126,8 +133,8 @@ implementation allows for the use of DAFi on the fly, giving the user
 the flexibility to re-use DAFi-refined populations with any of FlowJo’s
 downstream analysis capabilities.
 
-Notes and Source
-----------------
+Notes, Source and How To Use
+----------------------------
 
 #### Processing time
 
@@ -150,7 +157,7 @@ Notes and Source
 -   R error messages are not visible to the user. TODO: Make R error
     messages visible to the user
 
-### Visual Guide On How To Use With Example
+#### Visual Guide On How To Use With Example
 
 Population that we will cluster: CD8-CD4+.
 
