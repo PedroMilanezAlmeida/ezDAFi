@@ -12,6 +12,7 @@ package com.flowjo.plugin.DAFi;
     Speed and depecration.
  */
 
+import java.awt.*;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -69,7 +70,7 @@ public class RScriptFlowCalculator extends RFlowCalculator {
     protected static boolean verbose = true;  // Not really used (replaced by non-static field) but keeping for backwards compatibility
     protected String fScriptOutput = "";
     protected File fScriptFile = null;
-    protected File fOutFile = null;
+    protected static File fOutFile = null;
     protected File fScriptFileTempLink = null;
 
     protected boolean fRScriptMode = false;   // Default is R CMD BATCH (backwards compatible), but Rscript is an option if a plugin chooses that instead
@@ -424,7 +425,7 @@ public class RScriptFlowCalculator extends RFlowCalculator {
 
             fScriptFileTempLink = createTempSymLink(fScriptFile);
 
-            fOutFile = new File(fScriptFile.getAbsolutePath() + "out");
+            fOutFile = new File(fScriptFile.getAbsolutePath() + ".txt"); // changed ".Rout" to "R.txt" to allow auto open with default txt editor
 
             cmds.add(" CMD BATCH");
             if (fScriptFileTempLink == null)
@@ -513,6 +514,13 @@ public class RScriptFlowCalculator extends RFlowCalculator {
             System.out.println("Deleted " + fScriptFile.getAbsolutePath());
     }
 
+    //trying to open .R.txt file
+    public void open()
+            throws IOException {
+        Desktop dt = Desktop.getDesktop();
+        dt.open(fOutFile);
+    }
+
     public void deleteROutFile() {
         if (fOutFile != null && fOutFile.exists() && fOutFile.delete() && fVerboseOutput)
             System.out.println("Deleted " + fOutFile.getAbsolutePath());
@@ -522,7 +530,7 @@ public class RScriptFlowCalculator extends RFlowCalculator {
         if (fOutFile == null || !fOutFile.exists())
             return null;
         String fileName = fOutFile.getAbsolutePath();
-        fileName = fileName.replaceAll(".Rout", FileTypes.TXT_SUFFIX);
+        fileName = fileName.replaceAll(".R.txt", FileTypes.TXT_SUFFIX);
         File newFile = new File(fileName);
         fOutFile.renameTo(newFile);
         fOutFile = newFile;

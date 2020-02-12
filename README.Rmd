@@ -19,11 +19,11 @@ please see: [https://doi.org/10.1002/cyto.a.23371]( https://doi.org/10.1002/cyto
 
 Under the hood, the FlowJo plugin extracts your manual gating strategy to set the boundaries of regions of interest in your parameter hyperspace. Then, it gates on learned cluster centroids located in the regions of interest and finds all cells whose nearest neighbors are centroids of interest. Finally, the plugin automatically gates each cell according to their updated identities, returning them to your FlowJo workspace.
 
-### Installation
+#### Installation
 
-*On a mac*, install [XCode](https://apps.apple.com/us/app/xcode/id497799835?mt=12) and [gfortran](https://github.com/fxcoudert/gfortran-for-macOS/releases) before the next step.
+On a mac, install [XCode](https://apps.apple.com/us/app/xcode/id497799835?mt=12) and [gfortran](https://github.com/fxcoudert/gfortran-for-macOS/releases) before the next step.
 
-On mac and windows, Download the **DAFi.jar** file from our [Google Drive](https://drive.google.com/drive/folders/1fdTVdbz8S_v58oPX8jpYDudL4wRAge2a) and copy the file to your FlowJo plugins folder! Don't forget to restart FlowJo before you can use a new plugin.
+On mac and windows, download the **DAFi.jar** file from our [Google Drive](https://drive.google.com/drive/folders/1fdTVdbz8S_v58oPX8jpYDudL4wRAge2a) and copy the file to your FlowJo plugins folder. Don't forget to restart FlowJo before you can use a new plugin.
 
 <!---  (Give it try! Just download the __DAFi.jar__ file above (soon you will also find it on [FlowJo's Plugin page](https://www.flowjo.com/exchange/#/)) and copy the file to your FlowJo plugins folder! Don't forget to restart FlowJo before using a new plugin.) --->
 

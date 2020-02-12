@@ -243,13 +243,21 @@ public class DAFi extends R_Algorithm {
             }
             System.out.println(DAFiResult.getAbsolutePath());
             List<Float> values = extractUniqueValuesForParameter(DAFiResult);
-            addGatingML(results, values);
 
             String xmlEnding = sampleFile.getName() + ".gating-ml2.xml";
 
             FilenameFilter xmlFileFilter = (dir, name) -> name.endsWith(xmlEnding);
 
             File[] xmlFiles = outputFolder.listFiles(xmlFileFilter);
+
+            if(xmlFiles == null) {
+                try {
+                    Desktop.getDesktop().open(RScriptFlowCalculator.fOutFile);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+            }
 
             for (File xmlFile : xmlFiles)
             {
@@ -553,7 +561,7 @@ public class DAFi extends R_Algorithm {
                     WSDocument wsd = ws.getDoc();
                     String wsDir = wsd.getWorkspaceDirectory().getAbsolutePath();
                     String wsName = wsd.getFilename();
-                    String outputFolder = wsDir + File.separator + wsName.substring(0, wsName.lastIndexOf('.')) + File.separator + this.getName();
+                    String outputFolder = wsDir + File.separator + wsName.substring(0, wsName.lastIndexOf('.')) + File.separator + this.getName() ;
                     File pluginFolder = new File(outputFolder);
                     if (pluginFolder.exists())
                         algorithmElement.setAttribute(pluginFolderAttName, outputFolder);
@@ -881,30 +889,6 @@ public class DAFi extends R_Algorithm {
     }
 
     private static final double epsilon = 0.1;
-
-
-    private void addGatingML(ExternalAlgorithmResults result, List<Float> values) {
-        System.out.println("Adding gates to " + pluginName + " using: " + values);
-        SElement gate = new SElement("gating:Gating-ML");
-        int curPop = 0;
-
-        Collections.sort(values);
-        for (Float x : values) {
-
-            SElement rectGateElem = new SElement("gating:RectangleGate");
-            rectGateElem.setString("gating:id", pluginName + "_" + curPop);
-            curPop++;
-            gate.addContent(rectGateElem);
-            SElement dimElem = new SElement("gating:dimension");
-            dimElem.setDouble("gating:min", x - epsilon / 2);
-            dimElem.setDouble("gating:max", x + epsilon / 2);
-            rectGateElem.addContent(dimElem);
-            SElement fcsDimElem = new SElement("data-type:fcs-dimension");
-            fcsDimElem.setString("data-type:name", pluginName);
-            dimElem.addContent(fcsDimElem);
-        }
-        result.setGatingML(gate.toString());
-    }
 
     // Use FlowJo's CSV reader instead of manually and get the column where the categorical is found
     private List<Float> extractUniqueValuesForParameter(File sampleFile) {
