@@ -6,32 +6,26 @@ date: "2/7/2020"
 output: md_document
 ---
 
-# ezDAFi: easy to use Directed Automated Filtering and Identification of cell populations in single cell data
+# Overview
 
-Have you ever wanted to bridge automated clustering techniques and human-driven gating strategies? Now you can with ezDAFi, the new FlowJo plugin for DAFi!
+Our new FlowJo plugin for DAFi bridges automated clustering techniques and human-driven gating strategies. DAFi stands for **D**irected **A**utomated **F**iltering and **I**dentification of cell populations in polychromatic flow cytometry data. The major feature of DAFi is its ability to control unsupervised clustering tools for the identification of previously known populations of interest in high-dimensional flow cytometry datasets. Among other many advantages, DAFi-derived gating results follow a much more natural distribution of the data. For more details, please see: [https://doi.org/10.1002/cyto.a.23371]( https://doi.org/10.1002/cyto.a.23371). 
 
-DAFi stands for **D**irected **A**utomated **F**iltering and **I**dentification of cell populations in polychromatic flow cytometry data.
-
-The major feature of DAFi is its ability to control unsupervised clustering tools for the identification of previously known populations of interest in high-dimensional flow cytometry datasets.
-
-There are several advantages to this approach, including a  gating strategy that follows a much more natural distribution of the data! For more reasons why you should be using DAFi,
-please see: [https://doi.org/10.1002/cyto.a.23371]( https://doi.org/10.1002/cyto.a.23371). 
-
-Under the hood, the FlowJo plugin extracts your manual gating strategy to set the boundaries of regions of interest in your parameter hyperspace. Then, it gates on learned cluster centroids located in the regions of interest and finds all cells whose nearest neighbors are centroids of interest. Finally, the plugin automatically gates each cell according to their updated identities, returning them to your FlowJo workspace.
-
-#### Installation
+# Obtaining the plugin
 
 On a mac, install [XCode](https://apps.apple.com/us/app/xcode/id497799835?mt=12) and [gfortran](https://github.com/fxcoudert/gfortran-for-macOS/releases) before the next step.
 
-On mac and windows, download the **DAFi.jar** file from our [Google Drive](https://drive.google.com/drive/folders/1fdTVdbz8S_v58oPX8jpYDudL4wRAge2a) and copy the file to your FlowJo plugins folder. Don't forget to restart FlowJo before you can use a new plugin.
+On mac and windows, download the **DAFi.jar** file from our [Google Drive](https://drive.google.com/drive/folders/1fdTVdbz8S_v58oPX8jpYDudL4wRAge2a) and copy the file to FlowJo's plugin folder. More information on how to install a plugin in FlowJo can be found [here](http://docs.flowjo.com/d2/plugins/installing-plugins/).
+
+Don't forget to restart FlowJo before you can use the new plugin.
 
 <!---  (Give it try! Just download the __DAFi.jar__ file above (soon you will also find it on [FlowJo's Plugin page](https://www.flowjo.com/exchange/#/)) and copy the file to your FlowJo plugins folder! Don't forget to restart FlowJo before using a new plugin.) --->
 
-### Short Intro
 
-ezDAFi is an easy-to-use FlowJo plugin for DAFi. DAFi stands for **D**irected **A**utomated **F**iltering and **I**dentification of cell populations in polychromatic flow cytometry data (see [original publication]( https://doi.org/10.1002/cyto.a.23371)). The plugin automatically imports single-cell data and FlowJo-derived gating strategies into R, builds single cell representations either with self-organizing maps (SOM) or k-means, and updates single cell identities according to the location of their nearest cluster centroid within the gating tree. The plugin can be used to refine gated populations on the fly in FlowJo, allowing for the visual check and re-use of DAFi gated cells in downstream analysis, such as building stats, plots and more gates. 
+# Short Intro
 
-### Motivation
+Under the hood, the FlowJo plugin extracts the manual gating strategy from FlowJo to set the boundaries of regions of interest in the parameter hyperspace. Then, it gates on learned cluster centroids located in the regions of interest and finds all cells whose nearest neighbors are centroids of interest. Finally, the plugin automatically gates each cell according to their updated identities, returning them to the FlowJo workspace.
+
+## Motivation
 
 With the advent of high dimensional single cell interrogation technologies, bidimensional manual gating became obsolete. This led to a quick rise in the number of automatic clustering algorithms for biological and immunological research but several problems are associated with automated gating strategies, such as:
 
@@ -51,7 +45,7 @@ The algorithm works like this:
 ![](figures/Fig1.png)
 **Fig1**: How DAFi aims at bridging manual gating and automated clustering techniques.
 
-### Reported advantages of DAFi
+## Reported advantages of DAFi
 
 Several advantages of DAFi have been reported (see [original publication]( https://doi.org/10.1002/cyto.a.23371)):
 
@@ -62,16 +56,18 @@ Several advantages of DAFi have been reported (see [original publication]( https
 * Effective use of human knowledge in guiding automated algorithms
 
 
-### ezDAFi in action: DAFi from inside Flowjo
+## ezDAFi in action: DAFi from inside Flowjo
 
-Our new implementation of DAFi relies on R and several R packages, in particular flowWorkspace, to bring DAFi to FlowJo in the form of an easy-to-use plugin.
+Our new implementation of DAFi relies on R and several R packages, in particular flowWorkspace and FlowSOM, to bring DAFi to FlowJo in the form of an easy-to-use plugin.
 
-While building the gating tree, the user can select a parent population, call the plugin and refine any child population using DAFi. The DAFi-refined gates are automatically imported back to FlowJo for futher downstream analysis, including plotting, stats and further gating. 
+The plugin automatically imports single-cell data and FlowJo-derived gating strategies into R, builds single cell representations with either self-organizing maps (SOM, preferable) or k-means, and updates single cell identities according to the location of their nearest cluster centroid within the gating tree. The plugin can be used to refine gated populations in FlowJo, allowing for the visual check and re-use of DAFi gated cells in downstream analysis, such as building stats and plots. 
+
+While building the gating tree, the user can select a parent population, call the plugin and refine all of its child populations using DAFi.
 
 ![](figures/Fig2.png)
 **Fig2**: Selecting "Single Cells" and running the plugin will refine either all gates down the hierarchy from "Single Cells" or only the immediate children, depending on user input. In this case, we only show one example of one immediate child gate, the "CD3, CD45 subset". Please note how the DAFi-refined population shows a much more natural distribution of the parameters after gating.
 
-Importantly, if the user decides to build the whole gating tree first and to apply DAFi to an upstream gate, the plugin can be used to refine all children and children of children of a seleted population. This feature allows for DAFi to be used recursively throughout several levels of the gating tree without additional human interaction. This way, all sub-populations downstream of the selected gate will be refined by DAFi.
+The user can also  build the whole gating tree first and then apply DAFi to a upstream population for the plugin to refine all children and children of children of that population. This feature allows for DAFi to be used recursively throughout several levels of the gating tree without additional human interaction. This way, all sub-populations downstream of the selected gate will be refined by DAFi.
 
 ## Conclusion
 
@@ -91,14 +87,7 @@ Our new plugin brings the power of DAFi to FlowJo, the most widely used single c
 * Every DAFi-gate generates one derived parameter, overpopulating the view. TODO: Import derived parameters from R into FlowJo as one parameter for each DAFi run.
 * R error messages are not visible to the user. TODO: Make R error messages visible to the user
 
----
-title: "ezDAFi: How To Use"
-author: "Pedro Milanez-Almeida"
-date: "1/29/2020"
-output: html_document
----
-
-#### Visual Guide On How To Use With Example
+#### Visual Guide With an Example
 
 Population that we will cluster: CD8-CD4+.
 
@@ -115,7 +104,9 @@ After selecting population of interest, click on "Workspace", "plugins" and "DAF
 
 ![](figures/VisualGuide2.png)
 
-After hitting OK, the plugin runs for a few seconds (about 10-20sec for default number of clusters; the first run may take a few minutes to install packages). Derived parameters and gated populations are imported back into FlowJo automatically. Please Note how the plugin ran DAFi on the whole tree down from "CD8-CD4+" (this behavior can be turned off to DAFi only the immediate children).
+After hitting OK, the plugin runs for a few seconds (about 10-20sec for default number of clusters; the first run may take a few minutes to install packages; when running on a Mac for the firs time, the user will need to instal Xcode and gfortran [see installation instructions above]).
+
+Derived parameters and gated populations are imported back into FlowJo automatically. Please note how the plugin ran DAFi on the whole tree down from "CD8-CD4+" (this behavior can be turned off to DAFi only the immediate children).
 
 ![](figures/VisualGuide3.png)
 

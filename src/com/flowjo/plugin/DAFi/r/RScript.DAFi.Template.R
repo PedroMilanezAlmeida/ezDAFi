@@ -262,18 +262,25 @@ names_gates_SOM <- foreach(pop = seq_along(basename(popOfInt_full_path))) %do% {
 names(names_gates_SOM) <- basename(popOfInt_full_path)
 names_gates_SOM
 
+if(length(names_gates_SOM) == 1 &
+      is.null(names_gates_SOM[[1]])) {
+  stop("It looks like the selected population has no children for DAFi to refine. DAFi requires the selected population to have at least one child gate.",
+       call. = FALSE)
+}
+#####CODE ALONG THESE LINES WILL BE USED TO DAFi SELECTED POP INSTEAD OF ITS CHILDREN#####
 # if the selected population has no children
 # this will make it possible to DAFi the parent pop
 # and refine the selected one
-if(length(names_gates_SOM) == 1 & is.null(names_gates_SOM[[1]])) {
-  popOfInt <- basename(dirname(popOfInt_full_path))
-  names_gates_of_int <- popOfInt_full_path
-  names_gates_SOM <- basename(dirname(popOfInt_full_path))
-  popOfInt_full_path <- dirname(popOfInt_full_path)
-  names_gates_to_SOM <- as.list(popOfInt_full_path)
-  names(names_gates_to_SOM)[1] <- popOfInt_full_path
-  pops_to_SOM <- names_gates_to_SOM
-} else {
+#####if(length(names_gates_SOM) == 1 &
+#####   is.null(names_gates_SOM[[1]])) {
+#####popOfInt <- basename(dirname(popOfInt_full_path))
+#####names_gates_of_int <- popOfInt_full_path
+#####names_gates_SOM <- basename(dirname(popOfInt_full_path))
+#####popOfInt_full_path <- dirname(popOfInt_full_path)
+#####names_gates_to_SOM <- as.list(popOfInt_full_path)
+#####names(names_gates_to_SOM)[1] <- popOfInt_full_path
+#####pops_to_SOM <- names_gates_to_SOM
+#####} else {
   #if doing recursive analysis, run whole DAFi process for each
   #non-terminal gate, adding the results to GatingSet as boolean filter
   #importantly, we can still run children only analysis despite these changes, see below
@@ -367,7 +374,7 @@ if(length(names_gates_SOM) == 1 & is.null(names_gates_SOM[[1]])) {
            function(pop_to_SOM)
              !identical(pop_to_SOM, character(0))) %>%
       unlist(., use.names = FALSE)]
-}
+  #####}
 #actual DAFi
 for(pop_to_SOM in seq_along(pops_to_SOM)){
   print(pops_to_SOM[pop_to_SOM] %>% names(.))

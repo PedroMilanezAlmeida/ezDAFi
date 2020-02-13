@@ -71,6 +71,7 @@ public class RScriptFlowCalculator extends RFlowCalculator {
     protected String fScriptOutput = "";
     protected File fScriptFile = null;
     protected static File fOutFile = null;
+    protected static File fOutFileLastLines = null;
     protected File fScriptFileTempLink = null;
 
     protected boolean fRScriptMode = false;   // Default is R CMD BATCH (backwards compatible), but Rscript is an option if a plugin chooses that instead
@@ -427,6 +428,10 @@ public class RScriptFlowCalculator extends RFlowCalculator {
 
             fOutFile = new File(fScriptFile.getAbsolutePath() + ".txt"); // changed ".Rout" to "R.txt" to allow auto open with default txt editor
 
+            //fOutFileLastLines created to try to write the last few lines of the R script into a separate file that opens every time the plugin runs
+            //this may facilitate communicating errors to the user.
+            fOutFileLastLines = new File(fScriptFile.getAbsolutePath() + ".LastLines.txt"); // changed ".Rout" to "R.txt" to allow auto open with default txt editor
+
             cmds.add(" CMD BATCH");
             if (fScriptFileTempLink == null)
                 cmds.add(" " + wrapQuotes(fScriptFile.getAbsolutePath())); // R CMD BATCH "/x/path with space/x.R" "xx.Rout" still doesn't work with some R versions... cannot have the space
@@ -512,13 +517,6 @@ public class RScriptFlowCalculator extends RFlowCalculator {
     public void deleteScriptFile() {
         if (fScriptFile != null && fScriptFile.exists() && fScriptFile.delete() && fVerboseOutput)
             System.out.println("Deleted " + fScriptFile.getAbsolutePath());
-    }
-
-    //trying to open .R.txt file
-    public void open()
-            throws IOException {
-        Desktop dt = Desktop.getDesktop();
-        dt.open(fOutFile);
     }
 
     public void deleteROutFile() {

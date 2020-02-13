@@ -25,7 +25,6 @@
 
 package com.flowjo.plugin.DAFi;
 
-import com.flowjo.plugin.DAFi.DAFiRFlowCalc;
 import com.treestar.flowjo.application.workspace.Workspace;
 import com.treestar.flowjo.application.workspace.manager.FJApplication;
 import com.treestar.flowjo.application.workspace.manager.WSDocument;
@@ -61,6 +60,9 @@ import java.io.*;
 import java.net.URL;
 import java.util.*;
 import java.util.List;
+
+import static com.flowjo.plugin.DAFi.RScriptFlowCalculator.fOutFile;
+import static com.flowjo.plugin.DAFi.RScriptFlowCalculator.fOutFileLastLines;
 
 public class DAFi extends R_Algorithm {
 
@@ -105,7 +107,6 @@ public class DAFi extends R_Algorithm {
     private static final String mustBeMinPopSizeLabel = "(min #events must be larger than SOM grid size W x H!)";
     private static final String minPopSizeTooltip = "Smallest number of cells to apply DAFi on.";
 
-    private static final String displayLabel = "Display options";
     private static final String orPerformDAFiLabel = "or perform new DAFi";
     private static final String scaleLabel = "Scale parameters to mean = 0 and sd = 1 (recommended)";
     private static final String scaleTooltip = "Should the data be scaled prior to clustering";
@@ -215,10 +216,13 @@ public class DAFi extends R_Algorithm {
             // results instead of recalculating
             // checkUseExistingFiles(fcmlQueryElement);
             fUseExistingFiles = false;
+
+            //save workspace before running plugin
             Sample sample = FJPluginHelper.getSample(fcmlQueryElement);
             Workspace workspace = sample.getWorkspace();
             workspace.getDoc().save();
 
+            //get sample name
             String sampleName = StringUtil.rtrim(sampleFile.getName(), ".fcs");
 
             // Get the parent popnode
@@ -234,35 +238,53 @@ public class DAFi extends R_Algorithm {
             calculator.deleteScriptFile();
             checkROutFile(calculator);
 
+            //Try to read the results (import derived parameters and gatingML files) and print the Rscript,
+            //if fails, print only the last 10 lines of the Rscript to see help the user address the issue.
+            //This is a workaround for the bug that FlowJo is not showing errors in R.
+            try {
             // Added to avoid issue with sub pops in FlowJo.
-            if (isSeqGeq()) {
-                results.setCSVFile(DAFiResult);
-            } else {
-                // Workaround for merging a CSV file back in subpops.
-                mergeCSVFile(fcmlQueryElement, results, DAFiResult, sampleFile, outputFolder);
-            }
-            System.out.println(DAFiResult.getAbsolutePath());
-            List<Float> values = extractUniqueValuesForParameter(DAFiResult);
+                if (isSeqGeq()) {
+                    results.setCSVFile(DAFiResult);
+                } else {
+                    // Workaround for merging a CSV file back in subpops.
+                    mergeCSVFile(fcmlQueryElement, results, DAFiResult, sampleFile, outputFolder);
+                }
+                System.out.println(DAFiResult.getAbsolutePath());
+                List<Float> values = extractUniqueValuesForParameter(DAFiResult);
 
-            String xmlEnding = sampleFile.getName() + ".gating-ml2.xml";
+                String xmlEnding = sampleFile.getName() + ".gating-ml2.xml";
 
-            FilenameFilter xmlFileFilter = (dir, name) -> name.endsWith(xmlEnding);
+                FilenameFilter xmlFileFilter = (dir, name) -> name.endsWith(xmlEnding);
 
-            File[] xmlFiles = outputFolder.listFiles(xmlFileFilter);
+                File[] xmlFiles = outputFolder.listFiles(xmlFileFilter);
 
-            if(xmlFiles == null) {
+                for (File xmlFile : xmlFiles)
+                {
+                    String gatingML = readGatingMLFile(xmlFile);
+                    results.setGatingML(gatingML);
+                }
+
                 try {
-                    Desktop.getDesktop().open(RScriptFlowCalculator.fOutFile);
+                    Desktop.getDesktop().open(fOutFile);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
 
-            }
+            } catch (Exception error) {
+                try{
+                    BufferedWriter writer = new BufferedWriter(new FileWriter(fOutFileLastLines));
+                    writer.write(tail2(fOutFile, 10));
+                    writer.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
 
-            for (File xmlFile : xmlFiles)
-            {
-                String gatingML = readGatingMLFile(xmlFile);
-                results.setGatingML(gatingML);
+                try {
+                    Desktop.getDesktop().open(fOutFileLastLines);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
             }
 
             long timeStamp = System.currentTimeMillis();
@@ -595,12 +617,6 @@ public class DAFi extends R_Algorithm {
         componentList.add(addFlowJoParameterSelector(list));
         fsElement = selement;
 
-        int nPars = list.size();
-        String plotOptions[] = new String[nPars + 1];
-        int i = 1;
-        for (String p : list)
-            plotOptions[i++] = p;
-
         fApplyOnPrevCombo = new FJComboBox(new String[]{defaultApplyOnPrev});
         String pluginFolder = selement.getString(pluginFolderAttName);
         if (pluginFolder != null && !pluginFolder.isEmpty()) {
@@ -727,16 +743,15 @@ public class DAFi extends R_Algorithm {
         fScaleOptionCheckbox.setSelected(fScale);
         componentList.add(new HBox(new Component[]{fScaleOptionCheckbox}));
 
-        componentList.add(new HBox(new Component[]{new FJLabel(displayLabel)}));
-
         fShowOutputCheckBox = new JCheckBox(keepResultsLabel);
         fShowOutputCheckBox.setToolTipText("Keep a file that shows execution of the script");
         fShowOutputCheckBox.setToolTipText("<html><p width=\"" + fixedToolTipWidth + "\">" + keepResultsTooltip + "</p></html>");
         fShowOutputCheckBox.setSelected(fShowOutput);
         componentList.add(new HBox(new Component[]{fShowOutputCheckBox}));
 
-        if (!fRoutFile.isEmpty())
-            componentList.add(new HBox(Box.createHorizontalGlue(), createShowOutputButton(), Box.createHorizontalGlue()));
+        if (!this.fRoutFile.isEmpty()) {
+            componentList.add(new HBox(new Component[]{Box.createHorizontalGlue(), this.createShowOutputButton(), Box.createHorizontalGlue()}));
+        }
 
         FJLabel hSpaceLabelCiting = new FJLabel("");
         GuiFactory.setSizes(hSpaceLabelCiting, new Dimension(fixedLabelWidth, hSpaceHeigth));
@@ -924,6 +939,58 @@ public class DAFi extends R_Algorithm {
 
 
         return new ArrayList<>(uniqueValues);
+    }
+
+    //trying to open .R.txt file
+    public void open(File document)
+            throws IOException {
+        Desktop.getDesktop().open(document);
+    }
+
+    public String tail2( File file, int lines) {
+        java.io.RandomAccessFile fileHandler = null;
+        try {
+            fileHandler =
+                    new java.io.RandomAccessFile( file, "r" );
+            long fileLength = fileHandler.length() - 1;
+            StringBuilder sb = new StringBuilder();
+            int line = 0;
+
+            for(long filePointer = fileLength; filePointer != -1; filePointer--){
+                fileHandler.seek( filePointer );
+                int readByte = fileHandler.readByte();
+
+                if( readByte == 0xA ) {
+                    if (filePointer < fileLength) {
+                        line = line + 1;
+                    }
+                } else if( readByte == 0xD ) {
+                    if (filePointer < fileLength-1) {
+                        line = line + 1;
+                    }
+                }
+                if (line >= lines) {
+                    break;
+                }
+                sb.append( ( char ) readByte );
+            }
+
+            String lastLine = sb.reverse().toString();
+            return lastLine;
+        } catch( java.io.FileNotFoundException e ) {
+            e.printStackTrace();
+            return null;
+        } catch( java.io.IOException e ) {
+            e.printStackTrace();
+            return null;
+        }
+        finally {
+            if (fileHandler != null )
+                try {
+                    fileHandler.close();
+                } catch (IOException e) {
+                }
+        }
     }
 
 
