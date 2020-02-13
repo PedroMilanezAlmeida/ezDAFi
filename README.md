@@ -132,10 +132,8 @@ Notes, Source and How To Use
 
 #### Processing time
 
--   Depends on the number of centroids to be used
--   First run can take a few minutes to install required R packages
--   Since data are saved to hard disk, it may run slow on some older
-    systems
+-   Depends on the number of centroids to be used;
+-   First run can take a few minutes to install required R packages.
 
 #### Known Bugs
 
@@ -143,15 +141,12 @@ Notes, Source and How To Use
     derived parameters (zeros and ones), which are used to DAFi-gate
     cells in FlowJo. FlowJo-derived parameters are not imported into
     flowWorkspace in R, such that DAFi gates are not recognized in R for
-    DAFi analysis of children of DAFi gates. TODO: make derived
-    parameters exportable/readable in R.
+    DAFi analysis of children of DAFi gates.
 -   Every DAFi-gate generates one derived parameter, overpopulating the
-    view. TODO: Import derived parameters from R into FlowJo as one
-    parameter for each DAFi run.
--   R error messages are not visible to the user. TODO: Make R error
-    messages visible to the user
+    view.
 
-#### Visual Guide With an Example
+Visual Guide With an Example
+============================
 
 Population that we will cluster: CD8-CD4+.
 
