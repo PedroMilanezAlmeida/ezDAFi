@@ -86,20 +86,30 @@ tryCatch(suppressMessages(library("flowUtils")),
 
 sessionInfo()
 
-populationName <- "FJ_POPULATION_NAME"
 minPopSize <- FJ_PAR_MINPOPSIZE
+sampleFCS <- "FJ_SAMPLE_NODE_NAME"
 
 ## Code to read gates from wsp file
-popOfInt <- populationName
+popOfInt <- "FJ_POPULATION_NAME"
 popOfInt
 
 #find and load wsp file
-wspNames <- dirname(path = "FJ_DATA_FILE_PATH") %>%
-  dirname(path = .) %>%
-  paste0(.,
-         ".wsp")
-wspNames
-ws <- openWorkspace(wspNames)
+wspDir <- "FJ_PARM_WSPDIR"
+wspName <- "FJ_PARM_WSPNAME"
+
+wspName <- paste0(wspDir, 
+                  "/",
+                  wspName)
+#dirname(path = "FJ_DATA_FILE_PATH") %>%
+  #dirname(path = .) %>%
+  #paste0(.,
+  #       ".wsp")
+wspName
+
+# the following is meant to add support for acs files on windows
+# TODO: test on Mac!
+
+ws <- openWorkspace(wspName)
 ##find raw .fcs files
 #find path of all fcs files in workspace
 sampleFCS_paths <- xpathApply(ws@doc,
@@ -117,21 +127,22 @@ sampleFCS_names <- sampleFCS_paths %>%
        x = .)
 sampleFCS_names
 #find name of fcs file used here
-nameSearch <- sapply(sampleFCS_names,
-                     function(name)
-                       grep(pattern = name,
-                            x = basename("FJ_DATA_FILE_PATH"))) %>%
-  unlist(.)
-nameSearchRes <- names(nameSearch)[nameSearch %>%
-                                     names(.) %>% 
-                                     nchar(.) %>% 
-                                     which.max(.)]
-sampleFCS <- paste0(nameSearchRes,
-                    ".fcs")
+#nameSearch <- sapply(sampleFCS_names,
+#                    function(name)
+#                      grep(pattern = name,
+#                           x = basename("FJ_DATA_FILE_PATH"),
+#                           fixed = TRUE)) %>%
+# unlist(.)
+#nameSearchRes <- names(nameSearch)[nameSearch %>%
+#                                    names(.) %>% 
+#                                    nchar(.) %>% 
+#                                    which.max(.)]
+#sampleFCS <- paste0(nameSearchRes,
+#                   ".fcs")
 
 #gsFileName <- paste0(dirname("FJ_DATA_FILE_PATH"),
 #                     "/",
-#                    basename(wspNames),
+#                    basename(wspName),
 #                    ".",
 #                    sampleFCS,
 #                    ".gs")
@@ -142,12 +153,21 @@ sampleFCS <- paste0(nameSearchRes,
 sampleFCS_path <- sampleFCS_paths[basename(sampleFCS_paths) == sampleFCS]
 sampleFCS_path
 
-if(Sys.info()["sysname"] == "Windows"){
+nchar_wspDir <- nchar(wspDir)
+wspDir_last4 <- substr(wspDir, 
+                          nchar_wspDir - 4 + 1,
+                          nchar_wspDir)
+if(wspDir_last4 != ".acs" & Sys.info()["sysname"] == "Windows") {
   sampleFCS_path <- substring(sampleFCS_path, 2)
+  }
+
+if(wspDir_last4 == ".acs"){
+  sampleFCS_path <- paste0(wspDir,
+                           "/",
+                           sampleFCS_path)
 }
 
 #parse wsp and fcs files into a GatingSet object
-
 pathFCS <- tryCatch(
   data.frame(sampleID = getSamples(ws)$sampleID[getSamples(ws)$name == sampleFCS],
              file = sampleFCS_path),
@@ -267,6 +287,13 @@ if(length(names_gates_SOM) == 1 &
   stop("It looks like the selected population has no children for DAFi to refine. DAFi requires the selected population to have at least one child gate.",
        call. = FALSE)
 }
+
+##### CHANGE CODE TO BE ABLE TO HANDLE WHEN PLUGIN IS CALLED ON ROOT
+if(substr(popOfInt, nchar(popOfInt) - 4 + 1, nchar(popOfInt)) == ".fcs" &
+   popOfInt == sampleFCS){
+  
+}
+
 #####CODE ALONG THESE LINES WILL BE USED TO DAFi SELECTED POP INSTEAD OF ITS CHILDREN#####
 # if the selected population has no children
 # this will make it possible to DAFi the parent pop

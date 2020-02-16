@@ -7,7 +7,8 @@ import java.io.StringWriter;
 import java.util.List;
 import java.util.Map;
 
-import com.treestar.flowjo.engine.utility.EPluginHelper;
+import com.flowjo.plugin.DAFi.utils.ExportUtils;
+import com.treestar.flowjo.core.nodes.PopNode;
 import com.treestar.lib.file.FileUtil;
 import com.treestar.flowjo.engine.EngineManager;
 import com.treestar.flowjo.engine.utility.RFlowCalculator;
@@ -22,12 +23,13 @@ public class DAFiRFlowCalc extends RFlowCalculator {
     public static final String FALSE = "FALSE";
 
 
-    public File runDAFi(File sampleFile, String sampleName, String populationName, List<String> parameterNames, Map<String, String> options, String outputFolderPath, boolean useExistingFiles)
+    public File runDAFi(String wsName, String wsDir, File sampleFile, String sampleName, String populationName, String sampleNodeName, List<String> parameterNames, Map<String, String> options, String outputFolderPath, boolean useExistingFiles)
     {
         sampleName = sampleName.replaceAll(".ExtNode", "").replaceAll(".fcs", "").replaceAll(".LMD", "").trim();
         File outputFolder = new File(outputFolderPath);
+
         StringWriter scriptWriter = new StringWriter();
-        File DAFiScript = createDAFiscript(sampleFile, sampleName, populationName, parameterNames, options, outputFolder, scriptWriter);
+        File DAFiScript = createDAFiscript(wsName, wsDir, sampleFile, sampleName, populationName, sampleNodeName, parameterNames, options, outputFolder, scriptWriter);
         if(DAFiScript == null) return null;
         if(useExistingFiles && DAFiScript.exists()) return DAFiScript;
 
@@ -47,7 +49,7 @@ public class DAFiRFlowCalc extends RFlowCalculator {
         return DAFiScript;
     }
 
-    protected File createDAFiscript(File sampleFile, String sampleName, String populationName, List<String> parameterNames, Map<String, String> options, File outputFolder, StringWriter scriptWriter)
+    protected File createDAFiscript(String wsName, String wsDir, File sampleFile, String sampleName, String populationName, String sampleNodeName, List<String> parameterNames, Map<String, String> options, File outputFolder, StringWriter scriptWriter)
     {
         InputStream scriptStream = DAFiRFlowCalc.class.getResourceAsStream(DAFiTemplatePath);
 
@@ -94,6 +96,9 @@ public class DAFiRFlowCalc extends RFlowCalculator {
             sParApplyOnPrev = outputFolder + File.separator + sParApplyOnPrev;
         if(EngineManager.isWindows()) sParApplyOnPrev = sParApplyOnPrev.replaceAll("\\\\", "/");
 
+        if(EngineManager.isWindows()) wsDir = wsDir.replaceAll("\\\\", "/");
+        if(EngineManager.isWindows()) wsName = wsName.replaceAll("\\\\", "/");
+
         try {
             if ((Integer.parseInt(sParMinPopSize) < 100) || (Integer.parseInt(sParMinPopSize) > 1000000))
                 sParMinPopSize= Integer.toString(com.flowjo.plugin.DAFi.DAFi.defaultMinPopSize);
@@ -138,6 +143,8 @@ public class DAFiRFlowCalc extends RFlowCalculator {
             {
                 // Added to get runID in parameter - MVP
                 scriptLine = scriptLine.replace("FJ_PARM_SAMPLENAME", sampleName);
+                scriptLine = scriptLine.replace("FJ_PARM_WSPDIR", wsDir);
+                scriptLine = scriptLine.replace("FJ_PARM_WSPNAME", wsName);
                 scriptLine = scriptLine.replace("FJ_PARM_NAME", parameterName);
                 scriptLine = scriptLine.replace("FJ_DATA_FILE_PATH", dataFilePath);
                 scriptLine = scriptLine.replace("FJ_CSV_OUPUT_FILE", outFileName);
@@ -151,6 +158,7 @@ public class DAFiRFlowCalc extends RFlowCalculator {
                 scriptLine = scriptLine.replace("FJ_PAR_APPLY_ON_PREV", sParApplyOnPrev);
                 scriptLine = scriptLine.replace("FJ_PAR_ADD_CELLIDS_TO_RESULT", sAddCellIdToResults);
                 scriptLine = scriptLine.replace("FJ_POPULATION_NAME", populationName);
+                scriptLine = scriptLine.replace("FJ_SAMPLE_NODE_NAME", sampleNodeName);
 
                 if(scriptLine.contains("FJ_PARAMS_LIST")) {
                     String parListStr = "";
