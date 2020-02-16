@@ -19,8 +19,8 @@ On a mac, install
 [gfortran](https://github.com/fxcoudert/gfortran-for-macOS/releases)
 before the next step.
 
-On mac and windows, download the **DAFi.jar** file from our [Google
-Drive](https://drive.google.com/drive/folders/1fdTVdbz8S_v58oPX8jpYDudL4wRAge2a)
+On mac and windows, download the file
+[**DAFi.jar**](https://github.com/PedroMilanezAlmeida/DAFi/raw/master/DAFi.jar)
 and copy the file to FlowJo’s plugin folder. More information on how to
 install a plugin in FlowJo can be found
 [here](http://docs.flowjo.com/d2/plugins/installing-plugins/).
