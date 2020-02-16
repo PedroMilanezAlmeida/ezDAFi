@@ -288,10 +288,11 @@ if(length(names_gates_SOM) == 1 &
        call. = FALSE)
 }
 
-##### CHANGE CODE TO BE ABLE TO HANDLE WHEN PLUGIN IS CALLED ON ROOT
+# TODO: CHANGE CODE TO BE ABLE TO HANDLE WHEN PLUGIN IS CALLED ON ROOT
 if(substr(popOfInt, nchar(popOfInt) - 4 + 1, nchar(popOfInt)) == ".fcs" &
-   popOfInt == sampleFCS){
-  
+  popOfInt == sampleFCS){
+  stop("The plugin cannot handle the root population yet. Please select the next downstream gate from the root and rerun DAFi.",
+       call. = FALSE)
 }
 
 #####CODE ALONG THESE LINES WILL BE USED TO DAFi SELECTED POP INSTEAD OF ITS CHILDREN#####
