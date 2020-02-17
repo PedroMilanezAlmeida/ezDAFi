@@ -14,6 +14,10 @@ details, please see: <https://doi.org/10.1002/cyto.a.23371>.
 Obtaining the plugin
 ====================
 
+First of all, please install R on your machine (click for
+[instructions](https://cran.r-project.org/)). In case R is already
+installed, later versions will have fewer compatibility issues.
+
 On a mac, install
 [XCode](https://apps.apple.com/us/app/xcode/id497799835?mt=12) and
 [gfortran](https://github.com/fxcoudert/gfortran-for-macOS/releases)
@@ -28,6 +32,7 @@ install a plugin in FlowJo can be found
 Don’t forget to restart FlowJo before you can use the new plugin.
 
 <!---  (Give it try! Just download the __DAFi.jar__ file above (soon you will also find it on [FlowJo's Plugin page](https://www.flowjo.com/exchange/#/)) and copy the file to your FlowJo plugins folder! Don't forget to restart FlowJo before using a new plugin.) --->
+
 Short Intro
 ===========
 
