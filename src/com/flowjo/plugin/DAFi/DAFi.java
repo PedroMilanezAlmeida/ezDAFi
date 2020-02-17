@@ -247,10 +247,11 @@ public class DAFi extends R_Algorithm {
 
             // Get the parent popnode
             PopNode popNode = FJPluginHelper.getParentPopNode(fcmlQueryElement);
-            if (popNode == null) { // This means the current parent node is the root sample, if it is just take the sample node.
-                popNode = sample.getSampleNode();
+            PopNode parentPopNode = popNode.getParentPop();
+            if (parentPopNode == null) { // This means the current parent node is the root sample, if it is just take the sample node.
+                parentPopNode = sample.getSampleNode();
             }
-            // ExportUtils.exportParameters(popNode, parameterNames, outputFolder);
+            // ExportUtils.exportParameters(parentPopNode, parameterNames, outputFolder);
 
             //Get name of .FCS file
             PopNode sampleNode = sample.getSampleNode();
