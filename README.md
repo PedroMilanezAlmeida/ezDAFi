@@ -23,9 +23,13 @@ On a mac, install
 [gfortran](https://github.com/fxcoudert/gfortran-for-macOS/releases)
 before the next step.
 
+On windows, besides installing [R
+base](https://cran.r-project.org/bin/windows/base/), you may also have
+to install [Rtools](https://cran.r-project.org/bin/windows/Rtools/).
+
 On mac and windows, download the file
 [**DAFi.jar**](https://github.com/PedroMilanezAlmeida/DAFi/raw/master/DAFi.jar)
-and copy the file to FlowJo’s plugin folder. More information on how to
+and copy it to FlowJo’s plugin folder. More information on how to
 install a plugin in FlowJo can be found
 [here](http://docs.flowjo.com/d2/plugins/installing-plugins/).
 
