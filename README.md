@@ -14,23 +14,22 @@ details, please see: <https://doi.org/10.1002/cyto.a.23371>.
 Obtaining the plugin
 ====================
 
-To be able to use this plugin, please install R (click for
+To be able to use this plugin, please install R (see
 [instructions](https://cran.r-project.org/)). Only R version 3.6.2 or
-newer can run the plugin/
+newer can run the plugin.
 
-On a mac, install
+On a mac, please install
 [XCode](https://apps.apple.com/us/app/xcode/id497799835?mt=12) and
-[gfortran](https://github.com/fxcoudert/gfortran-for-macOS/releases)
-before the next step.
+[gfortran](https://github.com/fxcoudert/gfortran-for-macOS/releases).
 
 On windows, besides installing [R
 base](https://cran.r-project.org/bin/windows/base/), you may also have
 to install [Rtools](https://cran.r-project.org/bin/windows/Rtools/).
 
-On both mac and windows, please setup FlowJo to recognize R.
-[Here](http://docs.flowjo.com/d2/plugins/installing-plugins/), under
-“*"Installing the R statistical computing environment"*”, there are
-easy-to-follow instructions.
+On both mac and windows, please setup FlowJo to recognize R. There are
+easy-to-follow instructions
+[here](http://docs.flowjo.com/d2/plugins/installing-plugins/) under
+“*"Installing the R statistical computing environment"*”.
 
 Now, download the file
 [**DAFi.jar**](https://github.com/PedroMilanezAlmeida/DAFi/raw/master/DAFi.jar)
@@ -178,9 +177,11 @@ and “DAFi”. Select parameters for clustering among other options.
 
 After hitting OK, the plugin runs for a few seconds (about 10-20sec for
 default number of clusters; the first run may take a few minutes to
-install packages; when running on a Mac for the firs time, the user will
-need to instal Xcode and gfortran \[see installation instructions
-above\]).
+install packages; when running on a Mac for the first time, the user
+will need to instal
+[XCode](https://apps.apple.com/us/app/xcode/id497799835?mt=12) and
+[gfortran](https://github.com/fxcoudert/gfortran-for-macOS/releases)
+\[see installation instructions above\]).
 
 Derived parameters and gated populations are imported back into FlowJo
 automatically. Please note how the plugin ran DAFi on the whole tree
@@ -191,7 +192,7 @@ immediate children).
 
 DAFi populations behave just like FlowJo native populations! They can be
 plotted, gated, used in layouts and stats! Please note, however, that
-one cannot call the plugin on a children or children of children of a
-previous DAFi gate, yet.
+one cannot call the plugin on a child or grandchild of a previous DAFi
+gate, yet.
 
 ![](figures/VisualGuide4.png)
