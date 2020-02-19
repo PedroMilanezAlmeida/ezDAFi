@@ -14,9 +14,9 @@ details, please see: <https://doi.org/10.1002/cyto.a.23371>.
 Obtaining the plugin
 ====================
 
-First of all, please install R on your machine (click for
-[instructions](https://cran.r-project.org/)). In case R is already
-installed, later versions will have fewer compatibility issues.
+To be able to use this plugin, please install R (click for
+[instructions](https://cran.r-project.org/)). Only R version 3.6.2 or
+newer can run the plugin/
 
 On a mac, install
 [XCode](https://apps.apple.com/us/app/xcode/id497799835?mt=12) and
@@ -27,10 +27,14 @@ On windows, besides installing [R
 base](https://cran.r-project.org/bin/windows/base/), you may also have
 to install [Rtools](https://cran.r-project.org/bin/windows/Rtools/).
 
-On mac and windows, download the file
+On both mac and windows, please setup FlowJo to recognize R.
+[Here](http://docs.flowjo.com/d2/plugins/installing-plugins/), under
+“*"Installing the R statistical computing environment"*”, there are
+easy-to-follow instructions.
+
+Now, download the file
 [**DAFi.jar**](https://github.com/PedroMilanezAlmeida/DAFi/raw/master/DAFi.jar)
-and copy it to FlowJo’s plugin folder. More information on how to
-install a plugin in FlowJo can be found
+and copy it to FlowJo’s plugin folder as described
 [here](http://docs.flowjo.com/d2/plugins/installing-plugins/).
 
 Don’t forget to restart FlowJo before you can use the new plugin.
