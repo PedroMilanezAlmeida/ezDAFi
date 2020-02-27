@@ -158,7 +158,7 @@ tryCatch(suppressMessages(library("flowCore")),
 sessionInfo()
 
 minPopSize <- FJ_PAR_MINPOPSIZE
-sampleFCS <- "FJ_SAMPLE_NODE_NAME"
+#sampleFCS <- "FJ_SAMPLE_NODE_NAME"
 
 ## Code to read gates from wsp file
 popOfInt <- "FJ_POPULATION_NAME"
@@ -198,19 +198,21 @@ sampleFCS_names <- sampleFCS_paths %>%
        x = .)
 sampleFCS_names
 #find name of fcs file used here
-#nameSearch <- sapply(sampleFCS_names,
-#                    function(name)
-#                      grep(pattern = name,
-#                           x = basename("FJ_DATA_FILE_PATH"),
-#                           fixed = TRUE)) %>%
-# unlist(.)
-#nameSearchRes <- names(nameSearch)[nameSearch %>%
-#                                    names(.) %>% 
-#                                    nchar(.) %>% 
-#                                    which.max(.)]
-#sampleFCS <- paste0(nameSearchRes,
-#                   ".fcs")
-
+nameSearch <- sapply(sampleFCS_names,
+                    function(name)
+                      grep(pattern = name,
+                           x = basename("FJ_DATA_FILE_PATH"),
+                           fixed = TRUE)) %>%
+ unlist(.)
+nameSearch
+nameSearchRes <- names(nameSearch)[nameSearch %>%
+                                    names(.) %>% 
+                                    nchar(.) %>% 
+                                    which.max(.)]
+nameSearchRes
+sampleFCS <- paste0(nameSearchRes,
+                   ".fcs")
+sampleFCS
 #gsFileName <- paste0(dirname("FJ_DATA_FILE_PATH"),
 #                     "/",
 #                    basename(wspName),
@@ -557,7 +559,20 @@ for(pop_to_SOM in seq_along(pops_to_SOM)){
                                      paste0(pops_to_SOM[[pop_to_SOM]],
                                             "/", gate))))
       }
-      suppressMessages(flowWorkspace::recompute(gs_SOM))
+      tryCatch({suppressMessages(flowWorkspace::recompute(gs_SOM))},
+               error = function(e){
+                 stop(paste0("It looks like the channel \"",
+                             strsplit(x = e$message, 
+                                      split = "\n  ",
+                                      fixed = TRUE)[[1]][2] %>%
+                               strsplit(x = ., 
+                                        split = " not found",
+                                        fixed = TRUE) %>% 
+                               .[[1]] %>%
+                               .[1],
+                             "\" has not been selected when the plugin was called although it was used down the gating hiearchy. \nPlease, make sure all flow channels used in the gating tree are selected when calling the plugin."), 
+                      call. = FALSE)
+               })
       ## Code to update assignment of cell identity according to DAFi results
       SOM_labels <- vector(mode = "list",
                            length = length(gates))
