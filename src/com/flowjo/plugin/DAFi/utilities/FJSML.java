@@ -1,4 +1,4 @@
-package com.flowjo.plugin.DAFi.utils;
+package com.flowjo.plugin.DAFi.utilities;
 
 public class FJSML {
 
@@ -81,7 +81,7 @@ public class FJSML {
         public static final String ID = "ID";
         public static final String SAMPLE_ID = "SampleID";
         public static final String SEQGEQ = "seqgeq";
-        public static final String FLOWJO = "flowjo";
+        public static final String FLOWJO = "seqgeq";
     }
 
     public static class SEQGEQ {

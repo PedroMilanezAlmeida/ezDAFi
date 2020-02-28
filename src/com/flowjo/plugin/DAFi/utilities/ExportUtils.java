@@ -1,4 +1,4 @@
-package com.flowjo.plugin.DAFi.utils;
+package com.flowjo.plugin.DAFi.utilities;
 
 import com.opencsv.CSVReader;
 import com.opencsv.CSVWriter;
@@ -121,7 +121,7 @@ public class ExportUtils {
             if (outputFolder == null) {
                 return null;
             }
-            File outFile = FileUtils.getRandomCSV(outputFolder);
+            File outFile = FileUtilities.getRandomCSV(outputFolder);
             outFile.setWritable(true);
             outFile.setReadable(true);
             File sampleFile = pop.getSample().getLocalFileRef();
@@ -163,30 +163,23 @@ public class ExportUtils {
         return null;
     }
 
-    // COMMENTED OUT THE CODE BELOW SINCE FlowJoUtils.getPopulationNodesByIds IS NOT AVAILABLE.
-
-    //public static List exportPopulationsFiles(String workspaceID, String sampleID, List<String> populationIDs, List<String> parameterIDs, File outputFolder) {
-    //  List<PopNode> populationNodes = FlowJoUtils.getPopulationNodesByIds(workspaceID, sampleID, populationIDs);
-    //return exportPopulationsFiles(populationNodes, parameterIDs, outputFolder);
-    //}
-
-    //public static List exportPopulationsFiles(List<PopNode> populationNodes, List<String> parameterIDs, File outputFolder) {
-    //List<String> exportedFiles = new ArrayList<>();
-    //for (int i = 0; i < populationNodes.size(); i++) {
-    //    PopNode popNode = populationNodes.get(i);
-    //    File outputFile = ExportUtils.exportParameters(popNode, parameterIDs, outputFolder);
-    //    if (outputFile != null && outputFile.exists() && outputFile.isFile()) {
-    //        outputFile.setReadable(true);
-    //        String popName = popNode.getName();
-    //        File annotatedFile = ExportUtils.appendPopulationNumber(outputFile, popName, i);
-    //        if (annotatedFile != null && annotatedFile.exists()) {
-    //            annotatedFile.setReadable(true);
-    //            exportedFiles.add(annotatedFile.getAbsolutePath());
-    //        }
-    //    }
-    //}
-    //return exportedFiles;
-    //}
+    public static List exportPopulationsFiles(List<PopNode> populationNodes, List<String> parameterIDs, File outputFolder) {
+        List<String> exportedFiles = new ArrayList<>();
+        for (int i = 0; i < populationNodes.size(); i++) {
+            PopNode popNode = populationNodes.get(i);
+            File outputFile = ExportUtils.exportParameters(popNode, parameterIDs, outputFolder);
+            if (outputFile != null && outputFile.exists() && outputFile.isFile()) {
+                outputFile.setReadable(true);
+                String popName = popNode.getName();
+                File annotatedFile = ExportUtils.appendPopulationNumber(outputFile, popName, i);
+                if (annotatedFile != null && annotatedFile.exists()) {
+                    annotatedFile.setReadable(true);
+                    exportedFiles.add(annotatedFile.getAbsolutePath());
+                }
+            }
+        }
+        return exportedFiles;
+    }
 
 }
 

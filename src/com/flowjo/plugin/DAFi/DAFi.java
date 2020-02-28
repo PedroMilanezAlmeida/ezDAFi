@@ -25,7 +25,7 @@
 
 package com.flowjo.plugin.DAFi;
 
-import com.flowjo.plugin.DAFi.utils.ExportUtils;
+import com.flowjo.plugin.DAFi.utilities.ExportUtils;
 import com.treestar.flowjo.application.workspace.Workspace;
 import com.treestar.flowjo.application.workspace.manager.FJApplication;
 import com.treestar.flowjo.application.workspace.manager.WSDocument;
@@ -251,7 +251,13 @@ public class DAFi extends R_Algorithm {
             if (parentPopNode == null) { // This means the current parent node is the root sample, if it is just take the sample node.
                 parentPopNode = sample.getSampleNode();
             }
-            // ExportUtils.exportParameters(parentPopNode, parameterNames, outputFolder);
+
+            //File csvParentFile = ExportUtils.exportParameters(parentPopNode, fParameterNames, outputFolder);
+            //try {
+            //    Desktop.getDesktop().open(csvParentFile);
+            //} catch (IOException e) {
+            //    e.printStackTrace();
+            //}
 
             //Get name of .FCS file
             PopNode sampleNode = sample.getSampleNode();

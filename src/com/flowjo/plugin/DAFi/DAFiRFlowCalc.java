@@ -7,8 +7,6 @@ import java.io.StringWriter;
 import java.util.List;
 import java.util.Map;
 
-import com.flowjo.plugin.DAFi.utils.ExportUtils;
-import com.treestar.flowjo.core.nodes.PopNode;
 import com.treestar.lib.file.FileUtil;
 import com.treestar.flowjo.engine.EngineManager;
 import com.treestar.flowjo.engine.utility.RFlowCalculator;

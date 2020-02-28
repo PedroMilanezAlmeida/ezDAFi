@@ -1,5 +1,7 @@
-package com.flowjo.plugin.DAFi.utils;
+package com.flowjo.plugin.DAFi.utilities;
 
+import java.io.File;
+import java.util.HashMap;
 import java.util.Random;
 
 public class StringUtils {

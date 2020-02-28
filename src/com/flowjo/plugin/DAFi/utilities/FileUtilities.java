@@ -1,4 +1,4 @@
-package com.flowjo.plugin.DAFi.utils;
+package com.flowjo.plugin.DAFi.utilities;
 
 import com.opencsv.CSVReader;
 import com.opencsv.CSVWriter;
@@ -12,15 +12,15 @@ import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-public class FileUtils {
+public class FileUtilities {
 
     public static HashMap<String, String> getFileExtensionsMap() {
         HashMap<String, String> fileExtensionsMap = new HashMap<>();
-        fileExtensionsMap.put(com.flowjo.plugin.DAFi.utils.FJSML.FORMATS.FILE.FCS.UPPERCASE, com.flowjo.plugin.DAFi.utils.FJSML.FORMATS.FILE.FCS.EXTENSION);
-        fileExtensionsMap.put(com.flowjo.plugin.DAFi.utils.FJSML.FORMATS.FILE.CSV.UPPERCASE, com.flowjo.plugin.DAFi.utils.FJSML.FORMATS.FILE.CSV.EXTENSION);
-        fileExtensionsMap.put(com.flowjo.plugin.DAFi.utils.FJSML.FORMATS.FILE.TSV.UPPERCASE, com.flowjo.plugin.DAFi.utils.FJSML.FORMATS.FILE.TSV.EXTENSION);
-        fileExtensionsMap.put(com.flowjo.plugin.DAFi.utils.FJSML.FORMATS.FILE.TXT.UPPERCASE, com.flowjo.plugin.DAFi.utils.FJSML.FORMATS.FILE.TXT.EXTENSION);
-        fileExtensionsMap.put(com.flowjo.plugin.DAFi.utils.FJSML.FORMATS.FILE.H5.UPPERCASE, com.flowjo.plugin.DAFi.utils.FJSML.FORMATS.FILE.H5.EXTENSION);
+        fileExtensionsMap.put(FJSML.FORMATS.FILE.FCS.UPPERCASE, FJSML.FORMATS.FILE.FCS.EXTENSION);
+        fileExtensionsMap.put(FJSML.FORMATS.FILE.CSV.UPPERCASE, FJSML.FORMATS.FILE.CSV.EXTENSION);
+        fileExtensionsMap.put(FJSML.FORMATS.FILE.TSV.UPPERCASE, FJSML.FORMATS.FILE.TSV.EXTENSION);
+        fileExtensionsMap.put(FJSML.FORMATS.FILE.TXT.UPPERCASE, FJSML.FORMATS.FILE.TXT.EXTENSION);
+        fileExtensionsMap.put(FJSML.FORMATS.FILE.H5.UPPERCASE, FJSML.FORMATS.FILE.H5.EXTENSION);
         return fileExtensionsMap;
     }
 
@@ -67,11 +67,11 @@ public class FileUtils {
     }
 
     public static File getRandomCSV(File outputFolder) {
-        return new File(outputFolder, StringUtils.getSaltString() + com.flowjo.plugin.DAFi.utils.FJSML.FORMATS.FILE.CSV.EXTENSION);
+        return new File(outputFolder, com.flowjo.plugin.DAFi.utilities.StringUtils.getSaltString() + FJSML.FORMATS.FILE.CSV.EXTENSION);
     }
 
     public static File getRandomCSV(File outputFolder, String prefix) {
-        return new File(outputFolder, prefix + StringUtils.getSaltString() + com.flowjo.plugin.DAFi.utils.FJSML.FORMATS.IMAGE.PNG.EXTENSION);
+        return new File(outputFolder, prefix + com.flowjo.plugin.DAFi.utilities.StringUtils.getSaltString() + FJSML.FORMATS.IMAGE.PNG.EXTENSION);
     }
 
     public static File writeCSV(List<String[]> data, File outputFolder, String prefix) {
@@ -109,7 +109,7 @@ public class FileUtils {
     }
 
     public static File getDesktopFile() {
-        File desktop = new File(System.getProperty(com.flowjo.plugin.DAFi.utils.FJSML.SYSTEM_ATTRIBUTES.USER_HOME), com.flowjo.plugin.DAFi.utils.FJSML.SYSTEM_ATTRIBUTES.DESKTOP);
+        File desktop = new File(System.getProperty(FJSML.SYSTEM_ATTRIBUTES.USER_HOME), FJSML.SYSTEM_ATTRIBUTES.DESKTOP);
         if (!desktop.exists()) {
             desktop = new File("");
         }
@@ -118,13 +118,13 @@ public class FileUtils {
 
     public static JFileChooser getFileChooser() {
         final JFileChooser fileChooser = new JFileChooser();
-        fileChooser.setCurrentDirectory(FileUtils.getDesktopFile());
+        fileChooser.setCurrentDirectory(FileUtilities.getDesktopFile());
         return fileChooser;
     }
 
     public static File askCSVFile() {
         final JFileChooser fileChooser = new JFileChooser();
-        fileChooser.setCurrentDirectory(FileUtils.getDesktopFile());
+        fileChooser.setCurrentDirectory(FileUtilities.getDesktopFile());
         int returnVal = fileChooser.showOpenDialog(null);
         if (returnVal == JFileChooser.APPROVE_OPTION) {
             return fileChooser.getSelectedFile();
@@ -185,23 +185,23 @@ public class FileUtils {
     }
 
     public static File getRandomFile(File outputFolder) {
-        return new File(outputFolder, StringUtils.getSaltString(6));
+        return new File(outputFolder, com.flowjo.plugin.DAFi.utilities.StringUtils.getSaltString(6));
     }
 
     public static File getRandomFile(File outputFolder, String prefix) {
-        return new File(outputFolder, prefix + StringUtils.getSaltString(8));
+        return new File(outputFolder, prefix + com.flowjo.plugin.DAFi.utilities.StringUtils.getSaltString(8));
     }
 
     public static File getRandomPNG() {
-        return getRandomPNG(getDesktopFile(), StringUtils.getSaltString(6));
+        return getRandomPNG(getDesktopFile(), com.flowjo.plugin.DAFi.utilities.StringUtils.getSaltString(6));
     }
 
     public static File getRandomPNG(File outputFolder) {
-        return getRandomPNG(outputFolder, StringUtils.getSaltString(6));
+        return getRandomPNG(outputFolder, com.flowjo.plugin.DAFi.utilities.StringUtils.getSaltString(6));
     }
 
     public static File getRandomPNG(File outputFolder, String prefix) {
-        return new File(outputFolder, prefix.replace("\\", "_").replace(" ", "").replace("\\", "_").replace("/", "_").trim() + com.flowjo.plugin.DAFi.utils.FJSML.FORMATS.IMAGE.PNG.EXTENSION);
+        return new File(outputFolder, prefix.replace("\\", "_").replace(" ", "").replace("\\", "_").replace("/", "_").trim() + FJSML.FORMATS.IMAGE.PNG.EXTENSION);
 
     }
 }
