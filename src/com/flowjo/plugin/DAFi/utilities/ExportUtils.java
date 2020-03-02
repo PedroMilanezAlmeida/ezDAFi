@@ -104,7 +104,7 @@ public class ExportUtils {
         return null;
     }
 
-    public static File exportParameters(PopNode pop, List<String> parameters, File outputFolder) {
+    public static File exportParameters(PopNode pop, List<String> parameters, File outputFolder, String outputFileName) {
         if (pop == null) {
             return null;
         }
@@ -121,7 +121,7 @@ public class ExportUtils {
             if (outputFolder == null) {
                 return null;
             }
-            File outFile = FileUtilities.getRandomCSV(outputFolder);
+            File outFile = FileUtilities.getNonRandomCSVParent(outputFolder, outputFileName);
             outFile.setWritable(true);
             outFile.setReadable(true);
             File sampleFile = pop.getSample().getLocalFileRef();
@@ -163,11 +163,11 @@ public class ExportUtils {
         return null;
     }
 
-    public static List exportPopulationsFiles(List<PopNode> populationNodes, List<String> parameterIDs, File outputFolder) {
+    public static List exportPopulationsFiles(List<PopNode> populationNodes, List<String> parameterIDs, File outputFolder, String outputFileName) {
         List<String> exportedFiles = new ArrayList<>();
         for (int i = 0; i < populationNodes.size(); i++) {
             PopNode popNode = populationNodes.get(i);
-            File outputFile = ExportUtils.exportParameters(popNode, parameterIDs, outputFolder);
+            File outputFile = ExportUtils.exportParameters(popNode, parameterIDs, outputFolder, outputFileName);
             if (outputFile != null && outputFile.exists() && outputFile.isFile()) {
                 outputFile.setReadable(true);
                 String popName = popNode.getName();

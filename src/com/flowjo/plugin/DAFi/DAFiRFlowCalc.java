@@ -140,6 +140,7 @@ public class DAFiRFlowCalc extends RFlowCalculator {
             while((scriptLine = rTemplateReader.readLine()) != null)
             {
                 // Added to get runID in parameter - MVP
+                //scriptLine = scriptLine.replace("FJ_PARENT_NAME", csvParentFileName);
                 scriptLine = scriptLine.replace("FJ_PARM_SAMPLENAME", sampleName);
                 scriptLine = scriptLine.replace("FJ_PARM_WSPDIR", wsDir);
                 scriptLine = scriptLine.replace("FJ_PARM_WSPNAME", wsName);

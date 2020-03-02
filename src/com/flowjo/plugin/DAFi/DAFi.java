@@ -26,6 +26,8 @@
 package com.flowjo.plugin.DAFi;
 
 import com.flowjo.plugin.DAFi.utilities.ExportUtils;
+import com.flowjo.plugin.DAFi.utilities.FJSML;
+import com.flowjo.plugin.DAFi.utils.FilenameUtils;
 import com.treestar.flowjo.application.workspace.Workspace;
 import com.treestar.flowjo.application.workspace.manager.FJApplication;
 import com.treestar.flowjo.application.workspace.manager.WSDocument;
@@ -52,6 +54,7 @@ import com.treestar.lib.gui.swing.FJComboBox;
 import com.treestar.lib.parsing.interpreter.CSVReader;
 import com.treestar.lib.parsing.interpreter.ParseUtil;
 import com.treestar.lib.xml.SElement;
+import org.apache.tools.ant.taskdefs.MacroInstance;
 
 import javax.swing.*;
 import java.awt.*;
@@ -245,6 +248,9 @@ public class DAFi extends R_Algorithm {
             //Create variable with names of parameters
             List<String> parameterNames = preprocessCompParameterNames();
 
+            //get sample name
+            String sampleName = StringUtil.rtrim(sampleFile.getName(), ".fcs");
+
             // Get the parent popnode
             PopNode popNode = FJPluginHelper.getParentPopNode(fcmlQueryElement);
             PopNode parentPopNode = popNode.getParentPop();
@@ -252,18 +258,15 @@ public class DAFi extends R_Algorithm {
                 parentPopNode = sample.getSampleNode();
             }
 
-            //File csvParentFile = ExportUtils.exportParameters(parentPopNode, fParameterNames, outputFolder);
-            //try {
-            //    Desktop.getDesktop().open(csvParentFile);
-            //} catch (IOException e) {
-            //    e.printStackTrace();
-            //}
+            // tried to add ability to run dafi on parent of selected pop: FAILED (see line 283)
+            //List params = new ArrayList();
+            //params.add("EventNumberDP");
+
+            //File csvParentFile = ExportUtils.exportParameters(parentPopNode, params, outputFolder, sampleName);
+            //String csvParentFileName = sampleName + ".PARENT" + FJSML.FORMATS.FILE.CSV.EXTENSION;
 
             //Get name of .FCS file
             PopNode sampleNode = sample.getSampleNode();
-
-            //get sample name
-            String sampleName = StringUtil.rtrim(sampleFile.getName(), ".fcs");
 
             DAFiRFlowCalc calculator = new DAFiRFlowCalc();
             // Added the population node
@@ -276,12 +279,27 @@ public class DAFi extends R_Algorithm {
             //If this fails, print only the last 10 lines of the Rscript to make the error visible to the user.
             try {
             // Added to avoid issue with sub pops in FlowJo.
-                if (isSeqGeq()) {
-                    results.setCSVFile(DAFiResult);
-                } else {
-                    // Workaround for merging a CSV file back in subpops.
-                    mergeCSVFile(fcmlQueryElement, results, DAFiResult, sampleFile, outputFolder);
-                }
+
+                // the following code was used to try to add the capability of running flowjo on selected population if it has no child.
+                // i.e. run DAFi on parent of selected pop and refine selected pop.
+                // IT FAILED!
+                // The problem seems to be with "ExternalAlgorithmResults results", which apparently sends the results of the plugin back
+                // to the selected population but we need it to be sent back to its parent :'(
+
+                // detect whether DAFi was run on selected pop or on parent
+                //int nLinesFJOut = countLinesNew(sampleFile.getAbsolutePath());
+                //int nLinesPluginOut = countLinesNew(DAFiResult.getAbsolutePath());
+                //System.out.println(nLinesFJOut);
+                //System.out.println(nLinesPluginOut);
+
+                // try to make mergeCSVFile work on parent rather than selected pop: FAIL
+                //if (nLinesFJOut == nLinesPluginOut) {
+                mergeCSVFile(fcmlQueryElement, results, DAFiResult, sampleFile, outputFolder);
+                //} else {
+                //    mergeCSVFile(fcmlQueryElement.getParentSElement(), results, DAFiResult, csvParentFile, outputFolder);
+                //}
+
+                //}
                 System.out.println(DAFiResult.getAbsolutePath());
                 List<Float> values = extractUniqueValuesForParameter(DAFiResult);
 
@@ -1046,6 +1064,45 @@ public class DAFi extends R_Algorithm {
                     fileHandler.close();
                 } catch (IOException e) {
                 }
+        }
+    }
+
+    public static int countLinesNew(String filename) throws IOException { //https://stackoverflow.com/a/453067
+        InputStream is = new BufferedInputStream(new FileInputStream(filename));
+        try {
+            byte[] c = new byte[1024];
+
+            int readChars = is.read(c);
+            if (readChars == -1) {
+                // bail out if nothing to read
+                return 0;
+            }
+
+            // make it easy for the optimizer to tune this loop
+            int count = 0;
+            while (readChars == 1024) {
+                for (int i=0; i<1024;) {
+                    if (c[i++] == '\n') {
+                        ++count;
+                    }
+                }
+                readChars = is.read(c);
+            }
+
+            // count remaining characters
+            while (readChars != -1) {
+                System.out.println(readChars);
+                for (int i=0; i<readChars; ++i) {
+                    if (c[i] == '\n') {
+                        ++count;
+                    }
+                }
+                readChars = is.read(c);
+            }
+
+            return count == 0 ? 1 : count;
+        } finally {
+            is.close();
         }
     }
 

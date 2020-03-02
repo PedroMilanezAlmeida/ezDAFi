@@ -66,6 +66,11 @@ public class FileUtilities {
         return (temp);
     }
 
+    // trying to make name non-random
+    public static File getNonRandomCSVParent(File outputFolder, String prefix) {
+        return new File(outputFolder, prefix + ".PARENT" + FJSML.FORMATS.FILE.CSV.EXTENSION);
+    }
+
     public static File getRandomCSV(File outputFolder) {
         return new File(outputFolder, com.flowjo.plugin.DAFi.utilities.StringUtils.getSaltString() + FJSML.FORMATS.FILE.CSV.EXTENSION);
     }
