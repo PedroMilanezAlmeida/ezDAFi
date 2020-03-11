@@ -722,10 +722,10 @@ public class DAFi extends R_Algorithm {
             SElement option = iterator.next();
 
             int savedDimx = option.getInt(xDimOptionName, -1);
-            if (savedDimx >= 3 && savedDimx <= 32) fndimx = savedDimx;
+            if (savedDimx >= 3 && savedDimx <= 100) fndimx = savedDimx;
 
             int savedDimy = option.getInt(yDimOptionName, -1);
-            if (savedDimy >= 3 && savedDimy <= 32) fndimy = savedDimy;
+            if (savedDimy >= 3 && savedDimy <= 100) fndimy = savedDimy;
 
             int nApplyOnPrevComboItemsCount = fApplyOnPrevCombo.getItemCount();
             String savedApplyOnPrevOption = option.getString(applyOnPrevOptionName);
@@ -791,13 +791,13 @@ public class DAFi extends R_Algorithm {
         componentList.add(new HBox(new Component[]{new FJLabel(mustBeMinPopSizeLabel)}));
 
         FJLabel fjLabelDimX = new FJLabel(dimXLabel);
-        fDimXField = new RangedIntegerTextField(3, 32);
+        fDimXField = new RangedIntegerTextField(3, 100);
         fDimXField.setInt(fndimx);
         fDimXField.setToolTipText("<html><p width=\"" + fixedToolTipWidth + "\">" + dimXTooltip + "</p></html>");
         GuiFactory.setSizes(fDimXField, new Dimension(fixedFieldWidth, fixedFieldHeigth));
         GuiFactory.setSizes(fjLabelDimX, new Dimension(fixedLabelWidth, fixedLabelHeigth));
 
-        fDimYField = new RangedIntegerTextField(3, 32);
+        fDimYField = new RangedIntegerTextField(3, 100);
         fDimYField.setInt(fndimy);
         fDimYField.setToolTipText("<html><p width=\"" + fixedToolTipWidth + "\">" + dimYTooltip + "</p></html>");
         GuiFactory.setSizes(fDimYField, new Dimension(fixedFieldWidth, fixedFieldHeigth));
