@@ -183,9 +183,6 @@ wspName <- paste0(wspDir,
 #       ".wsp")
 wspName
 
-# the following is meant to add support for acs files on windows
-# TODO: test on Mac!
-
 ws <- CytoML::open_flowjo_xml(wspName)
 ##find raw .fcs files
 #find path of all fcs files in workspace
@@ -232,6 +229,10 @@ sampleFCS
 sampleFCS_path <- sampleFCS_paths[basename(sampleFCS_paths) == sampleFCS]
 sampleFCS_path
 
+sampleID <- which(sampleFCS_paths == sampleFCS_path)
+
+# the following is meant to add support for acs files on windows
+# TODO: test on Mac!
 nchar_wspDir <- nchar(wspDir)
 wspDir_last4 <- substr(wspDir, 
                        nchar_wspDir - 4 + 1,
@@ -255,11 +256,24 @@ pathFCS <- tryCatch(
     data.frame(sampleID = CytoML::fj_ws_get_samples(ws)$sampleID[CytoML::fj_ws_get_samples(ws)$name == FIL],
                file = sampleFCS_path)
   })
+pathFCS
+#in case two samples have the same sample name, altough they came from different fcs files,
+#the plugin will fail. In this case, return just the first row of pathFCS:
+if(duplicated(pathFCS$file) %>%
+   any){
+  pathFCS <- data.frame(sampleID = sampleID,
+                        file = pathFCS[1,"file"])
+  pathFCS$sampleID <- as.numeric(pathFCS$sampleID)
+}
 
 gs <- CytoML::flowjo_to_gatingset(ws,
                                   name = 1,
                                   path = pathFCS,
                                   isNcdf = FALSE)
+
+# Close the flowjo workspace connection
+CytoML::flowjo_ws_close(ws)
+
 #}
 
 orig.parNames <- flowWorkspace::gh_pop_get_data(gs[[1]]) %>%
@@ -1047,9 +1061,6 @@ isIdWrittenToXMLAlready <- function(id, flowEnv) { #from: https://rdrr.io/bioc/f
 }
 
 modified.write.gatingML(flowEnv, outputFile)
-
-# Close the flowjo_workspace
-CytoML::flowjo_ws_close(ws)
 
 # R seems to be saving the .RData when exiting, so let's clean up to at least make that tiny (i.e., empty environment)
 rm(list=ls())

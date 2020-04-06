@@ -112,7 +112,7 @@ public class DAFi extends R_Algorithm {
     private static final String minPopSizeTooltip = "Smallest number of cells to apply DAFi on.";
 
     private static final String orPerformDAFiLabel = "or perform new DAFi";
-    private static final String scaleLabel = "Scale parameters to mean = 0 and sd = 1 (recommended)";
+    private static final String scaleLabel = "Scale parameters to mean = 0 and sd = 1 (not recommended)";
     private static final String scaleTooltip = "Should the data be scaled prior to clustering";
     private static final String showRScriptLabel = "Show RScript (.txt format) upon completion.";
     private static final String showRScriptTooltip = "Show the resulting RScript file (in .txt format), created doing the DAFi process.";
@@ -141,7 +141,7 @@ public class DAFi extends R_Algorithm {
     public static final int defaultYDim = 10;
     public static final int defaultMinPopSize = 500;
     public static final String defaultApplyOnPrev = "None";
-    public static final boolean defaultScale = true;
+    public static final boolean defaultScale = false;
     public static final boolean defaultShowRScript = true;
     public static final boolean defaultKMeansSom = true;
     public static final boolean defaultApplyOnChildren = false;
