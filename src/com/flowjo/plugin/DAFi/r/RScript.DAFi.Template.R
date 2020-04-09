@@ -94,6 +94,12 @@ tryCatch(suppressMessages(library("foreach")),
                             repos = 'http://cran.us.r-project.org')
            suppressMessages(library("foreach"))
          })
+tryCatch(suppressMessages(library("Rcpp")),
+         error = function(e){
+           install.packages(pkgs =  "Rcpp",
+                            repos = 'http://cran.us.r-project.org')
+           suppressMessages(library("Rcpp"))
+         })
 tryCatch(suppressMessages(library("magrittr")),
          error = function(e){
            install.packages(pkgs =  "magrittr",
