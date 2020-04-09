@@ -33,7 +33,6 @@ On windows, besides installing [R base](https://cran.r-project.org/bin/windows/b
 
 On both mac and windows, please setup FlowJo to recognize R. There are easy-to-follow instructions [here](http://docs.flowjo.com/d2/plugins/installing-plugins/) under "*Installing the R statistical computing environment*".
 
-
 Now, download the file [**DAFi.jar**](https://github.com/PedroMilanezAlmeida/DAFi/raw/master/DAFi.jar) and copy it to FlowJo's plugin folder as described [here](http://docs.flowjo.com/d2/plugins/installing-plugins/).
 
 Don't forget to restart FlowJo before you can use the new plugin. The first time the plugin runs, it takes several minutes to install additional packages.
