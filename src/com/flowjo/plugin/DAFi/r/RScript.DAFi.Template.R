@@ -94,11 +94,11 @@ tryCatch(suppressMessages(library("foreach")),
                             repos = 'http://cran.us.r-project.org')
            suppressMessages(library("foreach"))
          })
-tryCatch(suppressMessages(library("dplyr")),
+tryCatch(suppressMessages(library("magrittr")),
          error = function(e){
-           install.packages(pkgs =  "dplyr",
+           install.packages(pkgs =  "magrittr",
                             repos = 'http://cran.us.r-project.org')
-           suppressMessages(library("dplyr"))
+           suppressMessages(library("magrittr"))
          })
 tryCatch(suppressMessages(library("XML")),
          error = function(e){
