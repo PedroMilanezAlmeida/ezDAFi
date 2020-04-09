@@ -53,6 +53,14 @@ if(Rver.maj < 3){
               ". Please, update R and try again."))
 }
 
+tryCatch(suppressMessages(library("BiocManager")),
+         error = function(e){
+           if (!requireNamespace("BiocManager",
+                                 quietly = TRUE))
+             install.packages("BiocManager",
+                              repos = 'http://cran.us.r-project.org')
+           suppressMessages(library("BiocManager"))
+         })
 
 Bioc.ver.maj <- strsplit(x = as.character(BiocManager::version()), 
                          split = ".",
@@ -248,23 +256,23 @@ if(wspDir_last4 == ".acs"){
 }
 
 #parse wsp and fcs files into a GatingSet object
-pathFCS <- tryCatch(
-  data.frame(sampleID = CytoML::fj_ws_get_samples(ws)$sampleID[CytoML::fj_ws_get_samples(ws)$name == sampleFCS],
-             file = sampleFCS_path),
-  error = function(e) {
-    FIL <- flowCore::read.FCS(sampleFCS_path)@description$`$FIL`
-    data.frame(sampleID = CytoML::fj_ws_get_samples(ws)$sampleID[CytoML::fj_ws_get_samples(ws)$name == FIL],
-               file = sampleFCS_path)
-  })
+pathFCS <- #tryCatch(
+  #data.frame(sampleID = CytoML::fj_ws_get_samples(ws)$sampleID[CytoML::fj_ws_get_samples(ws)$name == sampleFCS],
+  #          file = sampleFCS_path),
+  #error = function(e) {
+  #FIL <- flowCore::read.FCS(sampleFCS_path)@description$`$FIL`
+  data.frame(sampleID = sampleID,#CytoML::fj_ws_get_samples(ws)$sampleID[CytoML::fj_ws_get_samples(ws)$name == FIL],
+             file = sampleFCS_path)
+#})
 pathFCS
 #in case two samples have the same sample name, altough they came from different fcs files,
 #the plugin will fail. In this case, return just the first row of pathFCS:
-if(duplicated(pathFCS$file) %>%
-   any){
-  pathFCS <- data.frame(sampleID = sampleID,
-                        file = pathFCS[1,"file"])
-  pathFCS$sampleID <- as.numeric(pathFCS$sampleID)
-}
+#if(duplicated(pathFCS$file) %>%
+#  any){
+# pathFCS <- data.frame(sampleID = sampleID,
+#                       file = pathFCS[1,"file"])
+# pathFCS$sampleID <- as.numeric(pathFCS$sampleID)
+#}
 
 gs <- CytoML::flowjo_to_gatingset(ws,
                                   name = 1,
@@ -541,7 +549,7 @@ for(pop_to_SOM in seq_along(pops_to_SOM)){
       fS_SOM <- lapply(ls_fSOM,
                        function(sample)
                          flowCore::flowFrame(sample)) %>%
-        flowSet()
+        flowCore::flowSet()
       flowCore::parameters(fS_SOM[[1]]) <- flowCore::parameters(flowWorkspace::gh_pop_get_data(gs[[fSample]],
                                                                                                y = "root")[,parIndices])
       #create GatingSet with FlowSOM centroids
