@@ -90,7 +90,7 @@ if(Bioc.ver.maj < 3){
 ## This will load required packages and, if not found, install them without updating old Bioc pckgs
 tryCatch(suppressMessages(library("foreach")),
          error = function(e){
-           install.packages(pkgs =  "foreach::foreach",
+           install.packages(pkgs =  "foreach",
                             repos = 'http://cran.us.r-project.org')
            suppressMessages(library("foreach"))
          })
