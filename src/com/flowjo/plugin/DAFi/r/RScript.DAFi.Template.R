@@ -73,7 +73,6 @@ Bioc.ver.min <- strsplit(x = as.character(BiocManager::version()),
                          perl = FALSE, 
                          useBytes = FALSE)[[1]][2]
 
-
 if(Bioc.ver.maj < 3){
   stop(paste0("The plugin cannot run with Bioconductor releases older than 3.10. ",
               "Your version is: ",
@@ -264,6 +263,7 @@ pathFCS <- #tryCatch(
   data.frame(sampleID = sampleID,#CytoML::fj_ws_get_samples(ws)$sampleID[CytoML::fj_ws_get_samples(ws)$name == FIL],
              file = sampleFCS_path)
 #})
+pathFCS$sampleID <- as.numeric(pathFCS$sampleID)
 pathFCS
 #in case two samples have the same sample name, altough they came from different fcs files,
 #the plugin will fail. In this case, return just the first row of pathFCS:
