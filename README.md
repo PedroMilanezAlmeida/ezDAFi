@@ -3,7 +3,7 @@ Overview
 
 Our new FlowJo plugin for DAFi bridges automated clustering techniques
 and human-driven gating strategies. DAFi stands for **D**irected
-**A**utomated **F**iltering and **I**dentification of cell populations
+**A**utomated **F**iltering and **i**dentification of cell populations
 in polychromatic flow cytometry data. The major feature of DAFi is its
 ability to control unsupervised clustering tools for the identification
 of previously known populations of interest in high-dimensional flow
@@ -21,6 +21,16 @@ newer can run the plugin.
 On a mac, please install
 [XCode](https://apps.apple.com/us/app/xcode/id497799835?mt=12) and
 [gfortran](https://github.com/fxcoudert/gfortran-for-macOS/releases).
+Open the Terminal and run the following command:
+
+    xcode-select --install
+
+After running the command above, open R and install the Rcpp and glue
+packages using:
+
+    install.packages(pkgs =  c("Rcpp", "glue"), repos = 'http://cran.us.r-project.org')
+    library("Rcpp")
+    library("glue")
 
 On windows, besides installing [R
 base](https://cran.r-project.org/bin/windows/base/), you may also have
@@ -29,14 +39,16 @@ to install [Rtools](https://cran.r-project.org/bin/windows/Rtools/).
 On both mac and windows, please setup FlowJo to recognize R. There are
 easy-to-follow instructions
 [here](http://docs.flowjo.com/d2/plugins/installing-plugins/) under
-“*"Installing the R statistical computing environment"*”.
+“*Installing the R statistical computing environment*”.
 
 Now, download the file
 [**DAFi.jar**](https://github.com/PedroMilanezAlmeida/DAFi/raw/master/DAFi.jar)
 and copy it to FlowJo’s plugin folder as described
 [here](http://docs.flowjo.com/d2/plugins/installing-plugins/).
 
-Don’t forget to restart FlowJo before you can use the new plugin.
+Don’t forget to restart FlowJo before you can use the new plugin. The
+first time the plugin runs, it takes several minutes to install
+additional packages.
 
 <!---  (Give it try! Just download the __DAFi.jar__ file above (soon you will also find it on [FlowJo's Plugin page](https://www.flowjo.com/exchange/#/)) and copy the file to your FlowJo plugins folder! Don't forget to restart FlowJo before using a new plugin.) --->
 

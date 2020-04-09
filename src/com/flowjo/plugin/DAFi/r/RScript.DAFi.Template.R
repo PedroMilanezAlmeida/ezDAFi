@@ -33,13 +33,6 @@ Rver.min.2 <- strsplit(x = version$minor,
                        perl = FALSE, 
                        useBytes = FALSE)[[1]][2]
 
-if(Sys.info()["sysname"] != "Windows"){
-  tryCatch(system("xcode-select --install"),
-           error = function(e){
-             e
-           })
-}
-
 if(Rver.maj < 3){
   stop(paste0("The plugin cannot run with R versions older than 3.6.2. ",
               "Your version is: ",
