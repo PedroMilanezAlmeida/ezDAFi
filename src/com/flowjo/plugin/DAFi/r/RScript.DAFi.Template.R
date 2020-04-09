@@ -33,6 +33,13 @@ Rver.min.2 <- strsplit(x = version$minor,
                        perl = FALSE, 
                        useBytes = FALSE)[[1]][2]
 
+if(Sys.info()["sysname"] != "Windows"){
+  tryCatch(system("xcode-select --install"),
+           error = function(e){
+             e
+           })
+}
+
 if(Rver.maj < 3){
   stop(paste0("The plugin cannot run with R versions older than 3.6.2. ",
               "Your version is: ",
@@ -99,6 +106,12 @@ tryCatch(suppressMessages(library("Rcpp")),
            install.packages(pkgs =  "Rcpp",
                             repos = 'http://cran.us.r-project.org')
            suppressMessages(library("Rcpp"))
+         })
+tryCatch(suppressMessages(library("glue")),
+         error = function(e){
+           install.packages(pkgs =  "glue",
+                            repos = 'http://cran.us.r-project.org')
+           suppressMessages(library("glue"))
          })
 tryCatch(suppressMessages(library("magrittr")),
          error = function(e){
