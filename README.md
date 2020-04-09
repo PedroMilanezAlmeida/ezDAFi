@@ -29,6 +29,7 @@ After running the command above, open R and install the Rcpp and glue
 packages using:
 
     install.packages(pkgs =  c("Rcpp", "glue"), repos = 'http://cran.us.r-project.org')
+
     library("Rcpp")
     library("glue")
 
