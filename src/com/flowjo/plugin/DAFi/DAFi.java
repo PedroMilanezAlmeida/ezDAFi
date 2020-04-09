@@ -276,7 +276,7 @@ public class DAFi extends R_Algorithm {
 
             //This is a workaround for the bug that FlowJo is not showing errors in R:
             //Try to read the results (import derived parameters and gatingML files), and, if requested, print the Rscript.
-            //If this fails, print only the last 10 lines of the Rscript to make the error visible to the user.
+            //If this fails, print only the last 30 lines of the Rscript to make the error visible to the user.
             try {
             // Added to avoid issue with sub pops in FlowJo.
 
@@ -336,7 +336,7 @@ public class DAFi extends R_Algorithm {
             } catch (Exception error) {
                 try{
                     BufferedWriter writer = new BufferedWriter(new FileWriter(fOutFileLastLines));
-                    writer.write(tail2(fOutFile, 10));
+                    writer.write(tail2(fOutFile, 30));
                     writer.close();
                 } catch (IOException e) {
                     e.printStackTrace();
