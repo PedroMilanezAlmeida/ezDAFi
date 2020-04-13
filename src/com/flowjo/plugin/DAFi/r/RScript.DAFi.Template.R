@@ -248,7 +248,7 @@ sampleFCS
 sampleFCS_path <- sampleFCS_paths[basename(sampleFCS_paths) == sampleFCS]
 sampleFCS_path
 
-sampleID <- which(sampleFCS_paths == sampleFCS_path)
+sampleID_doc <- which(sampleFCS_paths == sampleFCS_path)
 
 # the following is meant to add support for acs files on windows
 # TODO: test on Mac!
@@ -272,7 +272,7 @@ pathFCS <- #tryCatch(
   #          file = sampleFCS_path),
   #error = function(e) {
   #FIL <- flowCore::read.FCS(sampleFCS_path)@description$`$FIL`
-  data.frame(sampleID = sampleID,#CytoML::fj_ws_get_samples(ws)$sampleID[CytoML::fj_ws_get_samples(ws)$name == FIL],
+  data.frame(sampleID = CytoML::fj_ws_get_samples(ws)$sampleID[sampleID_doc],#CytoML::fj_ws_get_samples(ws)$sampleID[CytoML::fj_ws_get_samples(ws)$name == FIL],
              file = sampleFCS_path)
 #})
 pathFCS$sampleID <- as.numeric(pathFCS$sampleID)
