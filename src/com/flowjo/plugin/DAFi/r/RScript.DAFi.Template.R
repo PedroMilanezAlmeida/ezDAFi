@@ -249,7 +249,7 @@ sampleFCS_path <- sampleFCS_paths[basename(sampleFCS_paths) == sampleFCS]
 sampleFCS_path
 
 sampleID_doc <- which(sampleFCS_paths == sampleFCS_path)
-
+sampleID_doc
 # the following is meant to add support for acs files on windows
 # TODO: test on Mac!
 nchar_wspDir <- nchar(wspDir)
