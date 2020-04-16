@@ -176,12 +176,14 @@ tryCatch(suppressMessages(library("flowCore")),
 
 sessionInfo()
 
+fj_data_file_path <- "FJ_DATA_FILE_PATH"
+
 minPopSize <- FJ_PAR_MINPOPSIZE
 #sampleFCS <- "FJ_SAMPLE_NODE_NAME"
 
 #find parent
 #parentFileName <- "FJ_PARENT_NAME"
-#parentFilePath <- paste0(dirname("FJ_DATA_FILE_PATH"),
+#parentFilePath <- paste0(dirname(fj_data_file_path),
 #                        "/",
 #                        parentFileName)
 #parentFilePath
@@ -196,7 +198,7 @@ wspName <- "FJ_PARM_WSPNAME"
 wspName <- paste0(wspDir, 
                   "/",
                   wspName)
-#dirname(path = "FJ_DATA_FILE_PATH") %>%
+#dirname(path = fj_data_file_path) %>%
 #dirname(path = .) %>%
 #paste0(.,
 #       ".wsp")
@@ -223,7 +225,7 @@ sampleFCS_names
 nameSearch <- sapply(sampleFCS_names,
                      function(name)
                        grep(pattern = name,
-                            x = basename("FJ_DATA_FILE_PATH"),
+                            x = basename(fj_data_file_path),
                             fixed = TRUE)) %>%
   unlist(.)
 nameSearch
@@ -235,7 +237,7 @@ nameSearchRes
 sampleFCS <- paste0(nameSearchRes,
                     ".fcs")
 sampleFCS
-#gsFileName <- paste0(dirname("FJ_DATA_FILE_PATH"),
+#gsFileName <- paste0(dirname(fj_data_file_path),
 #                     "/",
 #                    basename(wspName),
 #                    ".",
@@ -349,6 +351,23 @@ changeFJSpecialChar <- function(char_vec, cor_char_vec) {
 
 parNames <- FJCompToComp(parNames)
 parNames <- changeFJSpecialChar(parNames, orig.parNames)
+
+if(grepl(pattern = "time", 
+      x = parNames, 
+      ignore.case = TRUE, 
+      fixed = FALSE) %>%
+  any(.)){
+  stop("Please remove time as parameter for  clustering.")
+}
+
+if(grepl(pattern = "FSC|SSC", 
+      x = parNames, 
+      ignore.case = FALSE, 
+      fixed = FALSE) %>%
+  any(.) &
+  !FJ_PAR_SCALE){
+  stop("\n  It seems that FSC and/or SSC were included as clustering parameter, but with no data scaling.\n  FSC/SSC are handled differently than fluorochrome data in FlowJo.\n Please select scaling to make sure all data used in clustering is on the same scale.")
+}
 
 parIndices <- match(parNames, orig.parNames)
 
@@ -510,7 +529,7 @@ for(pop_to_SOM in seq_along(pops_to_SOM)){
       } else {
         fSOM <- FlowSOM::ReadInput(flowWorkspace::gh_pop_get_data(gs[[fSample]],
                                                                   pops_to_SOM[pop_to_SOM] %>%
-                                                                    names(.))[,parIndices],
+                                                                    names(.)),
                                    compensate = FALSE,
                                    transform = FALSE,
                                    scale = FJ_PAR_SCALE,
@@ -698,7 +717,7 @@ names(all_cell_DAFi_label) <- DAFi_nodes
 # EventNumberDP <- read.csv(file = parentFilePath,
 #                           check.names=FALSE)$EventNumberDP
 #} else {
-EventNumberDP <- read.csv(file = "FJ_DATA_FILE_PATH",
+EventNumberDP <- read.csv(file = fj_data_file_path,
                           check.names=FALSE)$EventNumberDP
 #}
 FJ_event_DAFi_label <- foreach::foreach(DAFi_node = DAFi_nodes) %do% {
@@ -797,7 +816,7 @@ for(pop in colnames(all.labels)) {
   flowEnv[[as.character(pop)]] <- rg
 }
 
-outputFile <- paste0("FJ_DATA_FILE_PATH",
+outputFile <- paste0(fj_data_file_path,
                      ".gating-ml2.xml")
 
 addObjectToGatingML <- function(gatingMLNode, x, flowEnv, addParent = NULL, forceGateId = NULL) {#from https://rdrr.io/bioc/flowUtils/src/R/writeGatingML.R 
