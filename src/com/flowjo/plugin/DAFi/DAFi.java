@@ -230,11 +230,11 @@ public class DAFi extends R_Algorithm {
     public ExternalAlgorithmResults invokeAlgorithm(SElement fcmlQueryElement, File sampleFile, File outputFolder) {
         ExternalAlgorithmResults results = new ExternalAlgorithmResults();
 
-        String thisSampleURI = fOptions.get(sampleURISlot);
-        String thisSamplePopNode = fOptions.get(samplePopNodeSlot);
+        String savedSampleURI = fOptions.get(sampleURISlot);
+        String savedSamplePopNode = fOptions.get(samplePopNodeSlot);
 
-        String savedSampleURI = FJPluginHelper.getSampleURI(fcmlQueryElement);
-        String savedSamplePopNode = FJPluginHelper.getParentPopNode(fcmlQueryElement).getName();
+        String thisSampleURI = FJPluginHelper.getSampleURI(fcmlQueryElement);
+        String thisSamplePopNode = FJPluginHelper.getParentPopNode(fcmlQueryElement).getName();
 
         boolean checkPrevRun = savedSampleURI.equals(thisSampleURI) && savedSamplePopNode.equals(thisSamplePopNode);
 
@@ -262,21 +262,8 @@ public class DAFi extends R_Algorithm {
             fUseExistingFiles = false;
 
             fOptions.put(sampleFileSlot, sampleFile.getAbsolutePath());
-
-            //String sampleURI = FJPluginHelper.getSampleURI(fcmlQueryElement);
-            //if (sampleURI != null) {
-            //    try{
-            //        fOptions.put(sampleURISlot, sampleURI);
-            //    } catch (Exception e) {
-            //    }
-            // }
-            //String samplePopNode = FJPluginHelper.getParentPopNode(fcmlQueryElement).getName();
-            //if (samplePopNode != null) {
-            //    try{
-            //        fOptions.put(samplePopNodeSlot, samplePopNode);
-            //    } catch (Exception e) {
-            //    }
-            //}
+            fOptions.put(sampleURISlot, thisSampleURI);
+            fOptions.put(samplePopNodeSlot, thisSamplePopNode);
 
             //save workspace before running plugin
             Sample sample = FJPluginHelper.getSample(fcmlQueryElement);
