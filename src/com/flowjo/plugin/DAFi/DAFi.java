@@ -230,13 +230,15 @@ public class DAFi extends R_Algorithm {
     public ExternalAlgorithmResults invokeAlgorithm(SElement fcmlQueryElement, File sampleFile, File outputFolder) {
         ExternalAlgorithmResults results = new ExternalAlgorithmResults();
 
-        //save workspace before running plugin
-        Sample sample = FJPluginHelper.getSample(fcmlQueryElement);
-        Workspace workspace = sample.getWorkspace();
-        workspace.getDoc().save();
+        String thisSampleURI = fOptions.get(sampleURISlot);
+        String thisSamplePopNode = fOptions.get(samplePopNodeSlot);
 
-        String savedAnalysisPath = fOptions.get(sampleFileSlot);
-        if(savedAnalysisPath.equals(sampleFile.getAbsolutePath())){
+        String savedSampleURI = FJPluginHelper.getSampleURI(fcmlQueryElement);
+        String savedSamplePopNode = FJPluginHelper.getParentPopNode(fcmlQueryElement).getName();
+
+        boolean checkPrevRun = savedSampleURI.equals(thisSampleURI) && savedSamplePopNode.equals(thisSamplePopNode);
+
+        if(!checkPrevRun){
             runAgain = true;
         }
 
@@ -260,6 +262,26 @@ public class DAFi extends R_Algorithm {
             fUseExistingFiles = false;
 
             fOptions.put(sampleFileSlot, sampleFile.getAbsolutePath());
+
+            //String sampleURI = FJPluginHelper.getSampleURI(fcmlQueryElement);
+            //if (sampleURI != null) {
+            //    try{
+            //        fOptions.put(sampleURISlot, sampleURI);
+            //    } catch (Exception e) {
+            //    }
+            // }
+            //String samplePopNode = FJPluginHelper.getParentPopNode(fcmlQueryElement).getName();
+            //if (samplePopNode != null) {
+            //    try{
+            //        fOptions.put(samplePopNodeSlot, samplePopNode);
+            //    } catch (Exception e) {
+            //    }
+            //}
+
+            //save workspace before running plugin
+            Sample sample = FJPluginHelper.getSample(fcmlQueryElement);
+            Workspace workspace = sample.getWorkspace();
+            workspace.getDoc().save();
 
             //get workspace directory and path to enable working with acs files
             WSDocument wsd = workspace.getDoc();
@@ -653,9 +675,7 @@ public class DAFi extends R_Algorithm {
 
     @Override
     protected List<Component> getPromptComponents(SElement fcmlElem, SElement algorithmElement, List<String> parameterNames) {
-        // We need the plugin output folder and we want to add that to the algorithmElement so that later on, we can scan that folder for any existing .RData files.
-        // Unfortunately, FJPluginHelper.getPluginOutputFolder(fcmlElem, this) seems to be returning null sometimes,
-        // i.e., this may be called before the plugin output folder is set. Therefore, this is a work around:
+        // we need to save the sample the plugin was applied on. this is to trigger re-run only if rerunning on diff sample and pop
         String sampleURI = FJPluginHelper.getSampleURI(fcmlElem);
         if (sampleURI != null) {
             try{
@@ -670,6 +690,10 @@ public class DAFi extends R_Algorithm {
             } catch (Exception e) {
             }
         }
+
+        // We need the plugin output folder and we want to add that to the algorithmElement so that later on, we can scan that folder for any existing .RData files.
+        // Unfortunately, FJPluginHelper.getPluginOutputFolder(fcmlElem, this) seems to be returning null sometimes,
+        // i.e., this may be called before the plugin output folder is set. Therefore, this is a work around:
         Sample sample = FJPluginHelper.getSample(fcmlElem);
         if (sample != null) {
             Workspace ws = sample.getWorkspace();
@@ -693,7 +717,6 @@ public class DAFi extends R_Algorithm {
         runAgain = true;
         return ret;
     }
-
 
     @SuppressWarnings("unchecked")
     @Override
