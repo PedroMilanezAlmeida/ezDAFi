@@ -972,11 +972,6 @@ labels <- matrix(unlist(labels.ls,
 colnames(labels) <- foreach::foreach(DAFi_node = DAFi_nodes,
                                      .final = unlist) %do% {
                                        DAFi_node %>%
-                                         strsplit(x = .,
-                                                  split = paste0(popOfInt),
-                                                  fixed = TRUE) %>%
-                                         .[[1]] %>%
-                                         tail(.,1) %>%
                                          gsub(pattern = "^/",
                                               replacement = "",
                                               x = .) %>%
@@ -1014,11 +1009,6 @@ all.labels <- matrix(unlist(all.labels.ls,
 colnames(all.labels) <- foreach::foreach(DAFi_node = DAFi_nodes,
                                          .final = unlist) %do% {
                                            DAFi_node %>%
-                                             strsplit(x = .,
-                                                      split = paste0(popOfInt),
-                                                      fixed = TRUE) %>%
-                                             .[[1]] %>%
-                                             tail(.,1) %>%
                                              gsub(pattern = "^/",
                                                   replacement = "",
                                                   x = .) %>%
