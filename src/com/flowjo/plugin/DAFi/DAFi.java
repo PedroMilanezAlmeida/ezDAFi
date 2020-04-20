@@ -33,6 +33,7 @@ import com.treestar.flowjo.application.workspace.manager.FJApplication;
 import com.treestar.flowjo.application.workspace.manager.WSDocument;
 import com.treestar.flowjo.core.Sample;
 import com.treestar.flowjo.core.nodes.PopNode;
+import com.treestar.flowjo.core.nodes.SampleNode;
 import com.treestar.flowjo.engine.FEML;
 import com.treestar.flowjo.engine.utility.R_Algorithm;
 import com.treestar.lib.FJPluginHelper;
@@ -68,6 +69,7 @@ import java.util.List;
 import static com.flowjo.plugin.DAFi.RScriptFlowCalculator.fOutFile;
 import static com.flowjo.plugin.DAFi.RScriptFlowCalculator.fOutFileLastLines;
 import static java.awt.event.ItemEvent.DESELECTED;
+import static java.lang.System.currentTimeMillis;
 
 public class DAFi extends R_Algorithm {
 
@@ -88,6 +90,7 @@ public class DAFi extends R_Algorithm {
     private RangedIntegerTextField fMinPopSizeField = null;
     private FJComboBox fApplyOnPrevCombo = null;
     private FJCheckBox fScaleOptionCheckbox = null;
+    private FJCheckBox fBatchOptionCheckbox = null;
     private FJCheckBox fShowRScriptCheckbox = null;
     private FJCheckBox fKMeansSomOptionCheckbox = null;
     private FJCheckBox fApplyOnChildrenCheckbox = null;
@@ -113,7 +116,9 @@ public class DAFi extends R_Algorithm {
 
     private static final String orPerformDAFiLabel = "or perform new DAFi";
     private static final String scaleLabel = "Scale parameters to mean = 0 and sd = 1 (use with care)";
-    private static final String scaleTooltip = "Should the data be scaled prior to clustering";
+    private static final String scaleTooltip = "Should the data be scaled prior to clustering?";
+    private static final String batchLabel = "Advanced (results not re-imported to FlowJo; batch mode)";
+    private static final String batchTooltip = "DAFi all samples, plot back-gating results and continue analysis in R. Gates will not be re-imported to FlowJo.";
     private static final String showRScriptLabel = "Show RScript (.txt format) upon completion.";
     private static final String showRScriptTooltip = "Show the resulting RScript file (in .txt format), created doing the DAFi process.";
     private static final String kMeansSomLabel = "<html>Cluster with self organizing maps"
@@ -124,6 +129,7 @@ public class DAFi extends R_Algorithm {
     private static final String applyOnChildrenTooltip = "If checked, DAFi will refine only the children of the selected population. If unchecked, all children of children will be refined recursively (i.e., all sub-populations downstream of the selected one).";
 
     public static final String scaleOptionName = "scale";
+    public static final String batchOptionName = "batch";
     public static final String showRScriptOptionName = "RScript";
     public static final String kMeansSomOptionName = "kMeansSom";
     public static final String applyOnChildrenOptionName = "childrenOnly";
@@ -132,6 +138,9 @@ public class DAFi extends R_Algorithm {
     public static final String minPopSizeOptionName = "minPopSize";
     public static final String applyOnPrevOptionName = "applyOn"; // "None" or file path to an RData file with a DAFi object
     public static final String pluginFolderAttName = "pluginFolder";
+    public static final String sampleURISlot = "sampleURI";
+    public static final String samplePopNodeSlot = "samplePopNode";
+    public static final String sampleFileSlot = "sampleFile";
 
     public static final String RDataFileExtension = ".RData";
     public static final String RDataFileSuffix = ".csv.DAFi.csv.RData";
@@ -142,16 +151,21 @@ public class DAFi extends R_Algorithm {
     public static final int defaultMinPopSize = 500;
     public static final String defaultApplyOnPrev = "None";
     public static final boolean defaultScale = false;
+    public static final boolean defaultBatch = false;
     public static final boolean defaultShowRScript = true;
     public static final boolean defaultKMeansSom = true;
     public static final boolean defaultApplyOnChildren = false;
 
     private boolean fScale = defaultScale;
+    private boolean fBatch = defaultBatch;
     private boolean fShowRScript = defaultShowRScript;
     private boolean fKMeansSom = defaultKMeansSom;
     private boolean fApplyOnChildren = defaultApplyOnChildren;
     private int fndimx = defaultXDim, fndimy = defaultYDim;
     private int fnMinPopSize = defaultMinPopSize;
+    private String fAnalysisPathSampleURI = "test1";
+    private String fAnalysisPathSamplePopNode = "test2";
+    private String fAnalysisPathSampleFile = "test3";
 
     private static final String channelsLabelLine0 = "Make sure the selected population has at least one child gate.";
     private static final String channelsLabelLine1 = "";
@@ -216,6 +230,16 @@ public class DAFi extends R_Algorithm {
     public ExternalAlgorithmResults invokeAlgorithm(SElement fcmlQueryElement, File sampleFile, File outputFolder) {
         ExternalAlgorithmResults results = new ExternalAlgorithmResults();
 
+        //save workspace before running plugin
+        Sample sample = FJPluginHelper.getSample(fcmlQueryElement);
+        Workspace workspace = sample.getWorkspace();
+        workspace.getDoc().save();
+
+        String savedAnalysisPath = fOptions.get(sampleFileSlot);
+        if(savedAnalysisPath.equals(sampleFile.getAbsolutePath())){
+            runAgain = true;
+        }
+
         // RunAgain is set to true when the user double clicks on the plugin node, this avoids the recalculation on update.
         if (!runAgain) {
             return results;
@@ -235,10 +259,7 @@ public class DAFi extends R_Algorithm {
             // checkUseExistingFiles(fcmlQueryElement);
             fUseExistingFiles = false;
 
-            //save workspace before running plugin
-            Sample sample = FJPluginHelper.getSample(fcmlQueryElement);
-            Workspace workspace = sample.getWorkspace();
-            workspace.getDoc().save();
+            fOptions.put(sampleFileSlot, sampleFile.getAbsolutePath());
 
             //get workspace directory and path to enable working with acs files
             WSDocument wsd = workspace.getDoc();
@@ -251,7 +272,7 @@ public class DAFi extends R_Algorithm {
             //get sample name
             String sampleName = StringUtil.rtrim(sampleFile.getName(), ".fcs");
 
-            // Get the parent popnode
+            // Get gate name and the parent popnode
             PopNode popNode = FJPluginHelper.getParentPopNode(fcmlQueryElement);
             PopNode parentPopNode = popNode.getParentPop();
             if (parentPopNode == null) { // This means the current parent node is the root sample, if it is just take the sample node.
@@ -270,7 +291,7 @@ public class DAFi extends R_Algorithm {
 
             DAFiRFlowCalc calculator = new DAFiRFlowCalc();
             // Added the population node
-            File DAFiResult = calculator.runDAFi(wsName, wsDir, sampleFile, sampleName, popNode.getName(), sampleNode.getName(), parameterNames, fOptions, outputFolder.getAbsolutePath(), useExistingFiles());
+            File DAFiResult = calculator.runDAFi(wsName, wsDir, sampleFile, sampleFile.getAbsolutePath(), sampleName, popNode.getName(), sampleNode.getName(), parameterNames, fOptions, outputFolder.getAbsolutePath(), useExistingFiles());
             calculator.deleteScriptFile();
             checkROutFile(calculator);
 
@@ -278,7 +299,7 @@ public class DAFi extends R_Algorithm {
             //Try to read the results (import derived parameters and gatingML files), and, if requested, print the Rscript.
             //If this fails, print only the last 30 lines of the Rscript to make the error visible to the user.
             try {
-            // Added to avoid issue with sub pops in FlowJo.
+                // Added to avoid issue with sub pops in FlowJo.
 
                 // the following code was used to try to add the capability of running flowjo on selected population if it has no child.
                 // i.e. run DAFi on parent of selected pop and refine selected pop.
@@ -317,7 +338,6 @@ public class DAFi extends R_Algorithm {
                     results.setGatingML(gatingML);
                 }
 
-                //fOptions.put(showRScriptOptionName, fShowRScriptCheckbox.isSelected() ? One : Zero);
                 String sParShowRScript = fOptions.get(showRScriptOptionName);
                 if (sParShowRScript == null || sParShowRScript.isEmpty() || com.flowjo.plugin.DAFi.DAFi.One.equals(sParShowRScript) || com.flowjo.plugin.DAFi.DAFi.True.equals(sParShowRScript)){
                     fShowRScript = true; // TRUE is the default
@@ -636,6 +656,20 @@ public class DAFi extends R_Algorithm {
         // We need the plugin output folder and we want to add that to the algorithmElement so that later on, we can scan that folder for any existing .RData files.
         // Unfortunately, FJPluginHelper.getPluginOutputFolder(fcmlElem, this) seems to be returning null sometimes,
         // i.e., this may be called before the plugin output folder is set. Therefore, this is a work around:
+        String sampleURI = FJPluginHelper.getSampleURI(fcmlElem);
+        if (sampleURI != null) {
+            try{
+                algorithmElement.setAttribute(sampleURISlot, sampleURI);
+            } catch (Exception e) {
+            }
+        }
+        String samplePopNode = FJPluginHelper.getParentPopNode(fcmlElem).getName();
+        if (samplePopNode != null) {
+            try{
+                algorithmElement.setAttribute(samplePopNodeSlot, samplePopNode);
+            } catch (Exception e) {
+            }
+        }
         Sample sample = FJPluginHelper.getSample(fcmlElem);
         if (sample != null) {
             Workspace ws = sample.getWorkspace();
@@ -703,10 +737,18 @@ public class DAFi extends R_Algorithm {
             }
         }
 
+        String sampleURI = selement.getString(sampleURISlot);
+        String samplePopNode = selement.getString(samplePopNodeSlot);
+        String sampleFile = "";
+
         // Default parameter values
+        fAnalysisPathSampleURI = sampleURI;
+        fAnalysisPathSamplePopNode = samplePopNode;
+        fAnalysisPathSampleFile = sampleFile;
         fndimx = defaultXDim;
         fndimy = defaultYDim;
         fScale = defaultScale;
+        fBatch = defaultBatch;
         fShowRScript = defaultShowRScript;
         fKMeansSom = defaultKMeansSom;
         fApplyOnChildren = defaultApplyOnChildren;
@@ -748,13 +790,16 @@ public class DAFi extends R_Algorithm {
             if (savedScale != null && !savedScale.isEmpty())
                 fScale = One.equals(savedScale) || True.equals(savedScale);
 
+            String savedBatch = option.getAttributeValue(batchOptionName);
+            if (savedBatch != null && !savedBatch.isEmpty())
+                fBatch = One.equals(savedBatch) || True.equals(savedBatch);
+
             String savedShowRScript = option.getAttributeValue(showRScriptOptionName);
             if (savedShowRScript != null && !savedShowRScript.isEmpty())
                 fShowRScript = One.equals(savedShowRScript) || True.equals(savedShowRScript);
 
             int savedMinPopSize = option.getInt(minPopSizeOptionName, -1);
             if (savedMinPopSize >= 100 && savedMinPopSize <= 100000) fnMinPopSize = savedMinPopSize;
-
 
         }
 
@@ -820,6 +865,11 @@ public class DAFi extends R_Algorithm {
         fShowRScriptCheckbox.setSelected(fShowRScript);
         componentList.add(new HBox(new Component[]{fShowRScriptCheckbox}));
 
+        fBatchOptionCheckbox = new FJCheckBox(batchLabel);
+        fBatchOptionCheckbox.setToolTipText("<html><p width=\"" + fixedToolTipWidth + "\">" + batchTooltip + "</p></html>");
+        fBatchOptionCheckbox.setSelected(fBatch);
+        componentList.add(new HBox(new Component[]{fBatchOptionCheckbox}));
+
         FJLabel hSpaceLabelCiting = new FJLabel("");
         GuiFactory.setSizes(hSpaceLabelCiting, new Dimension(fixedLabelWidth, hSpaceHeigth));
         componentList.add(hSpaceLabelCiting);
@@ -864,6 +914,7 @@ public class DAFi extends R_Algorithm {
                 if (fDimXField != null) fDimXField.setEnabled(false);
                 if (fDimYField != null) fDimYField.setEnabled(false);
                 if (fScaleOptionCheckbox != null) fScaleOptionCheckbox.setEnabled(false);
+                if (fBatchOptionCheckbox != null) fBatchOptionCheckbox.setEnabled(false);
                 if (fShowRScriptCheckbox != null) fShowRScriptCheckbox.setEnabled(false);
                 if (fKMeansSomOptionCheckbox != null) fKMeansSomOptionCheckbox.setEnabled(false);
                 if (fApplyOnChildrenCheckbox != null) fApplyOnChildrenCheckbox.setEnabled(false);
@@ -919,6 +970,7 @@ public class DAFi extends R_Algorithm {
                 if (fDimXField != null) fDimXField.setEnabled(true);
                 if (fDimYField != null) fDimYField.setEnabled(true);
                 if (fScaleOptionCheckbox != null) fScaleOptionCheckbox.setEnabled(true);
+                if (fBatchOptionCheckbox != null) fBatchOptionCheckbox.setEnabled(true);
                 if (fShowRScriptCheckbox != null) fShowRScriptCheckbox.setEnabled(true);
                 if (fKMeansSomOptionCheckbox != null) fKMeansSomOptionCheckbox.setEnabled(true);
                 if (fApplyOnChildrenCheckbox != null) fApplyOnChildrenCheckbox.setEnabled(true);
@@ -943,19 +995,23 @@ public class DAFi extends R_Algorithm {
             fParameterNames.add(parName);
             if (parName.equals(DAFi.cellIdParName))
                 cellIdParameterIncluded = true;
+                cellIdParameterIncluded = true;
         }
 
-        // If plotParameter isn't among the list, we will switch to plotting all that's there
         // TODO
         // We really need the Time parameter, so we select it even if the user doesn't.
         if (isSeqGeq() && !cellIdParameterIncluded)
             fParameterNames.add(DAFi.cellIdParName);
 
         // Save all the DAFi specific options
+        fOptions.put(sampleURISlot, fAnalysisPathSampleURI);
+        fOptions.put(samplePopNodeSlot, fAnalysisPathSamplePopNode);
+        fOptions.put(sampleFileSlot, fAnalysisPathSampleFile);
         fOptions.put(minPopSizeOptionName, Integer.toString(fMinPopSizeField.getInt()));
         fOptions.put(xDimOptionName, Integer.toString(fDimXField.getInt()));
         fOptions.put(yDimOptionName, Integer.toString(fDimYField.getInt()));
         fOptions.put(scaleOptionName, fScaleOptionCheckbox.isSelected() ? One : Zero);
+        fOptions.put(batchOptionName, fBatchOptionCheckbox.isSelected() ? One : Zero);
         fOptions.put(showRScriptOptionName, fShowRScriptCheckbox.isSelected() ? One : Zero);
         fOptions.put(kMeansSomOptionName, fKMeansSomOptionCheckbox.isSelected() ? One : Zero);
         fOptions.put(applyOnChildrenOptionName, fApplyOnChildrenCheckbox.isSelected() ? One : Zero);
@@ -978,6 +1034,9 @@ public class DAFi extends R_Algorithm {
     }
 
     private static final double epsilon = 0.1;
+
+    // in case you want to add time to separate between runs
+    // public static final long millisTime = currentTimeMillis();
 
     // Use FlowJo's CSV reader instead of manually and get the column where the categorical is found
     private List<Float> extractUniqueValuesForParameter(File sampleFile) {

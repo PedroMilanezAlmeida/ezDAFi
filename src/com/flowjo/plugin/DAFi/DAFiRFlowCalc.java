@@ -21,13 +21,13 @@ public class DAFiRFlowCalc extends RFlowCalculator {
     public static final String FALSE = "FALSE";
 
 
-    public File runDAFi(String wsName, String wsDir, File sampleFile, String sampleName, String populationName, String sampleNodeName, List<String> parameterNames, Map<String, String> options, String outputFolderPath, boolean useExistingFiles)
+    public File runDAFi(String wsName, String wsDir, File sampleFile, String sampleFileAbsolutePath, String sampleName, String populationName, String sampleNodeName, List<String> parameterNames, Map<String, String> options, String outputFolderPath, boolean useExistingFiles)
     {
         sampleName = sampleName.replaceAll(".ExtNode", "").replaceAll(".fcs", "").replaceAll(".LMD", "").trim();
         File outputFolder = new File(outputFolderPath);
 
         StringWriter scriptWriter = new StringWriter();
-        File DAFiScript = createDAFiscript(wsName, wsDir, sampleFile, sampleName, populationName, sampleNodeName, parameterNames, options, outputFolder, scriptWriter);
+        File DAFiScript = createDAFiscript(wsName, wsDir, sampleFile, sampleFileAbsolutePath, sampleName, populationName, sampleNodeName, parameterNames, options, outputFolder, scriptWriter);
         if(DAFiScript == null) return null;
         if(useExistingFiles && DAFiScript.exists()) return DAFiScript;
 
@@ -47,7 +47,7 @@ public class DAFiRFlowCalc extends RFlowCalculator {
         return DAFiScript;
     }
 
-    protected File createDAFiscript(String wsName, String wsDir, File sampleFile, String sampleName, String populationName, String sampleNodeName, List<String> parameterNames, Map<String, String> options, File outputFolder, StringWriter scriptWriter)
+    protected File createDAFiscript(String wsName, String wsDir, File sampleFile, String sampleFileAbsolutePath, String sampleName, String populationName, String sampleNodeName, List<String> parameterNames, Map<String, String> options, File outputFolder, StringWriter scriptWriter)
     {
         InputStream scriptStream = DAFiRFlowCalc.class.getResourceAsStream(DAFiTemplatePath);
 
@@ -63,6 +63,7 @@ public class DAFiRFlowCalc extends RFlowCalculator {
         if(EngineManager.isWindows()) dataFilePath = dataFilePath.replaceAll("\\\\", "/");
 
         String sParScale = options.get(com.flowjo.plugin.DAFi.DAFi.scaleOptionName);
+        String sParBatch = options.get(com.flowjo.plugin.DAFi.DAFi.batchOptionName);
         String sParkMeansSom = options.get(com.flowjo.plugin.DAFi.DAFi.kMeansSomOptionName);
         String sParApplyOnChildren = options.get(com.flowjo.plugin.DAFi.DAFi.applyOnChildrenOptionName);
         String sParMinPopSize = options.get(com.flowjo.plugin.DAFi.DAFi.minPopSizeOptionName);
@@ -77,6 +78,11 @@ public class DAFiRFlowCalc extends RFlowCalculator {
             sParScale = TRUE; // TRUE is the default
         else
             sParScale = FALSE;
+
+        if (sParBatch == null || sParBatch.isEmpty() || com.flowjo.plugin.DAFi.DAFi.One.equals(sParBatch) || com.flowjo.plugin.DAFi.DAFi.True.equals(sParBatch))
+            sParBatch = TRUE; // TRUE is the default
+        else
+            sParBatch = FALSE;
 
         if (sParkMeansSom == null || sParkMeansSom.isEmpty() || com.flowjo.plugin.DAFi.DAFi.One.equals(sParkMeansSom) || com.flowjo.plugin.DAFi.DAFi.True.equals(sParkMeansSom))
             sParkMeansSom = TRUE; // TRUE is the default
@@ -149,6 +155,7 @@ public class DAFiRFlowCalc extends RFlowCalculator {
                 scriptLine = scriptLine.replace("FJ_CSV_OUPUT_FILE", outFileName);
                 scriptLine = scriptLine.replace("FJ_GATING_ML_OUTPUT_FILE", gatingMLOutFile.getAbsolutePath());
                 scriptLine = scriptLine.replace("FJ_PAR_SCALE", sParScale);
+                scriptLine = scriptLine.replace("FJ_BATCH_MODE", sParBatch);
                 scriptLine = scriptLine.replace("FJ_PAR_SOM", sParkMeansSom);
                 scriptLine = scriptLine.replace("FJ_PAR_CHILDREN", sParApplyOnChildren);
                 scriptLine = scriptLine.replace("FJ_PAR_MINPOPSIZE", sParMinPopSize);
@@ -158,6 +165,7 @@ public class DAFiRFlowCalc extends RFlowCalculator {
                 scriptLine = scriptLine.replace("FJ_PAR_ADD_CELLIDS_TO_RESULT", sAddCellIdToResults);
                 scriptLine = scriptLine.replace("FJ_POPULATION_NAME", populationName);
                 scriptLine = scriptLine.replace("FJ_SAMPLE_NODE_NAME", sampleNodeName);
+                scriptLine = scriptLine.replace("FJ_SAMPLE_FILE_ABS_PATH", sampleFileAbsolutePath);
 
                 if(scriptLine.contains("FJ_PARAMS_LIST")) {
                     String parListStr = "";
