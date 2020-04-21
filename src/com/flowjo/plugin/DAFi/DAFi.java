@@ -233,14 +233,24 @@ public class DAFi extends R_Algorithm {
         String savedSampleURI = fOptions.get(sampleURISlot);
         String savedSamplePopNode = fOptions.get(samplePopNodeSlot);
 
+        System.out.println("savedSampleURI: " + savedSampleURI);
+
         String thisSampleURI = FJPluginHelper.getSampleURI(fcmlQueryElement);
         String thisSamplePopNode = FJPluginHelper.getParentPopNode(fcmlQueryElement).getName();
 
+        System.out.println("thisSampleURI: " + thisSampleURI);
+
         boolean checkPrevRun = savedSampleURI.equals(thisSampleURI) && savedSamplePopNode.equals(thisSamplePopNode);
+
+        System.out.println("!checkPrevRun: " + !checkPrevRun);
+
+        System.out.println("runAgain: " + runAgain);
 
         if(!checkPrevRun){
             runAgain = true;
         }
+
+        System.out.println("runAgain: " + runAgain);
 
         // RunAgain is set to true when the user double clicks on the plugin node, this avoids the recalculation on update.
         if (!runAgain) {
@@ -248,6 +258,8 @@ public class DAFi extends R_Algorithm {
         }
         // If the plugin fails, we need to avoid the recalculation as it might not get fixed anyways.
         runAgain = false;
+
+        System.out.println("!sampleFile.exists(): " + !sampleFile.exists());
 
         if (!sampleFile.exists()) {
             // results.setErrorMessage("Input file did not exist"); // We purposely don't want to set the error as there may be undesirable side-effects
@@ -265,13 +277,15 @@ public class DAFi extends R_Algorithm {
             fOptions.put(sampleURISlot, thisSampleURI);
             fOptions.put(samplePopNodeSlot, thisSamplePopNode);
 
+
             //save workspace before running plugin
             Sample sample = FJPluginHelper.getSample(fcmlQueryElement);
             Workspace workspace = sample.getWorkspace();
-            workspace.getDoc().save();
+            WSDocument wsd = workspace.getDoc();
+            //wsd.save();
+
 
             //get workspace directory and path to enable working with acs files
-            WSDocument wsd = workspace.getDoc();
             String wsDir = wsd.getWorkspaceDirectory().getAbsolutePath();
             String wsName = wsd.getFilename();
 
@@ -279,7 +293,7 @@ public class DAFi extends R_Algorithm {
             List<String> parameterNames = preprocessCompParameterNames();
 
             //get sample name
-            String sampleName = StringUtil.rtrim(sampleFile.getName(), ".fcs");
+            String sampleName = sampleFile.getName();
 
             // Get gate name and the parent popnode
             PopNode popNode = FJPluginHelper.getParentPopNode(fcmlQueryElement);
@@ -297,6 +311,8 @@ public class DAFi extends R_Algorithm {
 
             //Get name of .FCS file
             PopNode sampleNode = sample.getSampleNode();
+
+            System.out.println("sampleName: " + sampleName);
 
             DAFiRFlowCalc calculator = new DAFiRFlowCalc();
             // Added the population node
@@ -687,6 +703,7 @@ public class DAFi extends R_Algorithm {
             if (ws != null) {
                 try {
                     WSDocument wsd = ws.getDoc();
+                    wsd.save(); //save workspace before running plugin
                     String wsDir = wsd.getWorkspaceDirectory().getAbsolutePath();
                     String wsName = wsd.getFilename();
                     String outputFolder = wsDir + File.separator + wsName.substring(0, wsName.lastIndexOf('.')) + File.separator + this.getName() ;
