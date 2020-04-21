@@ -61,6 +61,7 @@ public class DAFiRFlowCalc extends RFlowCalculator {
 
         if(EngineManager.isWindows()) outFileName = outFileName.replaceAll("\\\\", "/");
         if(EngineManager.isWindows()) dataFilePath = dataFilePath.replaceAll("\\\\", "/");
+        if(EngineManager.isWindows()) sampleFileAbsolutePath = sampleFileAbsolutePath.replaceAll("\\\\", "/");
 
         String sParScale = options.get(com.flowjo.plugin.DAFi.DAFi.scaleOptionName);
         String sParBatch = options.get(com.flowjo.plugin.DAFi.DAFi.batchOptionName);
