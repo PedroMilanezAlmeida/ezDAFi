@@ -960,8 +960,10 @@ names(FJ_event_DAFi_label) <- DAFi_nodes
 labels.ls <- foreach::foreach(DAFi_node = DAFi_nodes) %do% {
   ## Please note "FJ_event_DAFi_label" here stemming from DAFi
   ## FlowJo, let's do labels as 100, 200, 300, all with a tiny bit of noise (to make FlowJo cluster those better)
-  label <- as.matrix(FJ_event_DAFi_label[[DAFi_node]] %>%
-                       as.integer(.))
+  label <- as.matrix(as.integer(FJ_event_DAFi_label[[DAFi_node]]) * 1e5 + 
+                       rnorm(n = length(FJ_event_DAFi_label[[DAFi_node]]),
+                             mean = 0,
+                             sd = 1000))
 }
 names(labels.ls) <- DAFi_nodes
 
@@ -972,6 +974,11 @@ labels <- matrix(unlist(labels.ls,
 colnames(labels) <- foreach::foreach(DAFi_node = DAFi_nodes,
                                      .final = unlist) %do% {
                                        DAFi_node %>%
+                                         strsplit(x = .,
+                                                  split = popOfInt,
+                                                  fixed = TRUE) %>%
+                                         .[[1]] %>%
+                                         tail(.,1) %>%
                                          gsub(pattern = "^/",
                                               replacement = "",
                                               x = .) %>%
@@ -982,7 +989,12 @@ colnames(labels) <- foreach::foreach(DAFi_node = DAFi_nodes,
                                          gsub(pattern = ",",
                                               replacement = ".",
                                               x = .,
-                                              fixed = TRUE)
+                                              fixed = TRUE) %>%
+                                         trimws(.,
+                                                which = "right") %>%
+                                         paste0(popOfInt,
+                                                "_",
+                                                .)
                                      }
 
 #sanity check
@@ -990,7 +1002,7 @@ print(
   apply(labels,
         2,
         function(pop)
-          mean(pop > 0))
+          mean(pop > 5e4))
 )
 #write results
 write.csv(labels, file = fj_csv_ouput_file, row.names=FALSE, quote=TRUE)
@@ -1009,6 +1021,11 @@ all.labels <- matrix(unlist(all.labels.ls,
 colnames(all.labels) <- foreach::foreach(DAFi_node = DAFi_nodes,
                                          .final = unlist) %do% {
                                            DAFi_node %>%
+                                             strsplit(x = .,
+                                                      split = popOfInt,
+                                                      fixed = TRUE) %>%
+                                             .[[1]] %>%
+                                             tail(.,1) %>%
                                              gsub(pattern = "^/",
                                                   replacement = "",
                                                   x = .) %>%
@@ -1019,7 +1036,12 @@ colnames(all.labels) <- foreach::foreach(DAFi_node = DAFi_nodes,
                                              gsub(pattern = ",",
                                                   replacement = ".",
                                                   x = .,
-                                                  fixed = TRUE)
+                                                  fixed = TRUE) %>%
+                                             trimws(.,
+                                                    which = "right") %>%
+                                             paste0(popOfInt,
+                                                    "_",
+                                                    .)
                                          }
 #2nd sanity check
 print(
@@ -1032,14 +1054,36 @@ print(
 flowEnv <- new.env()
 
 for(pop in colnames(all.labels)) {
-  mat <- matrix(c(0.5, 1.5),
+#  trLogicleName <- paste0("trLogicle_", pop)
+#  trLogicle <- logicletGml2(parameters = pop,
+  #                            T = 1000, 
+  #                         W = 0.5,
+  #                         M = 4.5, 
+  #                         A = 0, 
+  #                         transformationId = trLogicleName)
+  #flowEnv[[as.character(trLogicleName)]] <- trLogicle
+  #trPars <- list(transformReference(trLogicleName,
+  #                                 flowEnv))
+  mat <- matrix(c(5e4, 5e5),
                 ncol = 1,
                 dimnames = list(c("min", "max"),
                                 pop))
   rg <- rectangleGate(filterId = pop,
                       .gate = mat)
+  #rg@parameters <- new("parameters", 
+  #                    trPars)
   flowEnv[[as.character(pop)]] <- rg
 }
+
+#for(pop in colnames(all.labels)) {
+#  mat <- matrix(c(0.5, 1.5),
+#               ncol = 1,
+#               dimnames = list(c("min", "max"),
+#                               pop))
+# rg <- rectangleGate(filterId = pop,
+#                     .gate = mat)
+# flowEnv[[as.character(pop)]] <- rg
+#}
 
 outputFile <- paste0(fj_data_file_path,
                      ".gating-ml2.xml")
