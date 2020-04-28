@@ -282,47 +282,80 @@ if(wspDir_last4 != ".acs" & Sys.info()["sysname"] == "Windows") {
   if(!batch_mode){
     sampleFCS_path <- substring(sampleFCS_path, 2)
   } else {
-  sampleFCS_paths <- substring(sampleFCS_paths, 2)
+    sampleFCS_paths <- substring(sampleFCS_paths, 2)
   }
 }
 
 if(wspDir_last4 == ".acs"){
   if(!batch_mode){
     sampleFCS_path <- paste0(wspDir,
-                           "/",
-                           sampleFCS_path)
+                             "/",
+                             sampleFCS_path)
   } else {
-        sampleFCS_paths <- paste0(wspDir,
-                            "/",
-                            sampleFCS_paths)
-    }
+    sampleFCS_paths <- paste0(wspDir,
+                              "/",
+                              sampleFCS_paths)
+  }
 }
 
 #parse wsp and fcs files into a GatingSet object
 if(!batch_mode) {
-  pathFCS <- data.frame(sampleID = CytoML::fj_ws_get_samples(ws)$sampleID[sampleID_doc],
-                        file = sampleFCS_path)
+  pathFCS <- tryCatch({
+    data.frame(sampleID = CytoML::fj_ws_get_samples(ws)$sampleID[sampleID_doc],
+               file = sampleFCS_path)
+  },
+  error = function(e) {
+    data.frame(sampleID = CytoML::fj_ws_get_samples(ws,
+                                                    sampNloc = "sampleNode")$sampleID[sampleID_doc],
+               file = sampleFCS_path)
+  })
 } else {
-    pathFCS <- data.frame(sampleID = CytoML::fj_ws_get_samples(ws)$sampleID,
-                          file = sampleFCS_paths)
-
-  }
+  pathFCS <- tryCatch({
+    data.frame(sampleID = CytoML::fj_ws_get_samples(ws)$sampleID,
+               file = sampleFCS_paths)
+  },
+  error = function(e){
+    data.frame(sampleID = CytoML::fj_ws_get_samples(ws,
+                                                    sampNloc = "sampleNode")$sampleID,
+               file = sampleFCS_paths)
+  })
+  
+}
 pathFCS$sampleID <- as.numeric(pathFCS$sampleID)
 pathFCS
 
 if(!batch_mode) {
-  gs <- CytoML::flowjo_to_gatingset(ws,
-                                    name = 1,
-                                    path = pathFCS,
-                                    isNcdf = FALSE)
+  gs <- tryCatch({
+    CytoML::flowjo_to_gatingset(ws,
+                                name = 1,
+                                path = pathFCS,
+                                isNcdf = FALSE)
+  },
+  error = function(e){
+    CytoML::flowjo_to_gatingset(ws,
+                                name = 1,
+                                path = pathFCS,
+                                isNcdf = FALSE,
+                                sampNloc = "sampleNode")
+  })
 } else {
-  gs <- CytoML::flowjo_to_gatingset(ws,
-                                    name = 1,
-                                    path = pathFCS,
-                                    isNcdf = TRUE)
+  gs <- tryCatch({
+    CytoML::flowjo_to_gatingset(ws,
+                                name = 1,
+                                path = pathFCS,
+                                isNcdf = TRUE)
+  },
+  error = function(e){
+    CytoML::flowjo_to_gatingset(ws,
+                                name = 1,
+                                path = pathFCS,
+                                isNcdf = TRUE,
+                                sampNloc = "sampleNode")
+  })
 }
 
-flowCore::fsApply(flowWorkspace::gs_pop_get_data(gs), print)
+flowCore::fsApply(flowWorkspace::gs_pop_get_data(gs), 
+                  print)
 
 orig.parNames <- flowWorkspace::gh_pop_get_data(gs[[1]]) %>%
   flowCore::parameters(.) %>%
@@ -377,19 +410,19 @@ parNames <- FJCompToComp(parNames)
 parNames <- changeFJSpecialChar(parNames, orig.parNames)
 
 if(grepl(pattern = "time", 
-      x = parNames, 
-      ignore.case = TRUE, 
-      fixed = FALSE) %>%
-  any(.)){
+         x = parNames, 
+         ignore.case = TRUE, 
+         fixed = FALSE) %>%
+   any(.)){
   stop("Please remove time as parameter for  clustering.")
 }
 
 if(grepl(pattern = "FSC|SSC", 
-      x = parNames, 
-      ignore.case = FALSE, 
-      fixed = FALSE) %>%
-  any(.) &
-  !fj_par_scale){
+         x = parNames, 
+         ignore.case = FALSE, 
+         fixed = FALSE) %>%
+   any(.) &
+   !fj_par_scale){
   stop("\n  It seems that FSC and/or SSC were included as clustering parameter, but with no data scaling.\n  FSC/SSC are handled differently than fluorochrome data in FlowJo.\n Please select scaling to make sure all data used in clustering is on the same scale.")
 }
 
@@ -415,9 +448,9 @@ if (eventsCount == 0){
 #define gates of the selected samples that will be used here
 if(batch_mode){
   gates_of_sel_sample <- flowWorkspace::gh_get_pop_paths(gs[[CytoML::fj_ws_get_samples(ws)$sampleID[sampleID_doc]]])
-  } else {
-    gates_of_sel_sample <- flowWorkspace::gh_get_pop_paths(gs[[1]])
-    }
+} else {
+  gates_of_sel_sample <- flowWorkspace::gh_get_pop_paths(gs[[1]])
+}
 popOfInt_full_path <- gates_of_sel_sample[
   basename(gates_of_sel_sample) %in%
     popOfInt]
@@ -469,7 +502,7 @@ names_gates_of_int <- foreach::foreach(pop = seq_along(basename(popOfInt_full_pa
                                                                                     "/"),
                                                                    x = gates_of_sel_sample,
                                                                    fixed = TRUE)]
-                                         }
+                                       }
 
 #find non-terminal gates down the gating hierarchy, which will all be used in clustering
 names_gates_non_term <- unlist(names_gates_of_int,
@@ -715,9 +748,9 @@ for(pop_to_SOM in seq_along(pops_to_SOM)){
 
 if(batch_mode){
   post_DAFi_gates <- flowWorkspace::gh_get_pop_paths(gs[[CytoML::fj_ws_get_samples(ws)$sampleID[sampleID_doc]]])
-  } else {
-    post_DAFi_gates <- flowWorkspace::gh_get_pop_paths(gs[[1]])
-    }
+} else {
+  post_DAFi_gates <- flowWorkspace::gh_get_pop_paths(gs[[1]])
+}
 
 # Close the flowjo workspace connection
 CytoML::flowjo_ws_close(ws)
@@ -742,159 +775,159 @@ DAFi_leaf_nodes <- DAFi_leaf_nodes[grep(pattern = popOfInt,
 
 if(batch_mode){
   modified.autoplot.GatingSet <- function(object, gate, x = NULL,  y = "SSC-A", bins = 30, axis_inverse_trans = TRUE, stats = "percent", ...){
-  if(missing(gate))
-    stop("Must specifiy 'gate'!")
-  if(is.null(x)){
-    #determine dimensions from gate
-    g <- gh_pop_get_gate(object[[1]], gate[1])
-    params <- parameters(g)
-    nDims <- length(params)
-    if(nDims == 1){
-      x <- params
-      y <- flowWorkspace:::fix_y_axis(gs = object, x = x, y = y)
-    }else{
-      x <- params[1]
-      y <- params[2]
-    }
-  }
-  
-  mapping <- aes_q(x = as.symbol(x), y = as.symbol(y))
-  
-  p <- ggcyto(object, mapping, ...) + geom_hex(bins = bins) + geom_gate(gate)
-  if(stats != "none") {
-    p <- p + geom_stats(type = stats)
-  }
-  p <- p + ggcyto_par_set(limits = "instrument")
-  if(axis_inverse_trans)
-    p <- p + axis_x_inverse_trans() + axis_y_inverse_trans()
-  p
-  
-}
-
-modified.autoplot.GatingHierarchy <- function(object, gate, y = "SSC-A", bool=FALSE
-                                     , arrange.main = sampleNames(object), arrange=TRUE, merge=TRUE
-                                     , projections = list()
-                                     , strip.text = c("parent", "gate")
-                                     , path = "auto"
-                                     , ...){
-  strip.text <- match.arg(strip.text)
-  if(missing(gate)){
-    gate <- gs_get_pop_paths(object, path = path)
-    gate <- setdiff(gate,"root")
-  }else if (is.numeric(gate)){
-    gate <- gs_get_pop_paths(object, path = path)[gate]
-  }
-  
-  #match given axis to channel names
-  fr <- gh_pop_get_data(object, use.exprs = FALSE)
-  projections <- lapply(projections, function(thisPrj){
-    sapply(thisPrj, function(thisAxis)getChannelMarker(fr, thisAxis)[["name"]])
-  })
-  
-  
-  plotList <- flowWorkspace:::.mergeGates(object, gate, bool, merge, projections = projections)
-  Objs <- lapply(plotList,function(plotObjs){
-    
-    if(is.list(plotObjs)){
-      gate <- plotObjs[["popIds"]]
-      parent <- plotObjs[["parentId"]]
-      myPrj <- projections[[as.character(gate[1])]]
-      
-    }else{
-      gate <- plotObjs
-      parent <- gs_pop_get_parent(object, gate, path = path)
-      myPrj <- projections[[as.character(gate)]]
+    if(missing(gate))
+      stop("Must specifiy 'gate'!")
+    if(is.null(x)){
+      #determine dimensions from gate
+      g <- gh_pop_get_gate(object[[1]], gate[1])
+      params <- parameters(g)
+      nDims <- length(params)
+      if(nDims == 1){
+        x <- params
+        y <- flowWorkspace:::fix_y_axis(gs = object, x = x, y = y)
+      }else{
+        x <- params[1]
+        y <- params[2]
+      }
     }
     
+    mapping <- aes_q(x = as.symbol(x), y = as.symbol(y))
     
-    if(is.null(myPrj)){
-      p <- modified.autoplot.GatingSet(object, gate, y = y, ...)
-    }else{
-      p <- modified.autoplot.GatingSet(object, gate, x = myPrj[["x"]], y = myPrj[["y"]], ...)
+    p <- ggcyto(object, mapping, ...) + geom_hex(bins = bins) + geom_gate(gate)
+    if(stats != "none") {
+      p <- p + geom_stats(type = stats)
     }
-    
-    p <- p + guides(fill=FALSE) + labs(title = NULL)
-    myTheme <- theme(axis.title = element_text(color = gray(0.3), size = 8)
-                     , axis.text = element_text(color = gray(0.3), size = 6)
-                     , strip.text = element_text(size = 10)
-                     , plot.margin = unit(c(0,0,0,0), "cm")
-                     , panel.spacing = unit(0, "cm")
-    )
-    p <- p + myTheme
-    
-    #rename sample name with parent or current pop name in order to display it in strip
-    
-    if(strip.text == "parent"){
-      popName <- parent
-    }else{
-      popName <- paste(gate, collapse = "|")
-    }
-    attr(p$data, "strip.text") <- popName
-    
+    p <- p + ggcyto_par_set(limits = "instrument")
+    if(axis_inverse_trans)
+      p <- p + axis_x_inverse_trans() + axis_y_inverse_trans()
     p
     
-  })
-  
-  if(arrange){
-    #convert it to a special class to dispatch the dedicated print method
-    Objs <- as(Objs, "ggcyto_GatingLayout")
-    Objs@arrange.main <- arrange.main
   }
   
-  Objs
+  modified.autoplot.GatingHierarchy <- function(object, gate, y = "SSC-A", bool=FALSE
+                                                , arrange.main = sampleNames(object), arrange=TRUE, merge=TRUE
+                                                , projections = list()
+                                                , strip.text = c("parent", "gate")
+                                                , path = "auto"
+                                                , ...){
+    strip.text <- match.arg(strip.text)
+    if(missing(gate)){
+      gate <- gs_get_pop_paths(object, path = path)
+      gate <- setdiff(gate,"root")
+    }else if (is.numeric(gate)){
+      gate <- gs_get_pop_paths(object, path = path)[gate]
+    }
+    
+    #match given axis to channel names
+    fr <- gh_pop_get_data(object, use.exprs = FALSE)
+    projections <- lapply(projections, function(thisPrj){
+      sapply(thisPrj, function(thisAxis)getChannelMarker(fr, thisAxis)[["name"]])
+    })
+    
+    
+    plotList <- flowWorkspace:::.mergeGates(object, gate, bool, merge, projections = projections)
+    Objs <- lapply(plotList,function(plotObjs){
+      
+      if(is.list(plotObjs)){
+        gate <- plotObjs[["popIds"]]
+        parent <- plotObjs[["parentId"]]
+        myPrj <- projections[[as.character(gate[1])]]
+        
+      }else{
+        gate <- plotObjs
+        parent <- gs_pop_get_parent(object, gate, path = path)
+        myPrj <- projections[[as.character(gate)]]
+      }
+      
+      
+      if(is.null(myPrj)){
+        p <- modified.autoplot.GatingSet(object, gate, y = y, ...)
+      }else{
+        p <- modified.autoplot.GatingSet(object, gate, x = myPrj[["x"]], y = myPrj[["y"]], ...)
+      }
+      
+      p <- p + guides(fill=FALSE) + labs(title = NULL)
+      myTheme <- theme(axis.title = element_text(color = gray(0.3), size = 8)
+                       , axis.text = element_text(color = gray(0.3), size = 6)
+                       , strip.text = element_text(size = 10)
+                       , plot.margin = unit(c(0,0,0,0), "cm")
+                       , panel.spacing = unit(0, "cm")
+      )
+      p <- p + myTheme
+      
+      #rename sample name with parent or current pop name in order to display it in strip
+      
+      if(strip.text == "parent"){
+        popName <- parent
+      }else{
+        popName <- paste(gate, collapse = "|")
+      }
+      attr(p$data, "strip.text") <- popName
+      
+      p
+      
+    })
+    
+    if(arrange){
+      #convert it to a special class to dispatch the dedicated print method
+      Objs <- as(Objs, "ggcyto_GatingLayout")
+      Objs@arrange.main <- arrange.main
+    }
+    
+    Objs
+    
+  }
   
-}
-
-# create subfolder to plot results
-plotDir <- paste0(dirname(fj_data_file_path),
+  # create subfolder to plot results
+  plotDir <- paste0(dirname(fj_data_file_path),
                     "/plots")
-dir.create(plotDir)
-
-# create and save plots
-for(fSample in seq_along(gs)) { # for each sample
-  for(DAFi_leaf_node in DAFi_leaf_nodes){ # for each terminal DAFi node
-    n.up.gates <- (nchar(as.character(DAFi_leaf_node))) - # get the number of gates up the tree for each terminal DAFi node (important later to determine size of PNG file)
-      (nchar(gsub(pattern = "/",
-                  replacement = "",
-                  x =  DAFi_leaf_node,
-                  fixed = TRUE)))
-    png(paste0(plotDir,
-               "/backgating_",
-               basename(DAFi_leaf_node),
-               "_for_",
-               sampleNames(gs[[fSample]]),
-               ".png"),
-        width = 4 * n.up.gates %>%
-          sqrt(.) %>% 
-          floor(.) * 300,
-        height = 3 * n.up.gates %>%
-          sqrt(.) %>% 
-          ceiling(.) * 300,
-        res = 300)
-    print(
-      modified.autoplot.GatingHierarchy(gs[[fSample]],
-                                        bins = 256,
-                                        stats = "none",
-                                        strip.text = "parent",
-                                        arrange.main = paste0("Sample: ", 
-                                                              sampleNames(gs[[fSample]]),
-                                                              " - Gate: ",
-                                                              basename(DAFi_leaf_node))) +
-        theme_light() +
-        geom_overlay(DAFi_leaf_node, 
-                     size = 0.1, 
-                     alpha = 1)
-    )
-    dev.off()
+  dir.create(plotDir)
+  
+  # create and save plots
+  for(fSample in seq_along(gs)) { # for each sample
+    for(DAFi_leaf_node in DAFi_leaf_nodes){ # for each terminal DAFi node
+      n.up.gates <- (nchar(as.character(DAFi_leaf_node))) - # get the number of gates up the tree for each terminal DAFi node (important later to determine size of PNG file)
+        (nchar(gsub(pattern = "/",
+                    replacement = "",
+                    x =  DAFi_leaf_node,
+                    fixed = TRUE)))
+      png(paste0(plotDir,
+                 "/backgating_",
+                 basename(DAFi_leaf_node),
+                 "_for_",
+                 sampleNames(gs[[fSample]]),
+                 ".png"),
+          width = 4 * n.up.gates %>%
+            sqrt(.) %>% 
+            floor(.) * 300,
+          height = 3 * n.up.gates %>%
+            sqrt(.) %>% 
+            ceiling(.) * 300,
+          res = 300)
+      print(
+        modified.autoplot.GatingHierarchy(gs[[fSample]],
+                                          bins = 256,
+                                          stats = "none",
+                                          strip.text = "parent",
+                                          arrange.main = paste0("Sample: ", 
+                                                                sampleNames(gs[[fSample]]),
+                                                                " - Gate: ",
+                                                                basename(DAFi_leaf_node))) +
+          theme_light() +
+          geom_overlay(DAFi_leaf_node, 
+                       size = 0.1, 
+                       alpha = 1)
+      )
+      dev.off()
+    }
   }
-}
-
+  
   save_gs(gs,
-         path = paste0(wspName,
+          path = paste0(wspName,
                         ".R.gs"),
           cdf = "move")
   fileConn <- file(paste0(wspName,
-                        ".R"))
+                          ".R"))
   writeLines(c("library(foreach)",
                "library(gridExtra)",
                "library(magrittr)",
@@ -942,433 +975,433 @@ for(fSample in seq_along(gs)) { # for each sample
             normalizePath(.) %>%
             shQuote(.))
 } else {
-all_cell_DAFi_label <- foreach::foreach(DAFi_node = DAFi_nodes) %do% {
-  flowWorkspace::gh_pop_get_indices(gs[[1]],
-                                    DAFi_node)
-}
-names(all_cell_DAFi_label) <- DAFi_nodes
-
-EventNumberDP <- read.csv(file = fj_data_file_path,
-                          check.names=FALSE)$EventNumberDP
-
-FJ_event_DAFi_label <- foreach::foreach(DAFi_node = DAFi_nodes) %do% {
-  all_cell_DAFi_label[[DAFi_node]][EventNumberDP]
-}
-names(FJ_event_DAFi_label) <- DAFi_nodes
-
-## Extract DAFi clustering to pass back to FlowJo (or SeqGeq)
-labels.ls <- foreach::foreach(DAFi_node = DAFi_nodes) %do% {
-  ## Please note "FJ_event_DAFi_label" here stemming from DAFi
-  ## FlowJo, let's do labels as 100, 200, 300, all with a tiny bit of noise (to make FlowJo cluster those better)
-  label <- as.matrix(as.integer(FJ_event_DAFi_label[[DAFi_node]]) * 1e5 + 
-                       rnorm(n = length(FJ_event_DAFi_label[[DAFi_node]]),
-                             mean = 0,
-                             sd = 1000))
-}
-names(labels.ls) <- DAFi_nodes
-
-labels <- matrix(unlist(labels.ls,
-                        use.names = FALSE),
-                 ncol = length(labels.ls),
-                 byrow = FALSE)
-colnames(labels) <- foreach::foreach(DAFi_node = DAFi_nodes,
-                                     .final = unlist) %do% {
-                                       DAFi_node %>%
-                                         strsplit(x = .,
-                                                  split = popOfInt,
-                                                  fixed = TRUE) %>%
-                                         .[[1]] %>%
-                                         tail(.,1) %>%
-                                         gsub(pattern = "^/",
-                                              replacement = "",
-                                              x = .) %>%
-                                         gsub(pattern = "/",
-                                              replacement = "_",
-                                              x = .,
-                                              fixed = TRUE) %>%
-                                         gsub(pattern = ",",
-                                              replacement = ".",
-                                              x = .,
-                                              fixed = TRUE) %>%
-                                         trimws(.,
-                                                which = "right") %>%
-                                         paste0(popOfInt,
-                                                "_",
-                                                .)
-                                     }
-
-#sanity check
-print(
-  apply(labels,
-        2,
-        function(pop)
-          mean(pop > 5e4))
-)
-#write results
-write.csv(labels, file = fj_csv_ouput_file, row.names=FALSE, quote=TRUE)
-write.csv(parNames, paste0(fj_csv_ouput_file, ".pars.csv"), row.names=FALSE)
-
-all.labels.ls <- foreach::foreach(DAFi_node = DAFi_nodes) %do% {
-  all.label <- as.matrix(all_cell_DAFi_label[[DAFi_node]] %>%
-                           as.integer(.))
-}
-names(all.labels.ls) <- DAFi_nodes
-
-all.labels <- matrix(unlist(all.labels.ls,
-                            use.names = FALSE),
-                     ncol = length(all.labels.ls),
-                     byrow = FALSE)
-colnames(all.labels) <- foreach::foreach(DAFi_node = DAFi_nodes,
-                                         .final = unlist) %do% {
-                                           DAFi_node %>%
-                                             strsplit(x = .,
-                                                      split = popOfInt,
-                                                      fixed = TRUE) %>%
-                                             .[[1]] %>%
-                                             tail(.,1) %>%
-                                             gsub(pattern = "^/",
-                                                  replacement = "",
-                                                  x = .) %>%
-                                             gsub(pattern = "/",
-                                                  replacement = "_",
-                                                  x = .,
-                                                  fixed = TRUE) %>%
-                                             gsub(pattern = ",",
-                                                  replacement = ".",
-                                                  x = .,
-                                                  fixed = TRUE) %>%
-                                             trimws(.,
-                                                    which = "right") %>%
-                                             paste0(popOfInt,
-                                                    "_",
-                                                    .)
-                                         }
-#2nd sanity check
-print(
-  apply(all.labels,
-      2,
-      function(pop)
-        mean(pop > 0))
-  )
-
-flowEnv <- new.env()
-
-for(pop in colnames(all.labels)) {
-#  trLogicleName <- paste0("trLogicle_", pop)
-#  trLogicle <- logicletGml2(parameters = pop,
-  #                            T = 1000, 
-  #                         W = 0.5,
-  #                         M = 4.5, 
-  #                         A = 0, 
-  #                         transformationId = trLogicleName)
-  #flowEnv[[as.character(trLogicleName)]] <- trLogicle
-  #trPars <- list(transformReference(trLogicleName,
-  #                                 flowEnv))
-  mat <- matrix(c(5e4, 5e5),
-                ncol = 1,
-                dimnames = list(c("min", "max"),
-                                pop))
-  rg <- rectangleGate(filterId = pop,
-                      .gate = mat)
-  #rg@parameters <- new("parameters", 
-  #                    trPars)
-  flowEnv[[as.character(pop)]] <- rg
-}
-
-#for(pop in colnames(all.labels)) {
-#  mat <- matrix(c(0.5, 1.5),
-#               ncol = 1,
-#               dimnames = list(c("min", "max"),
-#                               pop))
-# rg <- rectangleGate(filterId = pop,
-#                     .gate = mat)
-# flowEnv[[as.character(pop)]] <- rg
-#}
-
-outputFile <- paste0(fj_data_file_path,
-                     ".gating-ml2.xml")
-
-addObjectToGatingML <- function(gatingMLNode, x, flowEnv, addParent = NULL, forceGateId = NULL) {#from https://rdrr.io/bioc/flowUtils/src/R/writeGatingML.R 
-  if(is(x, "character")) object = flowEnv[[x]]
-  else object = x
-  switch(class(object),
-         "rectangleGate" = addRectangleGateNode(gatingMLNode, x, flowEnv, addParent, forceGateId),
-         "unitytransform" = NA,
-         {
-           errMessage <- paste("Class \'", class(object), "\' is not supported in Gating-ML 2.0 output.", sep="")
-           if(is(object, "singleParameterTransform"))
-             errMessage <- paste(errMessage, " Only Gating-ML 2.0 compatible transformations are supported by Gating-ML 2.0 output. Transformation \'", 
-                                 object@transformationId, "\' is not among those and cannot be included. Therefore, any gate referencing this transformation would be referencing a non-existent transformation in the Gating-ML output. Please correct the gates and transformations in your environment and try again.", sep="")
-           if(is(object, "filter"))
-             errMessage <- paste(errMessage, " Only Gating-ML 2.0 compatible gates are supported by Gating-ML 2.0 output. Filter \'", 
-                                 object@filterId, "\' is not among those and cannot be included. Please remove this filter and any references to it from the environment and try again.", sep="")
-           stop(errMessage, call. = FALSE)    
-         }
-  )
-}
-
-# Add rectangle gate x to the Gating-ML node
-addRectangleGateNode <- function(gatingMLNode, x, flowEnv, addParent, forceGateId) {#from https://rdrr.io/bioc/flowUtils/src/R/writeGatingML.R 
-  gate = objectNameToObject(x, flowEnv)
-  if(!is(gate, "rectangleGate")) stop(paste("Unexpected object insted of a rectangleGate - ", class(gate))) 
-  addDebugMessage(paste("Working on rectangleGate ", gate@filterId, sep=""), flowEnv)
-  
-  myID = getObjectId(gate, forceGateId, flowEnv)
-  if(isIdWrittenToXMLAlready(myID, flowEnv)) return(FALSE) 
-  attrs = c("gating:id" = myID)
-  if (!is.null(addParent)) attrs = c(attrs, "gating:parent_id" = filterIdtoXMLId(addParent, flowEnv))
-  
-  gatingMLNode$addNode("gating:RectangleGate", attrs = attrs, close = FALSE)
-  addDimensions(gatingMLNode, x, flowEnv)
-  gatingMLNode$closeTag() # </gating:RectangleGate>
-}
-
-addDebugMessage <- function(msg, flowEnv) {#from https://rdrr.io/bioc/flowUtils/src/R/writeGatingML.R 
-  flowEnv[['.debugMessages']] = c(flowEnv[['.debugMessages']], msg)
-}
-
-doubleCheckExistanceOfParameter <- function(par, flowEnv) {#from https://rdrr.io/bioc/flowUtils/src/R/writeGatingML.R 
-  if(is(par, "transform")) 
-  {
-    if(!is.null(par@transformationId) && par@transformationId != "" && !exists(par@transformationId, envir=flowEnv, inherits=FALSE)) 
-    {
-      flowEnv[[par@transformationId]] <- par
-      flowEnv[['.addedObjects']][[par@transformationId]] <- par@transformationId
-      addReferencedObjectsToEnv(par@transformationId, flowEnv)
-    }    
+  all_cell_DAFi_label <- foreach::foreach(DAFi_node = DAFi_nodes) %do% {
+    flowWorkspace::gh_pop_get_indices(gs[[1]],
+                                      DAFi_node)
   }
-}
-
-objectNameToObject <- function(x, flowEnv) { #from https://rdrr.io/bioc/flowUtils/src/R/writeGatingML.R 
-  if(is(x, "character")) flowEnv[[x]]
-  else x
-}
-
-addReferencedObjectsToEnv <- function(x, flowEnv) { #from https://rdrr.io/bioc/flowUtils/src/R/writeGatingML.R 
-  object = objectNameToObject(x, flowEnv)
-  for(par in object@parameters) doubleCheckExistanceOfParameter(par, flowEnv)
-}
-
-createTransformIdentifier <- function(trans) {#from https://rdrr.io/bioc/flowUtils/src/R/writeGatingML.R 
-  name <- class(trans)
-  for (slotName in slotNames(trans))
-  {
-    if(slotName != ".Data" && slotName != "parameters" && slotName != "transformationId")
+  names(all_cell_DAFi_label) <- DAFi_nodes
+  
+  EventNumberDP <- read.csv(file = fj_data_file_path,
+                            check.names=FALSE)$EventNumberDP
+  
+  FJ_event_DAFi_label <- foreach::foreach(DAFi_node = DAFi_nodes) %do% {
+    all_cell_DAFi_label[[DAFi_node]][EventNumberDP]
+  }
+  names(FJ_event_DAFi_label) <- DAFi_nodes
+  
+  ## Extract DAFi clustering to pass back to FlowJo (or SeqGeq)
+  labels.ls <- foreach::foreach(DAFi_node = DAFi_nodes) %do% {
+    ## Please note "FJ_event_DAFi_label" here stemming from DAFi
+    ## FlowJo, let's do labels as 100, 200, 300, all with a tiny bit of noise (to make FlowJo cluster those better)
+    label <- as.matrix(as.integer(FJ_event_DAFi_label[[DAFi_node]]) * 1e5 + 
+                         rnorm(n = length(FJ_event_DAFi_label[[DAFi_node]]),
+                               mean = 0,
+                               sd = 1000))
+  }
+  names(labels.ls) <- DAFi_nodes
+  
+  labels <- matrix(unlist(labels.ls,
+                          use.names = FALSE),
+                   ncol = length(labels.ls),
+                   byrow = FALSE)
+  colnames(labels) <- foreach::foreach(DAFi_node = DAFi_nodes,
+                                       .final = unlist) %do% {
+                                         DAFi_node %>%
+                                           strsplit(x = .,
+                                                    split = popOfInt,
+                                                    fixed = TRUE) %>%
+                                           .[[1]] %>%
+                                           tail(.,1) %>%
+                                           gsub(pattern = "^/",
+                                                replacement = "",
+                                                x = .) %>%
+                                           gsub(pattern = "/",
+                                                replacement = "_",
+                                                x = .,
+                                                fixed = TRUE) %>%
+                                           gsub(pattern = ",",
+                                                replacement = ".",
+                                                x = .,
+                                                fixed = TRUE) %>%
+                                           trimws(.,
+                                                  which = "right") %>%
+                                           paste0(popOfInt,
+                                                  "_",
+                                                  .)
+                                       }
+  
+  #sanity check
+  print(
+    apply(labels,
+          2,
+          function(pop)
+            mean(pop > 5e4))
+  )
+  #write results
+  write.csv(labels, file = fj_csv_ouput_file, row.names=FALSE, quote=TRUE)
+  write.csv(parNames, paste0(fj_csv_ouput_file, ".pars.csv"), row.names=FALSE)
+  
+  all.labels.ls <- foreach::foreach(DAFi_node = DAFi_nodes) %do% {
+    all.label <- as.matrix(all_cell_DAFi_label[[DAFi_node]] %>%
+                             as.integer(.))
+  }
+  names(all.labels.ls) <- DAFi_nodes
+  
+  all.labels <- matrix(unlist(all.labels.ls,
+                              use.names = FALSE),
+                       ncol = length(all.labels.ls),
+                       byrow = FALSE)
+  colnames(all.labels) <- foreach::foreach(DAFi_node = DAFi_nodes,
+                                           .final = unlist) %do% {
+                                             DAFi_node %>%
+                                               strsplit(x = .,
+                                                        split = popOfInt,
+                                                        fixed = TRUE) %>%
+                                               .[[1]] %>%
+                                               tail(.,1) %>%
+                                               gsub(pattern = "^/",
+                                                    replacement = "",
+                                                    x = .) %>%
+                                               gsub(pattern = "/",
+                                                    replacement = "_",
+                                                    x = .,
+                                                    fixed = TRUE) %>%
+                                               gsub(pattern = ",",
+                                                    replacement = ".",
+                                                    x = .,
+                                                    fixed = TRUE) %>%
+                                               trimws(.,
+                                                      which = "right") %>%
+                                               paste0(popOfInt,
+                                                      "_",
+                                                      .)
+                                           }
+  #2nd sanity check
+  print(
+    apply(all.labels,
+          2,
+          function(pop)
+            mean(pop > 0))
+  )
+  
+  flowEnv <- new.env()
+  
+  for(pop in colnames(all.labels)) {
+    #  trLogicleName <- paste0("trLogicle_", pop)
+    #  trLogicle <- logicletGml2(parameters = pop,
+    #                            T = 1000, 
+    #                         W = 0.5,
+    #                         M = 4.5, 
+    #                         A = 0, 
+    #                         transformationId = trLogicleName)
+    #flowEnv[[as.character(trLogicleName)]] <- trLogicle
+    #trPars <- list(transformReference(trLogicleName,
+    #                                 flowEnv))
+    mat <- matrix(c(5e4, 5e5),
+                  ncol = 1,
+                  dimnames = list(c("min", "max"),
+                                  pop))
+    rg <- rectangleGate(filterId = pop,
+                        .gate = mat)
+    #rg@parameters <- new("parameters", 
+    #                    trPars)
+    flowEnv[[as.character(pop)]] <- rg
+  }
+  
+  #for(pop in colnames(all.labels)) {
+  #  mat <- matrix(c(0.5, 1.5),
+  #               ncol = 1,
+  #               dimnames = list(c("min", "max"),
+  #                               pop))
+  # rg <- rectangleGate(filterId = pop,
+  #                     .gate = mat)
+  # flowEnv[[as.character(pop)]] <- rg
+  #}
+  
+  outputFile <- paste0(fj_data_file_path,
+                       ".gating-ml2.xml")
+  
+  addObjectToGatingML <- function(gatingMLNode, x, flowEnv, addParent = NULL, forceGateId = NULL) {#from https://rdrr.io/bioc/flowUtils/src/R/writeGatingML.R 
+    if(is(x, "character")) object = flowEnv[[x]]
+    else object = x
+    switch(class(object),
+           "rectangleGate" = addRectangleGateNode(gatingMLNode, x, flowEnv, addParent, forceGateId),
+           "unitytransform" = NA,
+           {
+             errMessage <- paste("Class \'", class(object), "\' is not supported in Gating-ML 2.0 output.", sep="")
+             if(is(object, "singleParameterTransform"))
+               errMessage <- paste(errMessage, " Only Gating-ML 2.0 compatible transformations are supported by Gating-ML 2.0 output. Transformation \'", 
+                                   object@transformationId, "\' is not among those and cannot be included. Therefore, any gate referencing this transformation would be referencing a non-existent transformation in the Gating-ML output. Please correct the gates and transformations in your environment and try again.", sep="")
+             if(is(object, "filter"))
+               errMessage <- paste(errMessage, " Only Gating-ML 2.0 compatible gates are supported by Gating-ML 2.0 output. Filter \'", 
+                                   object@filterId, "\' is not among those and cannot be included. Please remove this filter and any references to it from the environment and try again.", sep="")
+             stop(errMessage, call. = FALSE)    
+           }
+    )
+  }
+  
+  # Add rectangle gate x to the Gating-ML node
+  addRectangleGateNode <- function(gatingMLNode, x, flowEnv, addParent, forceGateId) {#from https://rdrr.io/bioc/flowUtils/src/R/writeGatingML.R 
+    gate = objectNameToObject(x, flowEnv)
+    if(!is(gate, "rectangleGate")) stop(paste("Unexpected object insted of a rectangleGate - ", class(gate))) 
+    addDebugMessage(paste("Working on rectangleGate ", gate@filterId, sep=""), flowEnv)
+    
+    myID = getObjectId(gate, forceGateId, flowEnv)
+    if(isIdWrittenToXMLAlready(myID, flowEnv)) return(FALSE) 
+    attrs = c("gating:id" = myID)
+    if (!is.null(addParent)) attrs = c(attrs, "gating:parent_id" = filterIdtoXMLId(addParent, flowEnv))
+    
+    gatingMLNode$addNode("gating:RectangleGate", attrs = attrs, close = FALSE)
+    addDimensions(gatingMLNode, x, flowEnv)
+    gatingMLNode$closeTag() # </gating:RectangleGate>
+  }
+  
+  addDebugMessage <- function(msg, flowEnv) {#from https://rdrr.io/bioc/flowUtils/src/R/writeGatingML.R 
+    flowEnv[['.debugMessages']] = c(flowEnv[['.debugMessages']], msg)
+  }
+  
+  doubleCheckExistanceOfParameter <- function(par, flowEnv) {#from https://rdrr.io/bioc/flowUtils/src/R/writeGatingML.R 
+    if(is(par, "transform")) 
     {
-      slotValue = slot(trans, slotName)
-      if(is(slotValue, "numeric") || is(slotValue, "character"))
+      if(!is.null(par@transformationId) && par@transformationId != "" && !exists(par@transformationId, envir=flowEnv, inherits=FALSE)) 
       {
-        name <- paste(name, slotName, slot(trans, slotName), sep = "_")
+        flowEnv[[par@transformationId]] <- par
+        flowEnv[['.addedObjects']][[par@transformationId]] <- par@transformationId
+        addReferencedObjectsToEnv(par@transformationId, flowEnv)
+      }    
+    }
+  }
+  
+  objectNameToObject <- function(x, flowEnv) { #from https://rdrr.io/bioc/flowUtils/src/R/writeGatingML.R 
+    if(is(x, "character")) flowEnv[[x]]
+    else x
+  }
+  
+  addReferencedObjectsToEnv <- function(x, flowEnv) { #from https://rdrr.io/bioc/flowUtils/src/R/writeGatingML.R 
+    object = objectNameToObject(x, flowEnv)
+    for(par in object@parameters) doubleCheckExistanceOfParameter(par, flowEnv)
+  }
+  
+  createTransformIdentifier <- function(trans) {#from https://rdrr.io/bioc/flowUtils/src/R/writeGatingML.R 
+    name <- class(trans)
+    for (slotName in slotNames(trans))
+    {
+      if(slotName != ".Data" && slotName != "parameters" && slotName != "transformationId")
+      {
+        slotValue = slot(trans, slotName)
+        if(is(slotValue, "numeric") || is(slotValue, "character"))
+        {
+          name <- paste(name, slotName, slot(trans, slotName), sep = "_")
+        }
       }
     }
+    name
   }
-  name
-}
-
-shouldTransformationBeSkipped <- function(x, flowEnv) { #from https://rdrr.io/bioc/flowUtils/src/R/writeGatingML.R 
-  trEnv = flowEnv[['.singleParTransforms']]
-  trans = flowEnv[[x]]
-  if(!is.null(trEnv) && !is.null(trans) && is(trans, "singleParameterTransform"))
-  {
-    key = createTransformIdentifier(trans)
-    if (!is.null(trEnv[[key]])){
-      if (x == trEnv[[key]]) FALSE
-      else TRUE
+  
+  shouldTransformationBeSkipped <- function(x, flowEnv) { #from https://rdrr.io/bioc/flowUtils/src/R/writeGatingML.R 
+    trEnv = flowEnv[['.singleParTransforms']]
+    trans = flowEnv[[x]]
+    if(!is.null(trEnv) && !is.null(trans) && is(trans, "singleParameterTransform"))
+    {
+      key = createTransformIdentifier(trans)
+      if (!is.null(trEnv[[key]])){
+        if (x == trEnv[[key]]) FALSE
+        else TRUE
+      } else FALSE
     } else FALSE
-  } else FALSE
-}
-
-addDimensions <- function(gatingMLNode, x, flowEnv, quadGateDividerIdBasedName = NULL)
-{
-  gate = objectNameToObject(x, flowEnv)
-  for (i in 1:length(gate@parameters))
+  }
+  
+  addDimensions <- function(gatingMLNode, x, flowEnv, quadGateDividerIdBasedName = NULL)
   {
-    attrs = c()
-    parameter = gate@parameters[[i]]
-    
-    if (is(gate, "rectangleGate"))
+    gate = objectNameToObject(x, flowEnv)
+    for (i in 1:length(gate@parameters))
     {
-      min = gate@min[[i]]
-      max = gate@max[[i]]
-      if(min != -Inf) attrs = c(attrs, "gating:min" = min)
-      if(max != Inf) attrs = c(attrs, "gating:max" = max)
-    }
-    
-    if(is(parameter, "transformReference")) parameter = resolveTransformationReference(parameter)
-    if(is(parameter, "unitytransform")) attrs = c(attrs, "gating:compensation-ref" = "uncompensated")
-    else if(is(parameter, "singleParameterTransform"))
-    {
-      attrs = c(attrs, "gating:transformation-ref" = filterIdtoXMLId(parameter@transformationId, flowEnv))
-      parameter = parameter@parameters
-      if(is(parameter, "transformReference")) parameter = resolveTransformationReference(parameter)
+      attrs = c()
+      parameter = gate@parameters[[i]]
       
+      if (is(gate, "rectangleGate"))
+      {
+        min = gate@min[[i]]
+        max = gate@max[[i]]
+        if(min != -Inf) attrs = c(attrs, "gating:min" = min)
+        if(max != Inf) attrs = c(attrs, "gating:max" = max)
+      }
+      
+      if(is(parameter, "transformReference")) parameter = resolveTransformationReference(parameter)
       if(is(parameter, "unitytransform")) attrs = c(attrs, "gating:compensation-ref" = "uncompensated")
+      else if(is(parameter, "singleParameterTransform"))
+      {
+        attrs = c(attrs, "gating:transformation-ref" = filterIdtoXMLId(parameter@transformationId, flowEnv))
+        parameter = parameter@parameters
+        if(is(parameter, "transformReference")) parameter = resolveTransformationReference(parameter)
+        
+        if(is(parameter, "unitytransform")) attrs = c(attrs, "gating:compensation-ref" = "uncompensated")
+        else if(is(parameter, "compensatedParameter")) attrs = addCompensationRef(attrs, parameter, flowEnv)
+        else if(is(parameter, "ratiotGml2") || is(parameter, "ratio")) attrs = addCompensationRef(attrs, parameter@numerator, flowEnv)
+        else stop(paste("Unexpected parameter class ", class(parameter), ", compound transformations are not supported in Gating-ML 2.0.", sep=""))
+      } 
       else if(is(parameter, "compensatedParameter")) attrs = addCompensationRef(attrs, parameter, flowEnv)
       else if(is(parameter, "ratiotGml2") || is(parameter, "ratio")) attrs = addCompensationRef(attrs, parameter@numerator, flowEnv)
-      else stop(paste("Unexpected parameter class ", class(parameter), ", compound transformations are not supported in Gating-ML 2.0.", sep=""))
-    } 
-    else if(is(parameter, "compensatedParameter")) attrs = addCompensationRef(attrs, parameter, flowEnv)
-    else if(is(parameter, "ratiotGml2") || is(parameter, "ratio")) attrs = addCompensationRef(attrs, parameter@numerator, flowEnv)
-    else stop(paste("Unexpected parameter class", class(parameter), "- not supported in Gating-ML 2.0 output)."))
-    
-    if(is(gate, "quadGate")) 
-    {
-      attrs = c(attrs, "gating:id" = paste(quadGateDividerIdBasedName, ".D", i, sep = ""))
-      gatingMLNode$addNode("gating:divider", attrs = attrs, close = FALSE)
+      else stop(paste("Unexpected parameter class", class(parameter), "- not supported in Gating-ML 2.0 output)."))
+      
+      if(is(gate, "quadGate")) 
+      {
+        attrs = c(attrs, "gating:id" = paste(quadGateDividerIdBasedName, ".D", i, sep = ""))
+        gatingMLNode$addNode("gating:divider", attrs = attrs, close = FALSE)
+      }
+      else gatingMLNode$addNode("gating:dimension", attrs = attrs, close = FALSE)
+      
+      addDimensionContents(gatingMLNode, parameter, flowEnv)
+      if (is(gate, "quadGate")) gatingMLNode$addNode("gating:value", as.character(gate@boundary[i]))
+      gatingMLNode$closeTag() # </gating:dimension> or </gating:divider>
     }
-    else gatingMLNode$addNode("gating:dimension", attrs = attrs, close = FALSE)
+  }
+  
+  # Add the contents of a Gating-ML dimension to a Gating-ML node
+  addDimensionContents <- function(gatingMLNode, parameter, flowEnv)
+  {
+    newDimension = FALSE
+    if(is(parameter, "compensatedParameter")) 
+    {
+      if (parameter@spillRefId == "SpillFromFCS") 
+        attrs = c("data-type:name" = parameter@parameters)
+      else 
+        attrs = c("data-type:name" = parameter@transformationId)
+    }
+    else if(is(parameter, "unitytransform")) attrs = c("data-type:name" = parameter@parameters)
+    else if(is(parameter, "character")) attrs = c("data-type:name" = parameter)
+    else if(is(parameter, "ratiotGml2") || is(parameter, "ratio")) {
+      attrs = c("data-type:transformation-ref" = parameter@transformationId)
+      newDimension = TRUE
+    }
+    else stop(paste("Unrecognized parameter type, class ", class(parameter), ". Note that compound transformations are not supported in Gating-ML 2.0.", sep=""))
     
-    addDimensionContents(gatingMLNode, parameter, flowEnv)
-    if (is(gate, "quadGate")) gatingMLNode$addNode("gating:value", as.character(gate@boundary[i]))
-    gatingMLNode$closeTag() # </gating:dimension> or </gating:divider>
-  }
-}
-
-# Add the contents of a Gating-ML dimension to a Gating-ML node
-addDimensionContents <- function(gatingMLNode, parameter, flowEnv)
-{
-  newDimension = FALSE
-  if(is(parameter, "compensatedParameter")) 
-  {
-    if (parameter@spillRefId == "SpillFromFCS") 
-      attrs = c("data-type:name" = parameter@parameters)
-    else 
-      attrs = c("data-type:name" = parameter@transformationId)
-  }
-  else if(is(parameter, "unitytransform")) attrs = c("data-type:name" = parameter@parameters)
-  else if(is(parameter, "character")) attrs = c("data-type:name" = parameter)
-  else if(is(parameter, "ratiotGml2") || is(parameter, "ratio")) {
-    attrs = c("data-type:transformation-ref" = parameter@transformationId)
-    newDimension = TRUE
-  }
-  else stop(paste("Unrecognized parameter type, class ", class(parameter), ". Note that compound transformations are not supported in Gating-ML 2.0.", sep=""))
-  
-  if(newDimension)
-    gatingMLNode$addNode("data-type:new-dimension", attrs = attrs)
-  else
-    gatingMLNode$addNode("data-type:fcs-dimension", attrs = attrs)
-}
-
-
-modified.write.gatingML <- function(flowEnv, file = NULL){
-  
-  #THIS FUNCTION HAS BEEN MODIFIED BY A CLUELESS PERSON! DONT TRUST IT TOO MUCH! SOURCE:https://rdrr.io/bioc/flowUtils/src/R/writeGatingML.R
-  
-  if(!is.null(file) && !is(file, "character")) 
-    stop("A file has to be either NULL or a character string.", call. = FALSE)
-  if(is.null(flowEnv) || !is.environment(flowEnv))
-    stop("A flowEnv environment with objects to be saved is requred.", call. = FALSE)
-  if(!is.null(file) && substr(file, nchar(file) - 3, nchar(file)) != ".xml")
-    file <- paste(file, "xml", sep=".")
-  
-  flowEnv[['.debugMessages']] = c()
-  
-  namespaces <- c(
-    "gating" = "http://www.isac-net.org/std/Gating-ML/v2.0/gating", 
-    "xsi" = "http://www.w3.org/2001/XMLSchema-instance", 
-    "transforms" = "http://www.isac-net.org/std/Gating-ML/v2.0/transformations", 
-    "data-type" = "http://www.isac-net.org/std/Gating-ML/v2.0/datatypes")
-  
-  gatingMLNode = suppressWarnings(xmlTree("gating:Gating-ML", namespaces = namespaces, 
-                                          attrs = c("xsi:schemaLocation" = "http://www.isac-net.org/std/Gating-ML/v2.0/gating http://flowcyt.sourceforge.net/gating/2.0/xsd/Gating-ML.v2.0.xsd http://www.isac-net.org/std/Gating-ML/v2.0/transformations http://flowcyt.sourceforge.net/gating/2.0/xsd/Transformations.v2.0.xsd http://www.isac-net.org/std/Gating-ML/v2.0/datatypes http://flowcyt.sourceforge.net/gating/2.0/xsd/DataTypes.v2.0.xsd")))
-  
-  ##### THE FOLLOWING SEVERAL LINES ARE NOT COMMENTED OUT IN THE ORIGINAL
-  #gatingMLNode$addNode("data-type:custom_info", close = FALSE)
-  #gatingMLNode$addNode("info", "Gating-ML 2.0 export generated by R/flowUtils/flowCore")
-  #gatingMLNode$addNode("R-version", sessionInfo()$R.version$version.string)
-  #gatingMLNode$addNode("flowCore-version", as.character(packageVersion("flowCore")))
-  #gatingMLNode$addNode("flowUtils-version", as.character(packageVersion("flowUtils")))
-  #gatingMLNode$addNode("XML-version", as.character(packageVersion("XML")))
-  #gatingMLNode$closeTag()
-  
-  flowEnv[['.objectIDsWrittenToXMLOutput']] = list() # Use this list to collect XML Ids
-  
-  flowEnv[['.addedObjects']] = list() # List of object identifiers of objects that we have to temporarily add to flowEnv
-  for (x in ls(flowEnv)) addReferencedObjectsToEnv(x, flowEnv) 
-  
-  for (x in ls(flowEnv)) if(is(flowEnv[[x]], "transform"))
-    if(!shouldTransformationBeSkipped(x, flowEnv)) addObjectToGatingML(gatingMLNode, x, flowEnv)
-  for (x in ls(flowEnv)) if(!is(flowEnv[[x]], "transform")) addObjectToGatingML(gatingMLNode, x, flowEnv)
-  
-  if(!is.null(file)) sink(file = file)
-  cat(saveXML(gatingMLNode$value(), encoding = "UTF-8"))
-  if(!is.null(file)) sink()
-  
-  rm(list = as.character(flowEnv[['.addedObjects']]), envir = flowEnv)
-  rm('.addedObjects', envir = flowEnv)
-  
-  rm('.objectIDsWrittenToXMLOutput', envir = flowEnv) 
-  
-}
-
-getObjectId <- function(object, forceGateId, flowEnv) { #from: https://rdrr.io/bioc/flowUtils/src/R/writeGatingML.R
-  if (is(object, "filter")) {
-    if (is.null(forceGateId)) myID = filterIdtoXMLId(object@filterId, flowEnv)
-    else myID = filterIdtoXMLId(forceGateId, flowEnv)    
-  } else if (is(object, "transform")) {
-    if (is.null(forceGateId)) myID = filterIdtoXMLId(object@transformationId, flowEnv)
-    else myID = filterIdtoXMLId(forceGateId, flowEnv)
-  } else if (is(object, "compensation")) {
-    if (is.null(forceGateId)) myID = filterIdtoXMLId(object@compensationId, flowEnv)
-    else myID = filterIdtoXMLId(forceGateId, flowEnv)
+    if(newDimension)
+      gatingMLNode$addNode("data-type:new-dimension", attrs = attrs)
+    else
+      gatingMLNode$addNode("data-type:fcs-dimension", attrs = attrs)
   }
   
-  else stop(paste("Unexpected object to get id from, class", class(object)))
-  myID
-}
-
-filterIdtoXMLId <- function(x, flowEnv) { #from: https://rdrr.io/bioc/flowUtils/src/R/writeGatingML.R
-  if(!(is.character(x))) stop(paste("Object of class", class(x), "cannot be converted to an XML identifier."))
-  if(length(x) <= 0) stop(paste("An empty string cannot be converted to an XML identifier."))
   
-  # First, if it is a singleParameterTransform then check for a representative and use it instead eventually
-  trEnv = flowEnv[['.singleParTransforms']]
-  trans = flowEnv[[x]]
-  if(!is.null(trEnv) && !is.null(trans) && is(trans, "singleParameterTransform"))
-  {
-    key = createTransformIdentifier(trans)
-    if (!is.null(trEnv[[key]])) x = trEnv[[key]]        
+  modified.write.gatingML <- function(flowEnv, file = NULL){
+    
+    #THIS FUNCTION HAS BEEN MODIFIED BY A CLUELESS PERSON! DONT TRUST IT TOO MUCH! SOURCE:https://rdrr.io/bioc/flowUtils/src/R/writeGatingML.R
+    
+    if(!is.null(file) && !is(file, "character")) 
+      stop("A file has to be either NULL or a character string.", call. = FALSE)
+    if(is.null(flowEnv) || !is.environment(flowEnv))
+      stop("A flowEnv environment with objects to be saved is requred.", call. = FALSE)
+    if(!is.null(file) && substr(file, nchar(file) - 3, nchar(file)) != ".xml")
+      file <- paste(file, "xml", sep=".")
+    
+    flowEnv[['.debugMessages']] = c()
+    
+    namespaces <- c(
+      "gating" = "http://www.isac-net.org/std/Gating-ML/v2.0/gating", 
+      "xsi" = "http://www.w3.org/2001/XMLSchema-instance", 
+      "transforms" = "http://www.isac-net.org/std/Gating-ML/v2.0/transformations", 
+      "data-type" = "http://www.isac-net.org/std/Gating-ML/v2.0/datatypes")
+    
+    gatingMLNode = suppressWarnings(xmlTree("gating:Gating-ML", namespaces = namespaces, 
+                                            attrs = c("xsi:schemaLocation" = "http://www.isac-net.org/std/Gating-ML/v2.0/gating http://flowcyt.sourceforge.net/gating/2.0/xsd/Gating-ML.v2.0.xsd http://www.isac-net.org/std/Gating-ML/v2.0/transformations http://flowcyt.sourceforge.net/gating/2.0/xsd/Transformations.v2.0.xsd http://www.isac-net.org/std/Gating-ML/v2.0/datatypes http://flowcyt.sourceforge.net/gating/2.0/xsd/DataTypes.v2.0.xsd")))
+    
+    ##### THE FOLLOWING SEVERAL LINES ARE NOT COMMENTED OUT IN THE ORIGINAL
+    #gatingMLNode$addNode("data-type:custom_info", close = FALSE)
+    #gatingMLNode$addNode("info", "Gating-ML 2.0 export generated by R/flowUtils/flowCore")
+    #gatingMLNode$addNode("R-version", sessionInfo()$R.version$version.string)
+    #gatingMLNode$addNode("flowCore-version", as.character(packageVersion("flowCore")))
+    #gatingMLNode$addNode("flowUtils-version", as.character(packageVersion("flowUtils")))
+    #gatingMLNode$addNode("XML-version", as.character(packageVersion("XML")))
+    #gatingMLNode$closeTag()
+    
+    flowEnv[['.objectIDsWrittenToXMLOutput']] = list() # Use this list to collect XML Ids
+    
+    flowEnv[['.addedObjects']] = list() # List of object identifiers of objects that we have to temporarily add to flowEnv
+    for (x in ls(flowEnv)) addReferencedObjectsToEnv(x, flowEnv) 
+    
+    for (x in ls(flowEnv)) if(is(flowEnv[[x]], "transform"))
+      if(!shouldTransformationBeSkipped(x, flowEnv)) addObjectToGatingML(gatingMLNode, x, flowEnv)
+    for (x in ls(flowEnv)) if(!is(flowEnv[[x]], "transform")) addObjectToGatingML(gatingMLNode, x, flowEnv)
+    
+    if(!is.null(file)) sink(file = file)
+    cat(saveXML(gatingMLNode$value(), encoding = "UTF-8"))
+    if(!is.null(file)) sink()
+    
+    rm(list = as.character(flowEnv[['.addedObjects']]), envir = flowEnv)
+    rm('.addedObjects', envir = flowEnv)
+    
+    rm('.objectIDsWrittenToXMLOutput', envir = flowEnv) 
+    
   }
   
-  # Now make it a safe XML identifier
-  # 1) Put an underscore prefix if it starts with a number 
-  if(substr(x, 1, 1) >= "0" && substr(x, 1, 1) <= "9") x = paste("_", x, sep="")
-  # 2) Replace 'strange characters with '.'
-  for(i in 1:nchar(x)) {
-    if(!isNCNameChar(substr(x, i, i))) x <- paste(substr(x, 0, i - 1), '.', substr(x, i + 1, nchar(x)), sep= "")
+  getObjectId <- function(object, forceGateId, flowEnv) { #from: https://rdrr.io/bioc/flowUtils/src/R/writeGatingML.R
+    if (is(object, "filter")) {
+      if (is.null(forceGateId)) myID = filterIdtoXMLId(object@filterId, flowEnv)
+      else myID = filterIdtoXMLId(forceGateId, flowEnv)    
+    } else if (is(object, "transform")) {
+      if (is.null(forceGateId)) myID = filterIdtoXMLId(object@transformationId, flowEnv)
+      else myID = filterIdtoXMLId(forceGateId, flowEnv)
+    } else if (is(object, "compensation")) {
+      if (is.null(forceGateId)) myID = filterIdtoXMLId(object@compensationId, flowEnv)
+      else myID = filterIdtoXMLId(forceGateId, flowEnv)
+    }
+    
+    else stop(paste("Unexpected object to get id from, class", class(object)))
+    myID
   }
-  x
-}
-
-isNCNameChar <- function(char) { #from: https://rdrr.io/bioc/flowUtils/src/R/writeGatingML.R
-  # Based on the ASCII table and XML NCName syntax
-  asciiValue = as.numeric(charToRaw(char))
-  ##### PLEASE READ NOTE IN THE NEXT LINE
-  if(asciiValue < 32) return(FALSE) ##### ORIGINAL VALUE IN SOURCE WAS 45 #####
-  ##### PLEASE READ NOTE IN THE PREVIOUS LINE
-  if(asciiValue == 47) return(FALSE)
-  ##### PLEASE READ NOTE IN THE NEXT LINES
-  #  if(asciiValue >= 58 && asciiValue <= 64) return(FALSE) ##### ORIGINAL NOT COMMENTED OUT #####
-  #  if(asciiValue >= 91 && asciiValue <= 94) return(FALSE) ##### ORIGINAL NOT COMMENTED OUT #####
-  #  if(asciiValue == 96) return(FALSE) ##### ORIGINAL NOT COMMENTED OUT #####
-  #  if(asciiValue >= 123) return(FALSE) ##### ORIGINAL NOT COMMENTED OUT #####
-  if(asciiValue == 127) return(FALSE) ##### THIS ONE DID NOT EXIST IN ORIGINAL SINCE COVERED IN PREVIOUS LINE
-  TRUE    
-}
-
-isIdWrittenToXMLAlready <- function(id, flowEnv) { #from: https://rdrr.io/bioc/flowUtils/src/R/writeGatingML.R
-  idsList = flowEnv[['.objectIDsWrittenToXMLOutput']]
-  if (is.null(idsList[[id]])) {
-    idsList[[id]] = TRUE
-    flowEnv[['.objectIDsWrittenToXMLOutput']] = idsList 
-    FALSE
-  } else {
-    addDebugMessage(paste("ID", id, "should be in the Gating-ML file already."), flowEnv)
-    TRUE
+  
+  filterIdtoXMLId <- function(x, flowEnv) { #from: https://rdrr.io/bioc/flowUtils/src/R/writeGatingML.R
+    if(!(is.character(x))) stop(paste("Object of class", class(x), "cannot be converted to an XML identifier."))
+    if(length(x) <= 0) stop(paste("An empty string cannot be converted to an XML identifier."))
+    
+    # First, if it is a singleParameterTransform then check for a representative and use it instead eventually
+    trEnv = flowEnv[['.singleParTransforms']]
+    trans = flowEnv[[x]]
+    if(!is.null(trEnv) && !is.null(trans) && is(trans, "singleParameterTransform"))
+    {
+      key = createTransformIdentifier(trans)
+      if (!is.null(trEnv[[key]])) x = trEnv[[key]]        
+    }
+    
+    # Now make it a safe XML identifier
+    # 1) Put an underscore prefix if it starts with a number 
+    if(substr(x, 1, 1) >= "0" && substr(x, 1, 1) <= "9") x = paste("_", x, sep="")
+    # 2) Replace 'strange characters with '.'
+    for(i in 1:nchar(x)) {
+      if(!isNCNameChar(substr(x, i, i))) x <- paste(substr(x, 0, i - 1), '.', substr(x, i + 1, nchar(x)), sep= "")
+    }
+    x
   }
-}
-
-modified.write.gatingML(flowEnv, outputFile)
+  
+  isNCNameChar <- function(char) { #from: https://rdrr.io/bioc/flowUtils/src/R/writeGatingML.R
+    # Based on the ASCII table and XML NCName syntax
+    asciiValue = as.numeric(charToRaw(char))
+    ##### PLEASE READ NOTE IN THE NEXT LINE
+    if(asciiValue < 32) return(FALSE) ##### ORIGINAL VALUE IN SOURCE WAS 45 #####
+    ##### PLEASE READ NOTE IN THE PREVIOUS LINE
+    if(asciiValue == 47) return(FALSE)
+    ##### PLEASE READ NOTE IN THE NEXT LINES
+    #  if(asciiValue >= 58 && asciiValue <= 64) return(FALSE) ##### ORIGINAL NOT COMMENTED OUT #####
+    #  if(asciiValue >= 91 && asciiValue <= 94) return(FALSE) ##### ORIGINAL NOT COMMENTED OUT #####
+    #  if(asciiValue == 96) return(FALSE) ##### ORIGINAL NOT COMMENTED OUT #####
+    #  if(asciiValue >= 123) return(FALSE) ##### ORIGINAL NOT COMMENTED OUT #####
+    if(asciiValue == 127) return(FALSE) ##### THIS ONE DID NOT EXIST IN ORIGINAL SINCE COVERED IN PREVIOUS LINE
+    TRUE    
+  }
+  
+  isIdWrittenToXMLAlready <- function(id, flowEnv) { #from: https://rdrr.io/bioc/flowUtils/src/R/writeGatingML.R
+    idsList = flowEnv[['.objectIDsWrittenToXMLOutput']]
+    if (is.null(idsList[[id]])) {
+      idsList[[id]] = TRUE
+      flowEnv[['.objectIDsWrittenToXMLOutput']] = idsList 
+      FALSE
+    } else {
+      addDebugMessage(paste("ID", id, "should be in the Gating-ML file already."), flowEnv)
+      TRUE
+    }
+  }
+  
+  modified.write.gatingML(flowEnv, outputFile)
 }
 
 # R seems to be saving the .RData when exiting, so let's clean up to at least make that tiny (i.e., empty environment)
