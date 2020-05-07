@@ -223,6 +223,12 @@ fj_par_children <- FJ_PAR_CHILDREN
 fj_sample_node_name <- "FJ_SAMPLE_NODE_NAME"
 fj_population_name <- "FJ_POPULATION_NAME"
 fj_sample_file_abs_path <- "FJ_SAMPLE_FILE_ABS_PATH"
+
+# avoid issue with large numbers of centroids and small minPopSize
+if(minPopSize < fj_par_xdim * fj_par_ydim) {
+  minPopSize <- (fj_par_xdim * fj_par_ydim) + 1
+}
+
 ## Code to read gates from wsp file
 #find and load wsp file
 wspName <- paste0(wspDir, 
