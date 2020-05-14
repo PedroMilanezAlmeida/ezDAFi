@@ -223,6 +223,7 @@ fj_par_children <- FJ_PAR_CHILDREN
 fj_sample_node_name <- "FJ_SAMPLE_NODE_NAME"
 fj_population_name <- "FJ_POPULATION_NAME"
 fj_sample_file_abs_path <- "FJ_SAMPLE_FILE_ABS_PATH"
+fj_transform <- FJ_TRANSFORM
 
 # avoid issue with large numbers of centroids and small minPopSize
 if(minPopSize < fj_par_xdim * fj_par_ydim) {
@@ -335,13 +336,15 @@ if(!batch_mode) {
     CytoML::flowjo_to_gatingset(ws,
                                 name = 1,
                                 path = pathFCS,
-                                isNcdf = FALSE)
+                                isNcdf = FALSE,
+                                transform = fj_transform)
   },
   error = function(e){
     CytoML::flowjo_to_gatingset(ws,
                                 name = 1,
                                 path = pathFCS,
                                 isNcdf = FALSE,
+                                transform = fj_transform,
                                 sampNloc = "sampleNode")
   })
 } else {
@@ -349,13 +352,15 @@ if(!batch_mode) {
     CytoML::flowjo_to_gatingset(ws,
                                 name = 1,
                                 path = pathFCS,
-                                isNcdf = TRUE)
+                                isNcdf = TRUE,
+                                transform = fj_transform)
   },
   error = function(e){
     CytoML::flowjo_to_gatingset(ws,
                                 name = 1,
                                 path = pathFCS,
                                 isNcdf = TRUE,
+                                transform = fj_transform,
                                 sampNloc = "sampleNode")
   })
 }
@@ -412,7 +417,15 @@ changeFJSpecialChar <- function(char_vec, cor_char_vec) {
   return(new_char_vec)
 }
 
-parNames <- FJCompToComp(parNames)
+# if the fcs was exported from FlowJo, it usually starts with "FJComp-"
+# in such cases, there is no need to change parNames since it orig.parNames already
+# has "FJComp-" in the begining of parameters names
+if(!grepl(pattern = "^FJComp-",
+          orig.parNames,
+          fixed = FALSE) %>%
+   any) {
+  parNames <- FJCompToComp(parNames)
+}
 parNames <- changeFJSpecialChar(parNames, orig.parNames)
 
 if(grepl(pattern = "time", 
@@ -650,13 +663,14 @@ for(pop_to_SOM in seq_along(pops_to_SOM)){
       #if(noChildMode) {
       #  gates <- basename(names_gates_of_int)
       #} else {
-      gates <- basename(flowWorkspace::gh_get_pop_paths(gs[[fSample]]))[
-        lapply(strsplit(x = dirname(flowWorkspace::gh_get_pop_paths(gs[[fSample]])),
-                        split = "/"),
-               function(nodes)
-                 tail(nodes, n = 1) == basename(pops_to_SOM[[pop_to_SOM]])) %>%
-          unlist(.) %>%
-          which(.)]
+      gates <- basename(flowWorkspace::gh_pop_get_children(gs[[fSample]], pops_to_SOM[[pop_to_SOM]]))
+        #basename(flowWorkspace::gh_get_pop_paths(gs[[fSample]]))[
+      #lapply(strsplit(x = dirname(flowWorkspace::gh_get_pop_paths(gs[[fSample]])),
+      #                 split = "/"),
+      #        function(nodes)
+      #          tail(nodes, n = 1) == basename(pops_to_SOM[[pop_to_SOM]])) %>%
+      #   unlist(.) %>%
+      #   which(.)]
       #}
       for(gate in gates) {
         suppressMessages(flowWorkspace::gs_pop_add(gs_SOM,
@@ -727,13 +741,14 @@ for(pop_to_SOM in seq_along(pops_to_SOM)){
       }
       suppressMessages(flowWorkspace::recompute(gs[[fSample]]))
     } else {
-      gates <- basename(flowWorkspace::gh_get_pop_paths(gs[[fSample]]))[
-        lapply(strsplit(x = dirname(flowWorkspace::gh_get_pop_paths(gs[[fSample]])),
-                        split = "/"),
-               function(nodes)
-                 tail(nodes, n = 1) == basename(pops_to_SOM[[pop_to_SOM]])) %>%
-          unlist(.) %>%
-          which(.)]
+      gates <- basename(flowWorkspace::gh_pop_get_children(gs[[fSample]], pops_to_SOM[[pop_to_SOM]]))
+        #basename(flowWorkspace::gh_get_pop_paths(gs[[fSample]]))[
+      #lapply(strsplit(x = dirname(flowWorkspace::gh_get_pop_paths(gs[[fSample]])),
+      #                 split = "/"),
+      #        function(nodes)
+      #          tail(nodes, n = 1) == basename(pops_to_SOM[[pop_to_SOM]])) %>%
+      #   unlist(.) %>%
+      #   which(.)]
       for(gate in gates) {
         flowWorkspace::gs_pop_add(gs[[fSample]],
                                   flowWorkspace::gh_pop_get_gate(gs[[fSample]],

@@ -90,6 +90,7 @@ public class DAFi extends R_Algorithm {
     private RangedIntegerTextField fMinPopSizeField = null;
     private FJComboBox fApplyOnPrevCombo = null;
     private FJCheckBox fScaleOptionCheckbox = null;
+    private FJCheckBox fTransOptionCheckbox = null;
     private FJCheckBox fBatchOptionCheckbox = null;
     private FJCheckBox fShowRScriptCheckbox = null;
     private FJCheckBox fKMeansSomOptionCheckbox = null;
@@ -117,6 +118,8 @@ public class DAFi extends R_Algorithm {
     private static final String orPerformDAFiLabel = "or perform new DAFi";
     private static final String scaleLabel = "Scale parameters to mean = 0 and sd = 1 (use with care)";
     private static final String scaleTooltip = "Should the data be scaled prior to clustering?";
+    private static final String transLabel = "Transform parameters (usually, yes)";
+    private static final String transTooltip = "If not working with raw FCS files but pre-processed CSV files from other applications such as CITE-seq or histo-cytometry, the data may already have been transformed and this box should be unchecked.";
     private static final String batchLabel = "Advanced (results not re-imported to FlowJo; batch mode)";
     private static final String batchTooltip = "DAFi all samples, plot back-gating results and continue analysis in R. Gates will not be re-imported to FlowJo.";
     private static final String showRScriptLabel = "Show RScript (.txt format) upon completion.";
@@ -129,6 +132,7 @@ public class DAFi extends R_Algorithm {
     private static final String applyOnChildrenTooltip = "If checked, DAFi will refine only the children of the selected population. If unchecked, all children of children will be refined recursively (i.e., all sub-populations downstream of the selected one).";
 
     public static final String scaleOptionName = "scale";
+    public static final String transOptionName = "trans";
     public static final String batchOptionName = "batch";
     public static final String showRScriptOptionName = "RScript";
     public static final String kMeansSomOptionName = "kMeansSom";
@@ -151,12 +155,14 @@ public class DAFi extends R_Algorithm {
     public static final int defaultMinPopSize = 500;
     public static final String defaultApplyOnPrev = "None";
     public static final boolean defaultScale = false;
+    public static final boolean defaultTrans = true;
     public static final boolean defaultBatch = false;
     public static final boolean defaultShowRScript = true;
     public static final boolean defaultKMeansSom = true;
     public static final boolean defaultApplyOnChildren = false;
 
     private boolean fScale = defaultScale;
+    private boolean fTrans = defaultTrans;
     private boolean fBatch = defaultBatch;
     private boolean fShowRScript = defaultShowRScript;
     private boolean fKMeansSom = defaultKMeansSom;
@@ -412,12 +418,35 @@ public class DAFi extends R_Algorithm {
         }
 
         int numExport = FJPluginHelper.getNumTotalEvents(fcmlQueryElement);
-        String sampleName = FJPluginHelper.getSampleName(fcmlQueryElement);
+        //String sampleName = FJPluginHelper.getSampleName(fcmlQueryElement);
 
         FJFileRef retFile = null;
 
+        // Extract the hierarchical gating path from <ExternalPopNode>
+        SElement externalPopNodeElement = PluginHelper.getExternalPopNodeElement(fcmlQueryElement);
+        String pathString = externalPopNodeElement.getString(FJML.path);
+        List<String> paths = StringUtil.stringToPath(pathString);
+        paths = new ArrayList<String>(paths);
+        if (paths.size() > 1) // remove last name in the path, it's the plugin node
+        {
+            paths.remove(paths.size() - 1);
+        }
+        pathString = space;
+        for (String p : paths) {
+            pathString += p + ".";
+        }
+
+        String sampleName = FJPluginHelper.getSampleName(fcmlQueryElement);
+        if (sampleName.endsWith(FileTypes.FCS_SUFFIX)) {
+            sampleName = sampleName.substring(0, sampleName.length() - FileTypes.FCS_SUFFIX.length());
+        }
+        if (sampleName.endsWith(FileTypes.CSV_SUFFIX) || sampleName.endsWith(FileTypes.TXT_SUFFIX)) {
+            sampleName = sampleName.substring(0, sampleName.length() - FileTypes.CSV_SUFFIX.length());
+        }
+        String outFileName = pathString + sampleName + ".EPA.2" + FileTypes.CSV_SUFFIX;
+
         try {
-            retFile = generateDerivedParameterCSVFile(csvFile, numExport, sampleName, outputFolder.getAbsolutePath());
+            retFile = generateDerivedParameterCSVFile(csvFile, numExport, outFileName, outputFolder.getAbsolutePath());
         } catch (IOException ex) {
         }
         PluginHelper.createClusterParameter(results, pluginName, retFile.getLocalFile());
@@ -456,6 +485,9 @@ public class DAFi extends R_Algorithm {
         noEventLine += "\n";
 
         File outFile = new File(outputFolder, popName + FEML.EPA_Suffix);
+
+        System.out.println("outFile generateDerivedParameterCSVFile: " + outFile);
+
         Writer output = new BufferedWriter(new FileWriter(outFile));
         if (true)
             output.write(headerLine);
@@ -588,6 +620,9 @@ public class DAFi extends R_Algorithm {
             sampleName = sampleName.substring(0, sampleName.length() - FileTypes.CSV_SUFFIX.length());
         }
         String outFileName = pathString + sampleName + ".EPA" + FileTypes.CSV_SUFFIX;
+
+        System.out.println("outFileName generateDerivedParameterCSVFile2: " + outFileName);
+
         File outFile = new File(outputFolder, outFileName);
         Writer output = new BufferedWriter(new FileWriter(outFile));
         int ct = 0;
@@ -775,6 +810,7 @@ public class DAFi extends R_Algorithm {
         fndimx = defaultXDim;
         fndimy = defaultYDim;
         fScale = defaultScale;
+        fTrans = defaultTrans;
         fBatch = defaultBatch;
         fShowRScript = defaultShowRScript;
         fKMeansSom = defaultKMeansSom;
@@ -816,6 +852,10 @@ public class DAFi extends R_Algorithm {
             String savedScale = option.getAttributeValue(scaleOptionName);
             if (savedScale != null && !savedScale.isEmpty())
                 fScale = One.equals(savedScale) || True.equals(savedScale);
+
+            String savedTrans = option.getAttributeValue(transOptionName);
+            if (savedTrans != null && !savedTrans.isEmpty())
+                fTrans = One.equals(savedTrans) || True.equals(savedTrans);
 
             String savedBatch = option.getAttributeValue(batchOptionName);
             if (savedBatch != null && !savedBatch.isEmpty())
@@ -897,6 +937,11 @@ public class DAFi extends R_Algorithm {
         fBatchOptionCheckbox.setSelected(fBatch);
         componentList.add(new HBox(new Component[]{fBatchOptionCheckbox}));
 
+        fTransOptionCheckbox = new FJCheckBox(transLabel);
+        fTransOptionCheckbox.setToolTipText("<html><p width=\"" + fixedToolTipWidth + "\">" + transTooltip + "</p></html>");
+        fTransOptionCheckbox.setSelected(fTrans);
+        componentList.add(new HBox(new Component[]{fTransOptionCheckbox}));
+
         FJLabel hSpaceLabelCiting = new FJLabel("");
         GuiFactory.setSizes(hSpaceLabelCiting, new Dimension(fixedLabelWidth, hSpaceHeigth));
         componentList.add(hSpaceLabelCiting);
@@ -941,6 +986,7 @@ public class DAFi extends R_Algorithm {
                 if (fDimXField != null) fDimXField.setEnabled(false);
                 if (fDimYField != null) fDimYField.setEnabled(false);
                 if (fScaleOptionCheckbox != null) fScaleOptionCheckbox.setEnabled(false);
+                if (fTransOptionCheckbox != null) fTransOptionCheckbox.setEnabled(false);
                 if (fBatchOptionCheckbox != null) fBatchOptionCheckbox.setEnabled(false);
                 if (fShowRScriptCheckbox != null) fShowRScriptCheckbox.setEnabled(false);
                 if (fKMeansSomOptionCheckbox != null) fKMeansSomOptionCheckbox.setEnabled(false);
@@ -997,6 +1043,7 @@ public class DAFi extends R_Algorithm {
                 if (fDimXField != null) fDimXField.setEnabled(true);
                 if (fDimYField != null) fDimYField.setEnabled(true);
                 if (fScaleOptionCheckbox != null) fScaleOptionCheckbox.setEnabled(true);
+                if (fTransOptionCheckbox != null) fTransOptionCheckbox.setEnabled(true);
                 if (fBatchOptionCheckbox != null) fBatchOptionCheckbox.setEnabled(true);
                 if (fShowRScriptCheckbox != null) fShowRScriptCheckbox.setEnabled(true);
                 if (fKMeansSomOptionCheckbox != null) fKMeansSomOptionCheckbox.setEnabled(true);
@@ -1038,6 +1085,7 @@ public class DAFi extends R_Algorithm {
         fOptions.put(xDimOptionName, Integer.toString(fDimXField.getInt()));
         fOptions.put(yDimOptionName, Integer.toString(fDimYField.getInt()));
         fOptions.put(scaleOptionName, fScaleOptionCheckbox.isSelected() ? One : Zero);
+        fOptions.put(transOptionName, fTransOptionCheckbox.isSelected() ? One : Zero);
         fOptions.put(batchOptionName, fBatchOptionCheckbox.isSelected() ? One : Zero);
         fOptions.put(showRScriptOptionName, fShowRScriptCheckbox.isSelected() ? One : Zero);
         fOptions.put(kMeansSomOptionName, fKMeansSomOptionCheckbox.isSelected() ? One : Zero);
