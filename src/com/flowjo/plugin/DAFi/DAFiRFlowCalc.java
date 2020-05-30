@@ -63,12 +63,14 @@ public class DAFiRFlowCalc extends RFlowCalculator {
         if(EngineManager.isWindows()) dataFilePath = dataFilePath.replaceAll("\\\\", "/");
         if(EngineManager.isWindows()) sampleFileAbsolutePath = sampleFileAbsolutePath.replaceAll("\\\\", "/");
 
-        String sParScale = options.get(com.flowjo.plugin.DAFi.DAFi.scaleOptionName);
+        //String sParScale = options.get(com.flowjo.plugin.DAFi.DAFi.scaleOptionName);
         String sParTrans = options.get(com.flowjo.plugin.DAFi.DAFi.transOptionName);
         String sParBatch = options.get(com.flowjo.plugin.DAFi.DAFi.batchOptionName);
         String sParkMeansSom = options.get(com.flowjo.plugin.DAFi.DAFi.kMeansSomOptionName);
         String sParApplyOnChildren = options.get(com.flowjo.plugin.DAFi.DAFi.applyOnChildrenOptionName);
         String sParMinPopSize = options.get(com.flowjo.plugin.DAFi.DAFi.minPopSizeOptionName);
+        String sParMinDim = options.get(com.flowjo.plugin.DAFi.DAFi.minDimOptionName);
+        String sParMaxDim = options.get(com.flowjo.plugin.DAFi.DAFi.maxDimOptionName);
         String sParXDim = options.get(com.flowjo.plugin.DAFi.DAFi.xDimOptionName);
         String sParYDim = options.get(com.flowjo.plugin.DAFi.DAFi.yDimOptionName);
         String sParApplyOnPrev = options.get(com.flowjo.plugin.DAFi.DAFi.applyOnPrevOptionName);
@@ -76,10 +78,10 @@ public class DAFiRFlowCalc extends RFlowCalculator {
         //Added this to add runID to parameter
         String parameterName = com.flowjo.plugin.DAFi.DAFi.pluginName;
 
-        if (sParScale == null || sParScale.isEmpty() || com.flowjo.plugin.DAFi.DAFi.One.equals(sParScale) || com.flowjo.plugin.DAFi.DAFi.True.equals(sParScale))
-            sParScale = TRUE; // TRUE is the default
-        else
-            sParScale = FALSE;
+        //if (sParScale == null || sParScale.isEmpty() || com.flowjo.plugin.DAFi.DAFi.One.equals(sParScale) || com.flowjo.plugin.DAFi.DAFi.True.equals(sParScale))
+//            sParScale = TRUE; // TRUE is the default
+        //      else
+        //sParScale = FALSE;
 
         if (sParTrans == null || sParTrans.isEmpty() || com.flowjo.plugin.DAFi.DAFi.One.equals(sParTrans) || com.flowjo.plugin.DAFi.DAFi.True.equals(sParTrans))
             sParTrans = TRUE; // TRUE is the default
@@ -118,6 +120,20 @@ public class DAFiRFlowCalc extends RFlowCalculator {
         }
 
         try {
+            if ((Integer.parseInt(sParMinDim) < 3) || (Integer.parseInt(sParMinDim) > 1000000))
+                sParMinDim= Integer.toString(com.flowjo.plugin.DAFi.DAFi.defaultMinDim);
+        } catch (Exception e) {
+            sParMinDim = Integer.toString(com.flowjo.plugin.DAFi.DAFi.defaultMinDim);
+        }
+
+        try {
+            if ((Integer.parseInt(sParMaxDim) < 3) || (Integer.parseInt(sParMaxDim) > 1000000))
+                sParMaxDim= Integer.toString(com.flowjo.plugin.DAFi.DAFi.defaultMaxDim);
+        } catch (Exception e) {
+            sParMaxDim = Integer.toString(com.flowjo.plugin.DAFi.DAFi.defaultMaxDim);
+        }
+
+        try {
             if ((Integer.parseInt(sParXDim) < 3) || (Integer.parseInt(sParXDim) > 32))
                 sParXDim = Integer.toString(com.flowjo.plugin.DAFi.DAFi.defaultXDim);
         } catch (Exception e) {
@@ -132,10 +148,14 @@ public class DAFiRFlowCalc extends RFlowCalculator {
         }
 
         int minPopSize = com.flowjo.plugin.DAFi.DAFi.defaultMinPopSize;
+        int minDim = com.flowjo.plugin.DAFi.DAFi.defaultMinDim;
+        int maxDim = com.flowjo.plugin.DAFi.DAFi.defaultMaxDim;
         int xDim = com.flowjo.plugin.DAFi.DAFi.defaultXDim;
         int yDim = com.flowjo.plugin.DAFi.DAFi.defaultYDim;
         try {
             minPopSize = Integer.parseInt(sParMinPopSize);
+            minDim = Integer.parseInt(sParMinDim);
+            maxDim = Integer.parseInt(sParMaxDim);
             xDim = Integer.parseInt(sParXDim);
             yDim = Integer.parseInt(sParYDim);
         } catch (Exception e) {}
@@ -161,12 +181,14 @@ public class DAFiRFlowCalc extends RFlowCalculator {
                 scriptLine = scriptLine.replace("FJ_DATA_FILE_PATH", dataFilePath);
                 scriptLine = scriptLine.replace("FJ_CSV_OUPUT_FILE", outFileName);
                 scriptLine = scriptLine.replace("FJ_GATING_ML_OUTPUT_FILE", gatingMLOutFile.getAbsolutePath());
-                scriptLine = scriptLine.replace("FJ_PAR_SCALE", sParScale);
+                //scriptLine = scriptLine.replace("FJ_PAR_SCALE", sParScale);
                 scriptLine = scriptLine.replace("FJ_TRANSFORM", sParTrans);
                 scriptLine = scriptLine.replace("FJ_BATCH_MODE", sParBatch);
                 scriptLine = scriptLine.replace("FJ_PAR_SOM", sParkMeansSom);
                 scriptLine = scriptLine.replace("FJ_PAR_CHILDREN", sParApplyOnChildren);
                 scriptLine = scriptLine.replace("FJ_PAR_MINPOPSIZE", sParMinPopSize);
+                scriptLine = scriptLine.replace("FJ_MIN_N_PAR", sParMinDim);
+                scriptLine = scriptLine.replace("FJ_MAX_N_PAR", sParMaxDim);
                 scriptLine = scriptLine.replace("FJ_PAR_XDIM", sParXDim);
                 scriptLine = scriptLine.replace("FJ_PAR_YDIM", sParYDim);
                 scriptLine = scriptLine.replace("FJ_PAR_APPLY_ON_PREV", sParApplyOnPrev);

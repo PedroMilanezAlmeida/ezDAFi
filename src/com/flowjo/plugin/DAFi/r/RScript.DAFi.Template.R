@@ -94,6 +94,12 @@ tryCatch(suppressMessages(library("foreach")),
                             repos = 'http://cran.us.r-project.org')
            suppressMessages(library("foreach"))
          })
+tryCatch(suppressMessages(library("pheatmap")),
+         error = function(e){
+           install.packages(pkgs =  "pheatmap",
+                            repos = 'http://cran.us.r-project.org')
+           suppressMessages(library("pheatmap"))
+         })
 tryCatch(suppressMessages(library("gridExtra")),
          error = function(e){
            install.packages(pkgs =  "gridExtra",
@@ -190,7 +196,30 @@ tryCatch(suppressMessages(library("ggcyto")),
                                 ask = FALSE)
            suppressMessages(library("ggcyto"))
          })
-
+elbow_finder <- function(y_values) { #https://stackoverflow.com/a/42810075
+  # Max values to create line
+  x_values <- seq_along(y_values)
+  max_x_x <- max(x_values)
+  max_x_y <- y_values[which.max(x_values)]
+  max_y_y <- max(y_values)
+  max_y_x <- x_values[which.max(y_values)]
+  max_df <- data.frame(x = c(max_y_x, max_x_x), y = c(max_y_y, max_x_y))
+  
+  # Creating straight line between the max values
+  fit <- lm(max_df$y ~ max_df$x)
+  
+  # Distance from point to line
+  distances <- c()
+  for(i in 1:length(x_values)) {
+    distances <- c(distances, abs(coef(fit)[2]*x_values[i] - y_values[i] + coef(fit)[1]) / sqrt(coef(fit)[2]^2 + 1^2))
+  }
+  
+  # Max distance point
+  x_max_dist <- x_values[which.max(distances)]
+  y_max_dist <- y_values[which.max(distances)]
+  
+  return(c(x_max_dist, y_max_dist))
+}
 sessionInfo()
 
 # create R objects with FJ options
@@ -198,8 +227,8 @@ fj_data_file_path <- "FJ_DATA_FILE_PATH"
 fj_data_file_path
 batch_mode <- FJ_BATCH_MODE
 batch_mode
-fj_par_apply_on_prev <- "FJ_PAR_APPLY_ON_PREV"
-fj_par_apply_on_prev
+#fj_par_apply_on_prev <- "FJ_PAR_APPLY_ON_PREV"
+#fj_par_apply_on_prev
 popOfInt <- "FJ_POPULATION_NAME"
 popOfInt
 minPopSize <- FJ_PAR_MINPOPSIZE
@@ -208,9 +237,10 @@ wspDir <- "FJ_PARM_WSPDIR"
 wspDir
 wspName <- "FJ_PARM_WSPNAME"
 wspName
-parNames <- c(FJ_PARAMS_LIST)
-parNames
-fj_par_scale <- FJ_PAR_SCALE
+#parNames <- c(FJ_PARAMS_LIST)
+#parNames
+#fj_par_scale <- FJ_PAR_SCALE
+fj_par_scale <- TRUE
 fj_par_scale
 fj_par_som <- FJ_PAR_SOM
 fj_par_som
@@ -224,6 +254,16 @@ fj_sample_node_name <- "FJ_SAMPLE_NODE_NAME"
 fj_population_name <- "FJ_POPULATION_NAME"
 fj_sample_file_abs_path <- "FJ_SAMPLE_FILE_ABS_PATH"
 fj_transform <- FJ_TRANSFORM
+plotDir <- paste0(dirname(fj_data_file_path),
+                  "/plots")
+min.nPar <- FJ_MIN_N_PAR
+min.nPar <- ifelse(min.nPar < 3,
+                   yes = 3,
+                   no = min.nPar)
+max.nPar <- FJ_MAX_N_PAR
+if(max.nPar < min.nPar) {
+  max.nPar <- min.nPar
+}
 
 # avoid issue with large numbers of centroids and small minPopSize
 if(minPopSize < fj_par_xdim * fj_par_ydim) {
@@ -365,101 +405,187 @@ if(!batch_mode) {
   })
 }
 
+### THIS FOLLOWING CODE IS SHUT OFF
+### IT INTENDS TO ALLOW THE USER TO RUN DAFi ON PREVIOUSLY DAFi-ed POPS
+### ALTHOUGH IT IS POSSIBLE TO RECOVER DAFi GATES FROM DERIVED PARAMETERS CSV FILES,
+### IT IS NOT CURRENTLY POSSIBLE TO PARSE THE GATING TREE DOWN THE DAFi GATE
+### :'(((
+if(FALSE){
+  #### flowworkspace won't load gates based on derived parameters
+  ### therefore trying to do it manually here
+  ## find derived parameter files
+  der.par.paths <- XML::xpathApply(ws@doc,
+                                   file.path("/Workspace/SampleList/Sample/DerivedParameters","DerivedParameter"),
+                                   function(x)
+                                     XML::xmlGetAttr(x, "importFile") %>%
+                                     gsub(pattern = "%20", replacement = " ", x = .) %>%
+                                     gsub(pattern = "file:", replacement = "", x = .)) %>%
+    unlist %>%
+    unique %>%
+    grep(pattern = paste0(gsub(x = basename(as.character(pathFCS$file)),
+                               pattern = ".fcs$",
+                               replacement = "",
+                               fixed = FALSE),
+                          ".EPA.2.csv.EPA.csv"),
+         fixed = TRUE,
+         value = TRUE,
+         x = .)
+  der.par.paths
+  
+  # read DAFi derived parameter csv file and get DAFi gate names
+  der.par.gate.names <- sapply(seq_along(der.par.paths),
+                               function(der.par.path)
+                                 read.csv(file = der.par.path, 
+                                          header = FALSE, 
+                                          stringsAsFactors = FALSE, 
+                                          nrows = 1)[1,])
+  der.par.gate.names
+  # read DAFi derived parameter csv file and get DAFi gates as logical gates
+  der.par.gates <- lapply(seq_along(der.par.gate.names),
+                          function(der.par.gate.idx) {
+                            colClasses <- rep("NULL", length(der.par.gate.idx))
+                            colClasses[der.par.gate.idx] <- "numeric"
+                            der.par.gates <-
+                              read.csv(file = der.par.paths, 
+                                       header = FALSE, 
+                                       stringsAsFactors = FALSE,
+                                       skip = 1,
+                                       colClasses = colClasses)[,1]
+                            der.par.gates <- 
+                              ifelse(der.par.gates > 5e4,
+                                     yes = TRUE,
+                                     no = FALSE)
+                            return(der.par.gates)
+                          })
+  names(der.par.gates) <- der.par.gate.names
+  der.par.gates
+  # find names of population DAFi was called on
+  der.par.first.pop <- strsplit(x = names(der.par.gates),
+                                split = "_DAFi_",
+                                fixed = TRUE) %>%
+    lapply(., `[[`, 1)
+  names(der.par.first.pop) <- names(der.par.gates)
+  der.par.first.pop
+  # add DAFi logical gates from derived param file to GatingStrategy
+  for(der.par.gate in names(der.par.gates)) {
+    ls.der.par.gate <- list(der.par.gates[[der.par.gate]])
+    names(ls.der.par.gate) <- sampleNames(gs)
+    flowWorkspace::gs_pop_add(gs = gs,
+                              gate = ls.der.par.gate,
+                              parent = der.par.first.pop[[der.par.gate]],
+                              name = der.par.gate)
+  }
+  
+  
+  flowWorkspace::recompute(gs)
+  
+}
+
 flowCore::fsApply(flowWorkspace::gs_pop_get_data(gs), 
                   print)
 
-orig.parNames <- flowWorkspace::gh_pop_get_data(gs[[1]]) %>%
-  flowCore::parameters(.) %>%
-  flowCore::pData(.) %>%
-  .$name
+if(min.nPar >
+   flowWorkspace::gh_pop_get_data(gs[[1]]) %>%
+   flowCore::parameters(.) %>%
+   flowCore::pData(.) %>%
+   dim(.) %>%
+   .[1]) {
+  min.nPar <-
+    flowWorkspace::gh_pop_get_data(gs[[1]]) %>%
+    flowCore::parameters(.) %>%
+    flowCore::pData(.) %>%
+    dim(.) %>%
+    .[1]
+}
 
 ## In CSV files, the parameter names are often like FJComp-xxx while in parNames we may be getting Comp-dsfdsdxxx
-FJCompToComp <- function(char_vec) {
-  if (any(grepl("FJComp", char_vec))) {
-    ## If it looks like there is FJComp-xxx in parNames but no FJComp-xxx in the column names of the FCS file, then
-    ## rename FJComp-xxx to Comp-xxx in the parNames and we will be looking for those instead.
-    new_char_vec <- gsub("^\\FJComp-", "Comp-", char_vec)
-    return(new_char_vec)
-  } else {
-    return(char_vec)
-  }
-}
-changeFJSpecialChar <- function(char_vec, cor_char_vec) {
-  new_char_vec <- unlist(lapply(char_vec, function(name) {
-    if (name %in% cor_char_vec | name == "EventNumberDP") {
-      name
-    } else {
-      # Let's try [] to <>
-      name2 <- gsub("[", "<", name, fixed=TRUE)
-      name2 <- gsub("]", ">", name2, fixed=TRUE)
-      if (name2 %in% cor_char_vec) {
-        name2 # Worked, return it
-      } else {
-        # Previous fix did not do it, _ => / on the original names
-        name2 <- gsub("_", "/", name, fixed=TRUE)
-        if (name2 %in% cor_char_vec) {
-          name2 # Worked, return it
-        } else {
-          # That did not work either, let's try both [] => on top of the previous fix (_ => /)
-          name3 <- gsub("[", "<", name2, fixed=TRUE)
-          name3 <- gsub("]", ">", name3, fixed=TRUE)
-          if (name3 %in% cor_char_vec) {
-            name3 # Worked, finally, return it
-          } else {
-            ## Maybe we read a wrong dataset?
-            cat(paste("The input FCS file does not contain the provided input parameter, missing", name, "\n"))
-            "MISSINGPARAMETER"
-          }
-        }
-      }
-    }
-  }))
-  return(new_char_vec)
-}
+#FJCompToComp <- function(char_vec) {
+# if (any(grepl("FJComp", char_vec))) {
+#   ## If it looks like there is FJComp-xxx in parNames but no FJComp-xxx in the column names of the FCS file, then
+#   ## rename FJComp-xxx to Comp-xxx in the parNames and we will be looking for those instead.
+#   new_char_vec <- gsub("^\\FJComp-", "Comp-", char_vec)
+#   return(new_char_vec)
+# } else {
+#   return(char_vec)
+# }
+#}
+#changeFJSpecialChar <- function(char_vec, cor_char_vec) {
+# new_char_vec <- unlist(lapply(char_vec, function(name) {
+#   if (name %in% cor_char_vec | name == "EventNumberDP") {
+#     name
+#   } else {
+#     # Let's try [] to <>
+#     name2 <- gsub("[", "<", name, fixed=TRUE)
+#     name2 <- gsub("]", ">", name2, fixed=TRUE)
+#     if (name2 %in% cor_char_vec) {
+#       name2 # Worked, return it
+#     } else {
+#       # Previous fix did not do it, _ => / on the original names
+#       name2 <- gsub("_", "/", name, fixed=TRUE)
+#       if (name2 %in% cor_char_vec) {
+#         name2 # Worked, return it
+#       } else {
+#         # That did not work either, let's try both [] => on top of the previous fix (_ => /)
+#         name3 <- gsub("[", "<", name2, fixed=TRUE)
+#         name3 <- gsub("]", ">", name3, fixed=TRUE)
+#         if (name3 %in% cor_char_vec) {
+#           name3 # Worked, finally, return it
+#         } else {
+#           ## Maybe we read a wrong dataset?
+#           cat(paste("The input FCS file does not contain the provided input parameter, missing", name, "\n"))
+#           "MISSINGPARAMETER"
+#         }
+#       }
+#     }
+#   }
+# }))
+# return(new_char_vec)
+#}
 
 # if the fcs was exported from FlowJo, it usually starts with "FJComp-"
 # in such cases, there is no need to change parNames since it orig.parNames already
 # has "FJComp-" in the begining of parameters names
-if(!grepl(pattern = "^FJComp-",
-          orig.parNames,
-          fixed = FALSE) %>%
-   any) {
-  parNames <- FJCompToComp(parNames)
-}
-parNames <- changeFJSpecialChar(parNames, orig.parNames)
+#if(!grepl(pattern = "^FJComp-",
+#         orig.parNames,
+#         fixed = FALSE) %>%
+#  any) {
+# parNames <- FJCompToComp(parNames)
+#}
+#parNames <- changeFJSpecialChar(parNames, orig.parNames)
 
-if(grepl(pattern = "time", 
-         x = parNames, 
-         ignore.case = TRUE, 
-         fixed = FALSE) %>%
-   any(.)){
-  stop("Please remove time as parameter for  clustering.")
-}
+#if(grepl(pattern = "time", 
+#        x = parNames, 
+#        ignore.case = TRUE, 
+#        fixed = FALSE) %>%
+#  any(.)){
+# stop("Please remove time as parameter for  clustering.")
+#}
 
-if(grepl(pattern = "FSC|SSC", 
-         x = parNames, 
-         ignore.case = FALSE, 
-         fixed = FALSE) %>%
-   any(.) &
-   !fj_par_scale){
-  stop("\n  It seems that FSC and/or SSC were included as clustering parameter, but with no data scaling.\n  FSC/SSC are handled differently than fluorochrome data in FlowJo.\n Please select scaling to make sure all data used in clustering is on the same scale.")
-}
+#if(grepl(pattern = "FSC|SSC", 
+#        x = parNames, 
+#        ignore.case = FALSE, 
+#        fixed = FALSE) %>%
+#  any(.) &
+#  !fj_par_scale){
+# stop("\n  It seems that FSC and/or SSC were included as clustering parameter, but with no data scaling.\n  FSC/SSC are handled differently than fluorochrome data in FlowJo.\n Please select scaling to make sure all data used in clustering is on the same scale.")
+#}
 
-parIndices <- match(parNames, orig.parNames)
+#parIndices <- match(parNames, orig.parNames)
 
-if (length(parNames) == 0 || length(parIndices) == 0){
-  stop("Something seems wrong, it's like the input FCS file does not contain the provided input parameters.", call.=FALSE)
-}
+#if (length(parNames) == 0 || length(parIndices) == 0){
+# stop("Something seems wrong, it's like the input FCS file does not contain the provided input parameters.", call.=FALSE)
+#}
+
 eventsCount <- flowWorkspace::gh_pop_get_data(gs[[1]]) %>%
   dim %>%
   .[1]
 
-if (length(parNames) == 0){
-  stop("Some input parameters need to be selected!", call.=FALSE)
-}
-if (length(parNames) == 0 || "MISSINGPARAMETER" %in% parNames){
-  stop("The input file is missing some of the specified parameters.", call.=FALSE)
-}
+#if (length(parNames) == 0){
+# stop("Some input parameters need to be selected!", call.=FALSE)
+#}
+#if (length(parNames) == 0 || "MISSINGPARAMETER" %in% parNames){
+# stop("The input file is missing some of the specified parameters.", call.=FALSE)
+#}
 if (eventsCount == 0){
   stop("R failed to read the input file.", call.=FALSE)
 }
@@ -592,183 +718,239 @@ for(pop_to_SOM in seq_along(pops_to_SOM)){
   for(fSample in seq_along(gs)) {
     if(dim(flowWorkspace::gh_pop_get_data(gs[[fSample]],
                                           pops_to_SOM[pop_to_SOM] %>%
-                                          names(.))[,parIndices])[1] > minPopSize) { # in case a subpop is smaller than min #events, SOM is not applied
+                                          names(.)))[1] > minPopSize) {#[,parIndices])[1] > minPopSize) { # in case a subpop is smaller than min #events, SOM is not applied
       ## Code to read the GatingSet data from each population that will be analyzed with DAFi
-      if (nchar(fj_par_apply_on_prev) > 5) { ## Expected either "None" or a valid file path
-        load(fj_par_apply_on_prev)
-        fSOM <- FlowSOM::NewData(fSOM, flowWorkspace::gh_pop_get_data(gs[[fSample]],
-                                                                      pops_to_SOM[pop_to_SOM] %>%
-                                                                        names(.))[,parIndices]);
-      } else {
-        fSOM <- FlowSOM::ReadInput(flowWorkspace::gh_pop_get_data(gs[[fSample]],
-                                                                  pops_to_SOM[pop_to_SOM] %>%
-                                                                    names(.)),
-                                   compensate = FALSE,
-                                   transform = FALSE,
-                                   scale = fj_par_scale,
-                                   silent = TRUE)
-      }
-      if(fj_par_som){ #if user decides to use self-organizing maps
-        ## Code to generate SOM centroids
-        set.seed(2020)
-        fSOM <- FlowSOM::BuildSOM(fSOM,
-                                  colsToUse = parNames,
-                                  silent = TRUE,
-                                  xdim = fj_par_xdim,
-                                  ydim = fj_par_ydim)
-        ## Code to gate flowSOM results
-        #retrieve codes
-        if(fj_par_scale) {
-          codes <- t(apply(fSOM$map$codes,
-                           1,
-                           function(centroid)
-                             centroid *
-                             fSOM$scaled.scale[parNames] +
-                             fSOM$scaled.center[parNames]))
-        } else {
-          codes <- fSOM$map$codes
-        }
-      } else { # if the user decides to use kmeans
-        ## Code to generate kmeans centroids
-        set.seed(2020)
-        fkMeans <- stats::kmeans(x = fSOM$data[,parNames],
-                                 centers = fj_par_xdim*fj_par_ydim,
-                                 iter.max = 100)
-        ## Code to gate kmeans results
-        #retrieve codes
-        if(fj_par_scale) {
-          codes <- t(apply(fkMeans$centers,
-                           1,
-                           function(centroid)
-                             centroid *
-                             fSOM$scaled.scale[parNames] +
-                             fSOM$scaled.center[parNames]))
-        } else {
-          codes <- fkMeans$centers
-        }
-      }
-      ls_fSOM <- list(codes)
-      names(ls_fSOM) <- rownames(flowCore::pData(gs[[fSample]]))
-      #create FlowSet with FlowSOM centroids
-      fS_SOM <- lapply(ls_fSOM,
-                       function(sample)
-                         flowCore::flowFrame(sample)) %>%
-        flowCore::flowSet()
-      flowCore::parameters(fS_SOM[[1]]) <- flowCore::parameters(flowWorkspace::gh_pop_get_data(gs[[fSample]],
-                                                                                               y = "root")[,parIndices])
-      #create GatingSet with FlowSOM centroids
-      suppressMessages(gs_SOM <- GatingSet(fS_SOM))
-      flowCore::pData(gs_SOM) <- flowCore::pData(gs[[fSample]])
-      #get gates and apply to cluster centroids
-      #if(noChildMode) {
-      #  gates <- basename(names_gates_of_int)
+      #if (nchar(fj_par_apply_on_prev) > 5) { ## Expected either "None" or a valid file path
+      #  load(fj_par_apply_on_prev)
+      # fSOM <- FlowSOM::NewData(fSOM, 
+      #                          flowWorkspace::gh_pop_get_data(gs[[fSample]],
+      #                                                               pops_to_SOM[pop_to_SOM] %>%
+      #                                                                 names(.))[,parIndices]);
       #} else {
-      gates <- basename(flowWorkspace::gh_pop_get_children(gs[[fSample]], pops_to_SOM[[pop_to_SOM]]))
-        #basename(flowWorkspace::gh_get_pop_paths(gs[[fSample]]))[
-      #lapply(strsplit(x = dirname(flowWorkspace::gh_get_pop_paths(gs[[fSample]])),
-      #                 split = "/"),
-      #        function(nodes)
-      #          tail(nodes, n = 1) == basename(pops_to_SOM[[pop_to_SOM]])) %>%
-      #   unlist(.) %>%
-      #   which(.)]
-      #}
-      for(gate in gates) {
-        suppressMessages(flowWorkspace::gs_pop_add(gs_SOM,
-                                                   flowWorkspace::gh_pop_get_gate(gs[[fSample]],
-                                                                                  paste0(pops_to_SOM[[pop_to_SOM]],
-                                                                                         "/", gate))))
-      }
-      tryCatch({suppressMessages(flowWorkspace::recompute(gs_SOM))},
-               error = function(e){
-                 stop(paste0("It looks like the channel \"",
-                             strsplit(x = e$message, 
-                                      split = "\n  ",
-                                      fixed = TRUE)[[1]][2] %>%
-                               strsplit(x = ., 
-                                        split = " not found",
-                                        fixed = TRUE) %>% 
-                               .[[1]] %>%
-                               .[1],
-                             "\" has not been selected when the plugin was called although it was used down the gating hiearchy. \nPlease, make sure all flow channels used in the gating tree are selected when calling the plugin."), 
-                      call. = FALSE)
-               })
-      ## Code to update assignment of cell identity according to DAFi results
-      SOM_labels <- vector(mode = "list",
-                           length = length(gates))
-      names(SOM_labels) <- gates
-      for(gate in gates){
-        SOM_labels[[gate]] <- rep(FALSE,
-                                  fj_par_xdim*fj_par_ydim)
-      }
-      for(gate in gates) {
-        SOM_labels[[gate]][flowWorkspace::gh_pop_get_indices(gs_SOM[[1]],
-                                                             gate)] <- TRUE
-      }
-      cell_DAFi_label <- vector(mode = "list",
-                                length = length(gates))
-      names(cell_DAFi_label) <- gates
-      for(gate in gates) {
-        if(fj_par_som){
-          cell_DAFi_label[[gate]] <- SOM_labels[[gate]][fSOM$map$mapping[,1]]
-        } else {
-          cell_DAFi_label[[gate]] <- SOM_labels[[gate]][fkMeans$cluster]
+        pop.exprs <- flowWorkspace::gh_pop_get_data(
+          gs[[fSample]],
+          pops_to_SOM[pop_to_SOM] %>%
+            names(.)) %>%
+          flowCore::exprs() #%>%
+        #.[,parNames] #%>%
+        #scale(center = TRUE,
+        #     scale = TRUE)
+        gates <- basename(
+          flowWorkspace::gh_pop_get_children(
+            gs[[fSample]], 
+            pops_to_SOM[[pop_to_SOM]]))
+        for(gate in gates) {
+          gate_par <- flowWorkspace::gh_pop_get_gate(
+            gs[[fSample]],
+            paste0(pops_to_SOM[[pop_to_SOM]],
+                   "/",
+                   gate))@parameters %>% names
+          in.gate <- flowWorkspace::gh_pop_get_indices(
+            gs[[fSample]],
+            paste0(pops_to_SOM[[pop_to_SOM]],
+                   "/",
+                   gate))[
+                     flowWorkspace::gh_pop_get_indices(
+                       gs[[fSample]],
+                       pops_to_SOM[pop_to_SOM] %>%
+                         names(.))]
+          markers.t <- apply(pop.exprs,
+                             2, 
+                             function(marker) 
+                               t.test(marker[in.gate],
+                                      marker[!in.gate])$statistic) %>%
+            abs() %>%
+            sort(decreasing = TRUE)
+          keep.marker <- max(min.nPar,
+                             elbow_finder(markers.t)[1])
+          keep.marker <- min(keep.marker, max.nPar)
+          keep.marker <- markers.t[1:keep.marker] %>%
+            names
+          keep.marker <- c(gate_par, keep.marker) %>%
+            unique()
+          keep.marker <- colnames(pop.exprs) %in% 
+            keep.marker
+          print(gate)
+          print(flowWorkspace::gh_pop_get_data(gs[[fSample]],
+                                               pops_to_SOM[pop_to_SOM] %>%
+                                                 names(.)) %>%
+                  #.[,parNames] %>%
+                  .[,keep.marker] %>%
+                  flowCore::parameters() %>%
+                  flowCore::pData() %>%
+                  .$desc)
+          fSOM <- FlowSOM::ReadInput(
+            flowWorkspace::gh_pop_get_data(gs[[fSample]],
+                                           pops_to_SOM[pop_to_SOM] %>%
+                                             names(.)) %>%
+              #.[,parNames] %>%
+              .[,keep.marker],
+            compensate = FALSE,
+            transform = FALSE,
+            scale = fj_par_scale,
+            silent = TRUE)
+          if(fj_par_som){ #if user decides to use self-organizing maps
+            ## Code to generate SOM centroids
+            set.seed(2020)
+            fSOM <- FlowSOM::BuildSOM(fSOM,
+                                      colsToUse = NULL,
+                                      silent = TRUE,
+                                      xdim = fj_par_xdim,
+                                      ydim = fj_par_ydim)
+            ## Code to gate flowSOM results
+            #retrieve codes
+            if(fj_par_scale) {
+              codes <- t(apply(fSOM$map$codes,
+                               1,
+                               function(centroid)
+                                 centroid *
+                                 fSOM$scaled.scale +
+                                 fSOM$scaled.center))
+            } else {
+              codes <- fSOM$map$codes
+            }
+          } else { # if the user decides to use kmeans
+            ## Code to generate kmeans centroids
+            set.seed(2020)
+            fkMeans <- stats::kmeans(x = fSOM$data,
+                                     centers = fj_par_xdim*fj_par_ydim,
+                                     iter.max = 100)
+            ## Code to gate kmeans results
+            #retrieve codes
+            if(fj_par_scale) {
+              codes <- t(apply(fkMeans$centers,
+                               1,
+                               function(centroid)
+                                 centroid *
+                                 fSOM$scaled.scale +
+                                 fSOM$scaled.center))
+            } else {
+              codes <- fkMeans$centers
+            }
+          }
+          ls_fSOM <- list(codes)
+          names(ls_fSOM) <- rownames(flowCore::pData(gs[[fSample]]))
+          #create FlowSet with FlowSOM centroids
+          fS_SOM <- lapply(ls_fSOM,
+                           function(sample)
+                             flowCore::flowFrame(sample)) %>%
+            flowCore::flowSet()
+          flowCore::parameters(fS_SOM[[1]]) <- flowCore::parameters(
+            flowWorkspace::gh_pop_get_data(
+              gs[[fSample]],
+              y = "root")[,keep.marker])#[,parNames][,keep.marker])
+          #create GatingSet with FlowSOM centroids
+          suppressMessages(gs_SOM <- GatingSet(fS_SOM))
+          flowCore::pData(gs_SOM) <- flowCore::pData(gs[[fSample]])
+          #get gates and apply to cluster centroids
+          #if(noChildMode) {
+          #  gates <- basename(names_gates_of_int)
+          #} else {
+          #gates <- basename(flowWorkspace::gh_pop_get_children(gs[[fSample]], pops_to_SOM[[pop_to_SOM]]))
+          #basename(flowWorkspace::gh_get_pop_paths(gs[[fSample]]))[
+          #lapply(strsplit(x = dirname(flowWorkspace::gh_get_pop_paths(gs[[fSample]])),
+          #                 split = "/"),
+          #        function(nodes)
+          #          tail(nodes, n = 1) == basename(pops_to_SOM[[pop_to_SOM]])) %>%
+          #   unlist(.) %>%
+          #   which(.)]
+          #}
+          #for(gate in gates) {
+          suppressMessages(
+            flowWorkspace::gs_pop_add(
+              gs_SOM,
+              flowWorkspace::gh_pop_get_gate(
+                gs[[fSample]],
+                paste0(pops_to_SOM[[pop_to_SOM]],
+                       "/", gate))))
+          #}
+          tryCatch({
+            suppressMessages(flowWorkspace::recompute(gs_SOM))
+          },
+          error = function(e){
+            stop(paste0("It looks like the channel \"",
+                        strsplit(x = e$message, 
+                                 split = "\n  ",
+                                 fixed = TRUE)[[1]][2] %>%
+                          strsplit(x = ., 
+                                   split = " not found",
+                                   fixed = TRUE) %>% 
+                          .[[1]] %>%
+                          .[1],
+                        "\" has not been selected when the plugin was called although it was used down the gating hiearchy. \nPlease, make sure all flow channels used in the gating tree are selected when calling the plugin."), 
+                 call. = FALSE)
+          })
+          ## Code to update assignment of cell identity according to DAFi results
+          SOM_labels <- vector(mode = "list",
+                               length = length(gates))
+          names(SOM_labels) <- gates
+          SOM_labels[[gate]] <- rep(FALSE,
+                                    fj_par_xdim*fj_par_ydim)
+          SOM_labels[[gate]][flowWorkspace::gh_pop_get_indices(gs_SOM[[1]],
+                                                               gate)] <- TRUE
+          cell_DAFi_label <- vector(mode = "list",
+                                    length = length(gates))
+          names(cell_DAFi_label) <- gates
+          if(fj_par_som){
+            cell_DAFi_label[[gate]] <- SOM_labels[[gate]][fSOM$map$mapping[,1]]
+          } else {
+            cell_DAFi_label[[gate]] <- SOM_labels[[gate]][fkMeans$cluster]
+          }
+          all_cells_DAFi_label <- vector(mode = "list",
+                                         length = length(gates))
+          names(all_cells_DAFi_label) <- gates
+          all_cells_DAFi_label[[gate]] <- rep(FALSE,
+                                              length(
+                                                flowWorkspace::gh_pop_get_indices(
+                                                  gs[[fSample]],
+                                                  y = pops_to_SOM[pop_to_SOM] %>%
+                                                    names(.))))
+          all_cells_DAFi_label[[gate]][
+            flowWorkspace::gh_pop_get_indices(gs[[fSample]],
+                                              y = pops_to_SOM[pop_to_SOM] %>%
+                                                names(.))] <- cell_DAFi_label[[gate]]
+          all_cells_DAFi_label[[gate]] <- list(all_cells_DAFi_label[[gate]])
+          names(all_cells_DAFi_label[[gate]]) <- sampleNames(gs[[fSample]])
+          flowWorkspace::gs_pop_add(gs[[fSample]],
+                                    all_cells_DAFi_label[[gate]],
+                                    parent = pops_to_SOM[pop_to_SOM] %>%
+                                      names(.),
+                                    name = paste0("DAFi_", gate) ) %>%
+            gsub(pattern = "^/",
+                 replacement = "",
+                 x = .)
+          suppressMessages(flowWorkspace::recompute(gs[[fSample]]))
         }
+        #}
+      } else {
+        gates <- basename(
+          flowWorkspace::gh_pop_get_children(
+            gs[[fSample]], 
+            pops_to_SOM[[pop_to_SOM]]))
+        for(gate in gates) {
+          flowWorkspace::gs_pop_add(
+            gs[[fSample]],
+            flowWorkspace::gh_pop_get_gate(
+              gs[[fSample]],
+              paste0(pops_to_SOM[[pop_to_SOM]],
+                     "/", 
+                     gate)),
+            parent = pops_to_SOM[pop_to_SOM] %>% 
+              names(.),
+            name = paste0("DAFi_",
+                          gate) ) %>%
+            gsub(pattern = "^/",
+                 replacement = "",
+                 x = .)
+        }
+        suppressMessages(flowWorkspace::recompute(gs[[fSample]]))
       }
-      all_cells_DAFi_label <- vector(mode = "list",
-                                     length = length(gates))
-      names(all_cells_DAFi_label) <- gates
-      for(gate in gates) {
-        all_cells_DAFi_label[[gate]] <- rep(FALSE,
-                                            length(flowWorkspace::gh_pop_get_indices(gs[[fSample]],
-                                                                                     y = pops_to_SOM[pop_to_SOM] %>%
-                                                                                       names(.))))
-        all_cells_DAFi_label[[gate]][
-          flowWorkspace::gh_pop_get_indices(gs[[fSample]],
-                                            y = pops_to_SOM[pop_to_SOM] %>%
-                                              names(.))] <- cell_DAFi_label[[gate]]
-        all_cells_DAFi_label[[gate]] <- list(all_cells_DAFi_label[[gate]])
-        names(all_cells_DAFi_label[[gate]]) <- sampleNames(gs[[fSample]])
-      }
-      for(gate in gates) {
-        flowWorkspace::gs_pop_add(gs[[fSample]],
-                                  all_cells_DAFi_label[[gate]],
-                                  parent = pops_to_SOM[pop_to_SOM] %>%
-                                    names(.),
-                                  name = paste0("DAFi_", gate) ) %>%
-          gsub(pattern = "^/",
-               replacement = "",
-               x = .)
-      }
-      suppressMessages(flowWorkspace::recompute(gs[[fSample]]))
-    } else {
-      gates <- basename(flowWorkspace::gh_pop_get_children(gs[[fSample]], pops_to_SOM[[pop_to_SOM]]))
-        #basename(flowWorkspace::gh_get_pop_paths(gs[[fSample]]))[
-      #lapply(strsplit(x = dirname(flowWorkspace::gh_get_pop_paths(gs[[fSample]])),
-      #                 split = "/"),
-      #        function(nodes)
-      #          tail(nodes, n = 1) == basename(pops_to_SOM[[pop_to_SOM]])) %>%
-      #   unlist(.) %>%
-      #   which(.)]
-      for(gate in gates) {
-        flowWorkspace::gs_pop_add(gs[[fSample]],
-                                  flowWorkspace::gh_pop_get_gate(gs[[fSample]],
-                                                                 paste0(pops_to_SOM[[pop_to_SOM]],
-                                                                        "/", gate)),
-                                  parent = pops_to_SOM[pop_to_SOM] %>% 
-                                    names(.),
-                                  name = paste0("DAFi_",
-                                                gate) ) %>%
-          gsub(pattern = "^/",
-               replacement = "",
-               x = .)
-      }
-      suppressMessages(flowWorkspace::recompute(gs[[fSample]]))
-    }
   }
 }
 
 if(batch_mode){
-  post_DAFi_gates <- flowWorkspace::gh_get_pop_paths(gs[[CytoML::fj_ws_get_samples(ws)$sampleID[sampleID_doc]]])
+  post_DAFi_gates <- flowWorkspace::gh_get_pop_paths(
+    gs[[CytoML::fj_ws_get_samples(ws)$sampleID[sampleID_doc]]])
 } else {
   post_DAFi_gates <- flowWorkspace::gh_get_pop_paths(gs[[1]])
 }
@@ -900,10 +1082,9 @@ if(batch_mode){
   }
   
   # create subfolder to plot results
-  plotDir <- paste0(dirname(fj_data_file_path),
-                    "/plots")
-  dir.create(plotDir)
-  
+  if(!dir.exists(plotDir)) {
+    dir.create(plotDir)
+  }
   # create and save plots
   for(fSample in seq_along(gs)) { # for each sample
     for(DAFi_leaf_node in DAFi_leaf_nodes){ # for each terminal DAFi node
@@ -1048,7 +1229,11 @@ if(batch_mode){
                                                   which = "right") %>%
                                            paste0(popOfInt,
                                                   "_",
-                                                  .)
+                                                  .) %>%
+                                           gsub(pattern = ",",
+                                                replacement = ".",
+                                                x = .,
+                                                fixed = TRUE)
                                        }
   
   #sanity check
@@ -1060,7 +1245,75 @@ if(batch_mode){
   )
   #write results
   write.csv(labels, file = fj_csv_ouput_file, row.names=FALSE, quote=TRUE)
-  write.csv(parNames, paste0(fj_csv_ouput_file, ".pars.csv"), row.names=FALSE)
+  #write.csv(parNames, paste0(fj_csv_ouput_file, ".pars.csv"), row.names=FALSE)
+  
+  # create heatmaps with median expression of all selected paramaters on DAFi vs traditional gates
+  if(!dir.exists(plotDir)){
+    dir.create(plotDir)
+  }
+  for(DAFi_node in DAFi_nodes) {
+    # get median
+    mark.exprs <- cbind(
+      flowWorkspace::gh_pop_get_data(gs[[1]],
+                                     DAFi_node) %>% 
+        flowCore::exprs() %>%
+        apply(2,
+              median)
+      , 
+      flowWorkspace::gh_pop_get_data(gs[[1]],
+                                     gsub(pattern = "DAFi_",
+                                          replacement = "", 
+                                          x = DAFi_node,
+                                          fixed = TRUE)) %>%
+        flowCore::exprs() %>%
+        apply(2,
+              median))
+    mark.exprs <- mark.exprs[!grepl(pattern = "time", 
+                                    x = rownames(mark.exprs), 
+                                    ignore.case = TRUE, 
+                                    fixed = FALSE),]
+    mark.exprs <- mark.exprs[!grepl(pattern = "FSC|SSC", 
+                                    x = rownames(mark.exprs), 
+                                    ignore.case = FALSE, 
+                                    fixed = FALSE),]
+    pData.asDF <- flowCore::parameters(gh_pop_get_data(gs[[1]],
+                                                       DAFi_node)) %>%
+      Biobase::pData()
+    rownames(mark.exprs) <- pData.asDF$desc[pData.asDF$name %in%
+                                              rownames(mark.exprs)]
+    
+    mark.exprs %>%
+      .[order(abs(.[,1] - .[,2]),
+              decreasing = TRUE),] %>%
+      pheatmap(mat = .,
+               cluster_cols = FALSE,
+               cluster_rows = FALSE, 
+               scale = "none",
+               #               color = hcl.colors(256, 
+               #                                  palette = "RdYlBu",
+               #                                 alpha = NULL, 
+               #                                 rev = FALSE, 
+               #                                 fixup = TRUE),
+               labels_col = c("DAFi", "traditional"),
+               main = DAFi_node %>%
+                 gsub(pattern = "DAFi_",
+                      replacement = "", 
+                      x = .,
+                      fixed = TRUE) %>%
+                 basename(),
+               filename = paste0(plotDir,
+                                 "/",
+                                 sampleFCS,
+                                 gsub(pattern = "/",
+                                      replacement = "_", 
+                                      x = DAFi_node,
+                                      fixed = TRUE),
+                                 ".pdf"),
+               width = 3,
+               height = ifelse(0.25 * dim(.)[1] < 4,
+                               yes = 4,
+                               no = 0.25 * dim(.)[1]))
+  }
   
   all.labels.ls <- foreach::foreach(DAFi_node = DAFi_nodes) %do% {
     all.label <- as.matrix(all_cell_DAFi_label[[DAFi_node]] %>%
@@ -1095,7 +1348,11 @@ if(batch_mode){
                                                       which = "right") %>%
                                                paste0(popOfInt,
                                                       "_",
-                                                      .)
+                                                      .) %>%
+                                               gsub(pattern = ",",
+                                                    replacement = ".",
+                                                    x = .,
+                                                    fixed = TRUE)
                                            }
   #2nd sanity check
   print(
@@ -1108,36 +1365,14 @@ if(batch_mode){
   flowEnv <- new.env()
   
   for(pop in colnames(all.labels)) {
-    #  trLogicleName <- paste0("trLogicle_", pop)
-    #  trLogicle <- logicletGml2(parameters = pop,
-    #                            T = 1000, 
-    #                         W = 0.5,
-    #                         M = 4.5, 
-    #                         A = 0, 
-    #                         transformationId = trLogicleName)
-    #flowEnv[[as.character(trLogicleName)]] <- trLogicle
-    #trPars <- list(transformReference(trLogicleName,
-    #                                 flowEnv))
     mat <- matrix(c(5e4, 5e5),
                   ncol = 1,
                   dimnames = list(c("min", "max"),
                                   pop))
     rg <- rectangleGate(filterId = pop,
                         .gate = mat)
-    #rg@parameters <- new("parameters", 
-    #                    trPars)
     flowEnv[[as.character(pop)]] <- rg
   }
-  
-  #for(pop in colnames(all.labels)) {
-  #  mat <- matrix(c(0.5, 1.5),
-  #               ncol = 1,
-  #               dimnames = list(c("min", "max"),
-  #                               pop))
-  # rg <- rectangleGate(filterId = pop,
-  #                     .gate = mat)
-  # flowEnv[[as.character(pop)]] <- rg
-  #}
   
   outputFile <- paste0(fj_data_file_path,
                        ".gating-ml2.xml")
