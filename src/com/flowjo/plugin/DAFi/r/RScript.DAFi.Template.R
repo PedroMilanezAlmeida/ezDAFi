@@ -1,6 +1,10 @@
 #######################################################################
 # Copyright (c) 2020 Pedro Milanez-Almeida, Ph.D., NIAID/NIH
 #
+# Parts of this code were modified from the source of the packages used here.
+# Credits for these parts go to the authors of the packages.
+# See list of all packages used below.
+#
 # License
 # The software is distributed under the terms of the
 # Artistic License 2.0
@@ -220,6 +224,32 @@ elbow_finder <- function(y_values) { #https://stackoverflow.com/a/42810075
   
   return(c(x_max_dist, y_max_dist))
 }
+
+hierarc.str <- function(DAFi_gate_name, n){
+  i <- n
+  pop_pars_v <- vector("character",
+                       n)
+  pop_pars_v[i] <- DAFi_gate_name
+  while(i > 1){
+    pop_pars_v[i-1] <- strsplit(x =  pop_pars_v[i], 
+                                split = "_DAFi_",
+                                fixed = TRUE) %>%
+      .[[1]] %>%
+      tail(.,
+           1) %>%
+      paste0("_DAFi_",
+             .) %>%
+      strsplit(x =  pop_pars_v[i], 
+               split = .,
+               fixed = TRUE) %>%
+      .[[1]] %>%
+      head(.,
+           1)
+    i <- i - 1
+  }
+  return(pop_pars_v)
+}
+
 sessionInfo()
 
 # create R objects with FJ options
@@ -758,7 +788,8 @@ for(pop_to_SOM in seq_along(pops_to_SOM)){
                              2, 
                              function(marker) 
                                t.test(marker[in.gate],
-                                      marker[!in.gate])$statistic) %>%
+                                      marker[!in.gate],
+                                      var.equal = FALSE)$statistic) %>%
             abs() %>%
             sort(decreasing = TRUE)
           keep.marker <- max(min.nPar,
@@ -966,6 +997,13 @@ DAFi_nodes <- post_DAFi_gates[
 DAFi_nodes <- DAFi_nodes[grep(pattern = popOfInt,
                               x = DAFi_nodes,
                               fixed = TRUE)]
+
+tree_pos_DAFi_gate_to_SOM <- strsplit(x = DAFi_nodes,
+                                      split = "/",
+                                      fixed = TRUE) %>%
+  lapply(length) %>%
+  unlist(.)
+DAFi_nodes <- DAFi_nodes[order(tree_pos_DAFi_gate_to_SOM)] #order is very important to ensure hierarchy of gates
 
 DAFi_leaf_nodes <- post_DAFi_gates[
   grep(pattern = "DAFi_",
@@ -1364,25 +1402,154 @@ if(batch_mode){
   
   flowEnv <- new.env()
   
-  for(pop in colnames(all.labels)) {
-    mat <- matrix(c(5e4, 5e5),
-                  ncol = 1,
-                  dimnames = list(c("min", "max"),
-                                  pop))
-    rg <- rectangleGate(filterId = pop,
-                        .gate = mat)
-    flowEnv[[as.character(pop)]] <- rg
+  for(pop in seq_along(colnames(all.labels))) {
+    if(!(strsplit(x =  colnames(all.labels)[pop], 
+                  split = "_DAFi_",
+                  fixed = TRUE) %>%
+         .[[1]] %>% 
+         length()) > 2){
+      mat <- matrix(c(5e4, 5e5),
+                    ncol = 1,
+                    dimnames = list(c("min", "max"),
+                                    colnames(all.labels)[pop]))
+      rg <- rectangleGate(filterId = colnames(all.labels)[pop],
+                          .gate = mat)
+      # test if DAFi is not direct child of pop of interest
+      # if it is, add gate directly to flowEnv
+      # if it is a grandchild, get name of DAFi parent and add it to flowEnv hierarchically
+      flowEnv[[as.character(colnames(all.labels)[pop])]] <- rg
+    } else { # from: https://rdrr.io/github/RGLab/CytoML/src/R/gate-methods.R
+      DAFi_gates_v <- hierarc.str(DAFi_gate_name = colnames(all.labels)[pop],
+                                  n = 2)
+      rgs <- vector("list",
+                    length = 2)
+      names(rgs) <- DAFi_gates_v
+      for(DAFi_gate in DAFi_gates_v) {
+        rgs[[as.character(DAFi_gate)]] <- 
+          rectangleGate(filterId = DAFi_gate,
+                        .gate = matrix(c(5e4, 5e5),
+                                       ncol = 1,
+                                       dimnames = list(c("min", "max"),
+                                                       DAFi_gate)))
+        
+      }
+      rgs <- rev(rgs) # parent gate must come later
+      flowEnv[[as.character(colnames(all.labels)[pop])]] <-
+        new("subsetFilter",
+            filterId = colnames(all.labels)[pop], 
+            filters = rgs)
+      
+    }
   }
   
   outputFile <- paste0(fj_data_file_path,
                        ".gating-ml2.xml")
   
-  addObjectToGatingML <- function(gatingMLNode, x, flowEnv, addParent = NULL, forceGateId = NULL) {#from https://rdrr.io/bioc/flowUtils/src/R/writeGatingML.R 
+  #############################################
+  ## Code related to writing Gating-ML files ##
+  ##########################################################
+  ## Copied and modified from #############################
+  ## https://rdrr.io/bioc/flowUtils/src/R/writeGatingML.R ##
+  ##########################################################
+  
+  # Write objects in the flowEnv environment to an Gating-ML 2.0 XML file.
+  # If file is NULL then output is written to standard output.
+  modified.write.gatingML <- function(flowEnv, file = NULL)
+  {
+    #THIS FUNCTION HAS BEEN MODIFIED BY A CLUELESS PERSON! DONT TRUST IT TOO MUCH! SOURCE:https://rdrr.io/bioc/flowUtils/src/R/writeGatingML.R
+    
+    if(!is.null(file) && !is(file, "character")) 
+      stop("A file has to be either NULL or a character string.", call. = FALSE)
+    if(is.null(flowEnv) || !is.environment(flowEnv))
+      stop("A flowEnv environment with objects to be saved is requred.", call. = FALSE)
+    if(!is.null(file) && substr(file, nchar(file) - 3, nchar(file)) != ".xml")
+      file <- paste(file, "xml", sep=".")
+    
+    flowEnv[['.debugMessages']] = c()
+    
+    namespaces <- c(
+      "gating" = "http://www.isac-net.org/std/Gating-ML/v2.0/gating", 
+      "xsi" = "http://www.w3.org/2001/XMLSchema-instance", 
+      "transforms" = "http://www.isac-net.org/std/Gating-ML/v2.0/transformations", 
+      "data-type" = "http://www.isac-net.org/std/Gating-ML/v2.0/datatypes")
+    
+    gatingMLNode = suppressWarnings(xmlTree("gating:Gating-ML", namespaces = namespaces, 
+                                            attrs = c("xsi:schemaLocation" = "http://www.isac-net.org/std/Gating-ML/v2.0/gating http://flowcyt.sourceforge.net/gating/2.0/xsd/Gating-ML.v2.0.xsd http://www.isac-net.org/std/Gating-ML/v2.0/transformations http://flowcyt.sourceforge.net/gating/2.0/xsd/Transformations.v2.0.xsd http://www.isac-net.org/std/Gating-ML/v2.0/datatypes http://flowcyt.sourceforge.net/gating/2.0/xsd/DataTypes.v2.0.xsd")))
+    
+    ##### THE FOLLOWING SEVERAL LINES ARE NOT COMMENTED OUT IN THE ORIGINAL
+    #gatingMLNode$addNode("data-type:custom_info", close = FALSE)
+    #gatingMLNode$addNode("info", "Gating-ML 2.0 export generated by R/flowUtils/flowCore")
+    #gatingMLNode$addNode("R-version", sessionInfo()$R.version$version.string)
+    #gatingMLNode$addNode("flowCore-version", as.character(packageVersion("flowCore")))
+    #gatingMLNode$addNode("flowUtils-version", as.character(packageVersion("flowUtils")))
+    #gatingMLNode$addNode("XML-version", as.character(packageVersion("XML")))
+    #gatingMLNode$closeTag()
+    
+    flowEnv[['.objectIDsWrittenToXMLOutput']] = list() # Use this list to collect XML Ids
+    
+    somethingUseful = FALSE
+    for (x in ls(flowEnv)) {
+      object = objectNameToObject(x, flowEnv)
+      if(is(object, "parameterFilter") || is(object, "singleParameterTransform") || is(object, "setOperationFilter"))
+      {
+        somethingUseful = TRUE
+        break
+      }
+    }
+    if(!somethingUseful) warning("Nothing useful seems to be present in the environment; the output Gating-ML file may not be very useful.", call. = FALSE)
+    
+    # Go over everything and temporarily add transformations and argument gates to flowEnv
+    # if they are not saved in flowEnv directly, but they are being used in other objects
+    flowEnv[['.addedObjects']] = list() # List of object identifiers of objects that we have to temporarily add to flowEnv
+    for (x in ls(flowEnv)) addReferencedObjectsToEnv(x, flowEnv) 
+    
+    flowEnv[['.singleParTransforms']] = new.env() # Use this env to collect transformations
+    for (x in ls(flowEnv)) if(is(flowEnv[[x]], "singleParameterTransform")) collectTransform(x, flowEnv)
+    
+    # Transforms go first unless they can be skipped all together
+    for (x in ls(flowEnv)) if(is(flowEnv[[x]], "transform"))
+      if(!shouldTransformationBeSkipped(x, flowEnv)) addObjectToGatingML(gatingMLNode, x, flowEnv)
+    for (x in ls(flowEnv)) if(!is(flowEnv[[x]], "transform")) addObjectToGatingML(gatingMLNode, x, flowEnv)
+    
+    if(!is.null(file)) sink(file = file)
+    cat(saveXML(gatingMLNode$value(), encoding = "UTF-8"))
+    if(!is.null(file)) sink()
+    
+    rm(list = ls(flowEnv[['.singleParTransforms']], all.names = TRUE), envir = flowEnv[['.singleParTransforms']])
+    rm('.singleParTransforms', envir = flowEnv)
+    
+    rm(list = as.character(flowEnv[['.addedObjects']]), envir = flowEnv)
+    rm('.addedObjects', envir = flowEnv)
+    
+    rm('.objectIDsWrittenToXMLOutput', envir = flowEnv) 
+  }
+  
+  # Add the object x to the Gating-ML node
+  addObjectToGatingML <- function(gatingMLNode, x, flowEnv, addParent = NULL, forceGateId = NULL)
+  {
     if(is(x, "character")) object = flowEnv[[x]]
     else object = x
     switch(class(object),
            "rectangleGate" = addRectangleGateNode(gatingMLNode, x, flowEnv, addParent, forceGateId),
+           "polygonGate" = addPolygonGateNode(gatingMLNode, x, flowEnv, addParent, forceGateId),
+           "ellipsoidGate" = addEllipsoidGateNode(gatingMLNode, x, flowEnv, addParent, forceGateId),
+           "quadGate" = addQuadGateNode(gatingMLNode, x, flowEnv, addParent, forceGateId),
+           "intersectFilter" = addBooleanAndGateNode(gatingMLNode, x, flowEnv, addParent, forceGateId),
+           "unionFilter" = addBooleanOrGateNode(gatingMLNode, x, flowEnv, addParent, forceGateId),
+           "complementFilter" = addBooleanNotGateNode(gatingMLNode, x, flowEnv, addParent, forceGateId),
+           "subsetFilter" = addGateWithParent(gatingMLNode, x, flowEnv),
+           "compensation" = addCompensation(gatingMLNode, x, flowEnv),
+           "asinhtGml2" = addAsinhtGml2(gatingMLNode, x, flowEnv),
+           "hyperlogtGml2" = addHyperlogtGml2(gatingMLNode, x, flowEnv),
+           "lintGml2" = addLintGml2(gatingMLNode, x, flowEnv),
+           "logtGml2" = addLogtGml2(gatingMLNode, x, flowEnv),
+           "logicletGml2" = addLogicletGml2(gatingMLNode, x, flowEnv),
+           "ratiotGml2" = addRatiotGml2(gatingMLNode, x, flowEnv),
+           "ratio" = addRatioGml1.5(gatingMLNode, x, flowEnv),
+           "asinht" = addAsinhtGml1.5(gatingMLNode, x, flowEnv),
+           "compensatedParameter" = NA,
            "unitytransform" = NA,
+           "numeric" = NA,
            {
              errMessage <- paste("Class \'", class(object), "\' is not supported in Gating-ML 2.0 output.", sep="")
              if(is(object, "singleParameterTransform"))
@@ -1397,7 +1564,8 @@ if(batch_mode){
   }
   
   # Add rectangle gate x to the Gating-ML node
-  addRectangleGateNode <- function(gatingMLNode, x, flowEnv, addParent, forceGateId) {#from https://rdrr.io/bioc/flowUtils/src/R/writeGatingML.R 
+  addRectangleGateNode <- function(gatingMLNode, x, flowEnv, addParent, forceGateId)
+  {
     gate = objectNameToObject(x, flowEnv)
     if(!is(gate, "rectangleGate")) stop(paste("Unexpected object insted of a rectangleGate - ", class(gate))) 
     addDebugMessage(paste("Working on rectangleGate ", gate@filterId, sep=""), flowEnv)
@@ -1412,61 +1580,476 @@ if(batch_mode){
     gatingMLNode$closeTag() # </gating:RectangleGate>
   }
   
-  addDebugMessage <- function(msg, flowEnv) {#from https://rdrr.io/bioc/flowUtils/src/R/writeGatingML.R 
-    flowEnv[['.debugMessages']] = c(flowEnv[['.debugMessages']], msg)
-  }
-  
-  doubleCheckExistanceOfParameter <- function(par, flowEnv) {#from https://rdrr.io/bioc/flowUtils/src/R/writeGatingML.R 
-    if(is(par, "transform")) 
+  # Add polygon gate x to the Gating-ML node
+  addPolygonGateNode <- function(gatingMLNode, x, flowEnv, addParent, forceGateId)
+  {
+    gate = objectNameToObject(x, flowEnv)
+    if(!is(gate, "polygonGate")) stop(paste("Unexpected object insted of a polygonGate - ", class(gate))) 
+    addDebugMessage(paste("Working on polygonGate ", gate@filterId, sep=""), flowEnv)
+    
+    myID = getObjectId(gate, forceGateId, flowEnv)
+    if(isIdWrittenToXMLAlready(myID, flowEnv)) return(FALSE) 
+    attrs = c("gating:id" = myID)
+    if (!is.null(addParent)) attrs = c(attrs, "gating:parent_id" = filterIdtoXMLId(addParent, flowEnv))    
+    
+    gatingMLNode$addNode("gating:PolygonGate", attrs = attrs, close = FALSE)
+    addDimensions(gatingMLNode, x, flowEnv)
+    for (i in 1:length(gate@boundaries[,1]))
     {
-      if(!is.null(par@transformationId) && par@transformationId != "" && !exists(par@transformationId, envir=flowEnv, inherits=FALSE)) 
-      {
-        flowEnv[[par@transformationId]] <- par
-        flowEnv[['.addedObjects']][[par@transformationId]] <- par@transformationId
-        addReferencedObjectsToEnv(par@transformationId, flowEnv)
-      }    
+      gatingMLNode$addNode("gating:vertex", close = FALSE)
+      # attrs = c("data-type:value" = gate@boundaries[i,1])
+      attrs = c("data-type:value" = as.numeric(gate@boundaries[i,1]))
+      gatingMLNode$addNode("gating:coordinate", attrs = attrs)
+      # attrs = c("data-type:value" = gate@boundaries[i,2])
+      attrs = c("data-type:value" = as.numeric(gate@boundaries[i,2]))
+      gatingMLNode$addNode("gating:coordinate", attrs = attrs)
+      gatingMLNode$closeTag() # </gating:vertex>
     }
+    gatingMLNode$closeTag() # </gating:PolygonGate>
   }
   
-  objectNameToObject <- function(x, flowEnv) { #from https://rdrr.io/bioc/flowUtils/src/R/writeGatingML.R 
-    if(is(x, "character")) flowEnv[[x]]
-    else x
-  }
-  
-  addReferencedObjectsToEnv <- function(x, flowEnv) { #from https://rdrr.io/bioc/flowUtils/src/R/writeGatingML.R 
-    object = objectNameToObject(x, flowEnv)
-    for(par in object@parameters) doubleCheckExistanceOfParameter(par, flowEnv)
-  }
-  
-  createTransformIdentifier <- function(trans) {#from https://rdrr.io/bioc/flowUtils/src/R/writeGatingML.R 
-    name <- class(trans)
-    for (slotName in slotNames(trans))
+  # Add ellipse gate x to the Gating-ML node
+  addEllipsoidGateNode <- function(gatingMLNode, x, flowEnv, addParent, forceGateId)
+  {
+    gate = objectNameToObject(x, flowEnv)
+    if(!is(gate, "ellipsoidGate")) stop(paste("Unexpected object insted of an ellipsoidGate - ", class(gate))) 
+    addDebugMessage(paste("Working on ellipsoidGate ", gate@filterId, sep=""), flowEnv)
+    
+    myID = getObjectId(gate, forceGateId, flowEnv)
+    if(isIdWrittenToXMLAlready(myID, flowEnv)) return(FALSE) 
+    attrs = c("gating:id" = myID)
+    if (!is.null(addParent)) attrs = c(attrs, "gating:parent_id" = filterIdtoXMLId(addParent, flowEnv))    
+    
+    gatingMLNode$addNode("gating:EllipsoidGate", attrs = attrs, close = FALSE)
+    addDimensions(gatingMLNode, x, flowEnv)
+    
+    gatingMLNode$addNode("gating:mean", close = FALSE)
+    for (i in 1:length(gate@mean))
     {
-      if(slotName != ".Data" && slotName != "parameters" && slotName != "transformationId")
+      attrs = c("data-type:value" = as.numeric(gate@mean[i]))
+      gatingMLNode$addNode("gating:coordinate", attrs = attrs)
+    }
+    gatingMLNode$closeTag() # </gating:mean>
+    
+    gatingMLNode$addNode("gating:covarianceMatrix", close = FALSE)
+    for (row in 1:length(gate@cov[,1]))
+    {
+      gatingMLNode$addNode("gating:row", close = FALSE)
+      for (column in 1:length(gate@cov[1,]))
       {
-        slotValue = slot(trans, slotName)
-        if(is(slotValue, "numeric") || is(slotValue, "character"))
-        {
-          name <- paste(name, slotName, slot(trans, slotName), sep = "_")
-        }
+        attrs = c("data-type:value" = gate@cov[row,column])
+        gatingMLNode$addNode("gating:entry", attrs = attrs)
+      }
+      gatingMLNode$closeTag() # </gating:row>
+    }
+    gatingMLNode$closeTag() # </gating:covarianceMatrix>
+    
+    attrs = c("data-type:value" = gate@distance ^ 2)
+    gatingMLNode$addNode("gating:distanceSquare", attrs = attrs)
+    
+    gatingMLNode$closeTag() # </gating:EllipsoidGate>
+  }
+  
+  # Add a Boolean AND gate x to the Gating-ML node
+  addBooleanAndGateNode <- function(gatingMLNode, x, flowEnv, addParent, forceGateId)
+  {
+    gate = objectNameToObject(x, flowEnv)
+    if(!is(gate, "intersectFilter")) stop(paste("Unexpected object insted of an intersectFilter - ", class(gate))) 
+    addDebugMessage(paste("Working on intersectFilter ", gate@filterId, sep=""), flowEnv)
+    
+    myID = getObjectId(gate, forceGateId, flowEnv)
+    if(isIdWrittenToXMLAlready(myID, flowEnv)) return(FALSE) 
+    attrs = c("gating:id" = myID)
+    if (!is.null(addParent)) attrs = c(attrs, "gating:parent_id" = filterIdtoXMLId(addParent, flowEnv))    
+    
+    gatingMLNode$addNode("gating:BooleanGate", attrs = attrs, close = FALSE)
+    gatingMLNode$addNode("gating:and", close = FALSE)
+    if(length(gate@filters) == 0) 
+      stop("Boolean AND gates (intersectFilter) have to reference some arguments.", call. = FALSE)
+    for (i in 1:length(gate@filters))
+    {
+      attrs = c("gating:ref" = filterIdtoXMLId(gate@filters[[i]]@filterId, flowEnv))
+      gatingMLNode$addNode("gating:gateReference", attrs = attrs)
+    }
+    if(length(gate@filters)  == 1) 
+    {
+      # If there was just one referenced filter than we add it twice
+      # since and/or gates require at least two arguments in Gating-ML 2.0
+      gatingMLNode$addNode("gating:gateReference", attrs = attrs)
+    } 
+    gatingMLNode$closeTag() # </gating:and>
+    gatingMLNode$closeTag() # </gating:BooleanGate>    
+  }
+  
+  # Add a Boolean OR gate x to the Gating-ML node
+  addBooleanOrGateNode <- function(gatingMLNode, x, flowEnv, addParent, forceGateId)
+  {
+    gate = objectNameToObject(x, flowEnv)
+    if(!is(gate, "unionFilter")) stop(paste("Unexpected object insted of a unionFilter - ", class(gate))) 
+    addDebugMessage(paste("Working on unionFilter ", gate@filterId, sep=""), flowEnv)
+    
+    myID = getObjectId(gate, forceGateId, flowEnv)
+    if(isIdWrittenToXMLAlready(myID, flowEnv)) return(FALSE) 
+    attrs = c("gating:id" = myID)
+    if (!is.null(addParent)) attrs = c(attrs, "gating:parent_id" = filterIdtoXMLId(addParent, flowEnv))    
+    
+    gatingMLNode$addNode("gating:BooleanGate", attrs = attrs, close = FALSE)
+    gatingMLNode$addNode("gating:or", close = FALSE)
+    if(length(gate@filters) == 0) 
+      stop("Boolean OR gates (unionFilter) have to reference some arguments.", call. = FALSE)
+    for (i in 1:length(gate@filters))
+    {
+      attrs = c("gating:ref" = filterIdtoXMLId(gate@filters[[i]]@filterId, flowEnv))
+      gatingMLNode$addNode("gating:gateReference", attrs = attrs)
+    }
+    if(length(gate@filters)  == 1) 
+    {
+      # If there was just one referenced filter than we add it twice
+      # since and/or gates require at least two arguments in Gating-ML 2.0
+      gatingMLNode$addNode("gating:gateReference", attrs = attrs)
+    } 
+    gatingMLNode$closeTag() # </gating:or>
+    gatingMLNode$closeTag() # </gating:BooleanGate>    
+  }
+  
+  # Add a Boolean NOT gate x to the Gating-ML node
+  addBooleanNotGateNode <- function(gatingMLNode, x, flowEnv, addParent, forceGateId)
+  {
+    gate = objectNameToObject(x, flowEnv)
+    if(!is(gate, "complementFilter")) stop(paste("Unexpected object insted of a complementFilter - ", class(gate))) 
+    addDebugMessage(paste("Working on complementFilter ", gate@filterId, sep=""), flowEnv)
+    
+    myID = getObjectId(gate, forceGateId, flowEnv)
+    if(isIdWrittenToXMLAlready(myID, flowEnv)) return(FALSE) 
+    attrs = c("gating:id" = myID)
+    if (!is.null(addParent)) attrs = c(attrs, "gating:parent_id" = filterIdtoXMLId(addParent, flowEnv))    
+    
+    gatingMLNode$addNode("gating:BooleanGate", attrs = attrs, close = FALSE)
+    gatingMLNode$addNode("gating:not", close = FALSE)
+    if(length(gate@filters)  == 1) 
+    {
+      attrs = c("gating:ref" = filterIdtoXMLId(gate@filters[[1]]@filterId, flowEnv))
+      gatingMLNode$addNode("gating:gateReference", attrs = attrs)
+    } else stop("Boolean NOT gates (complementFilter) have to reference exactly one argument.", call. = FALSE)
+    gatingMLNode$closeTag() # </gating:not>
+    gatingMLNode$closeTag() # </gating:BooleanGate>    
+  }
+  
+  # Add a Quadrant gate x to the Gating-ML node
+  addQuadGateNode <- function(gatingMLNode, x, flowEnv, addParent, forceGateId)
+  {
+    gate = objectNameToObject(x, flowEnv)
+    if(!is(gate, "quadGate")) stop(paste("Unexpected object insted of a quadGate - ", class(gate))) 
+    addDebugMessage(paste("Working on quadGate ", gate@filterId, sep=""), flowEnv)
+    
+    myID = getObjectId(gate, forceGateId, flowEnv)
+    if(isIdWrittenToXMLAlready(myID, flowEnv)) return(FALSE) 
+    attrs = c("gating:id" = myID)
+    if (!is.null(addParent)) attrs = c(attrs, "gating:parent_id" = filterIdtoXMLId(addParent, flowEnv))    
+    
+    gatingMLNode$addNode("gating:QuadrantGate", attrs = attrs, close = FALSE)
+    addDimensions(gatingMLNode, x, flowEnv, myID)
+    
+    attrs = c("gating:id" = paste(myID, ".PP", sep = ""))
+    gatingMLNode$addNode("gating:Quadrant", attrs = attrs, close = FALSE)
+    attrs = c("gating:divider_ref" = paste(myID, ".D1", sep = ""))
+    attrs = c(attrs, "gating:location" = as.character(gate@boundary[1] + 1))
+    gatingMLNode$addNode("gating:position", attrs = attrs)
+    attrs = c("gating:divider_ref" = paste(myID, ".D2", sep = ""))
+    attrs = c(attrs, "gating:location" = as.character(gate@boundary[2] + 1))
+    gatingMLNode$addNode("gating:position", attrs = attrs)
+    gatingMLNode$closeTag() # </gating:Quadrant>
+    
+    attrs = c("gating:id" = paste(myID, ".PN", sep = ""))
+    gatingMLNode$addNode("gating:Quadrant", attrs = attrs, close = FALSE)
+    attrs = c("gating:divider_ref" = paste(myID, ".D1", sep = ""))
+    attrs = c(attrs, "gating:location" = as.character(gate@boundary[1] + 1))
+    gatingMLNode$addNode("gating:position", attrs = attrs)
+    attrs = c("gating:divider_ref" = paste(myID, ".D2", sep = ""))
+    attrs = c(attrs, "gating:location" = as.character(gate@boundary[2] - 1))
+    gatingMLNode$addNode("gating:position", attrs = attrs)
+    gatingMLNode$closeTag() # </gating:Quadrant>
+    
+    attrs = c("gating:id" = paste(myID, ".NP", sep = ""))
+    gatingMLNode$addNode("gating:Quadrant", attrs = attrs, close = FALSE)
+    attrs = c("gating:divider_ref" = paste(myID, ".D1", sep = ""))
+    attrs = c(attrs, "gating:location" = as.character(gate@boundary[1] - 1))
+    gatingMLNode$addNode("gating:position", attrs = attrs)
+    attrs = c("gating:divider_ref" = paste(myID, ".D2", sep = ""))
+    attrs = c(attrs, "gating:location" = as.character(gate@boundary[2] + 1))
+    gatingMLNode$addNode("gating:position", attrs = attrs)
+    gatingMLNode$closeTag() # </gating:Quadrant>
+    
+    attrs = c("gating:id" = paste(myID, ".NN", sep = ""))
+    gatingMLNode$addNode("gating:Quadrant", attrs = attrs, close = FALSE)
+    attrs = c("gating:divider_ref" = paste(myID, ".D1", sep = ""))
+    attrs = c(attrs, "gating:location" = as.character(gate@boundary[1] - 1))
+    gatingMLNode$addNode("gating:position", attrs = attrs)
+    attrs = c("gating:divider_ref" = paste(myID, ".D2", sep = ""))
+    attrs = c(attrs, "gating:location" = as.character(gate@boundary[2] - 1))
+    gatingMLNode$addNode("gating:position", attrs = attrs)
+    gatingMLNode$closeTag() # </gating:Quadrant>
+    
+    gatingMLNode$closeTag() # </gating:QuadrantGate>
+  }
+  
+  # Add a subsetFilter gate named x to the the Gating-ML node
+  addGateWithParent <- function(gatingMLNode, x, flowEnv)
+  {
+    addDebugMessage(paste("Working on ", x, sep=""), flowEnv)
+    gate = objectNameToObject(x, flowEnv)
+    if (!is(gate, "subsetFilter")) stop(paste("Expected a subsetFilter to add a gate with a parent id, but found an object of class", class(gate)))
+    if (length(gate@filters) == 2){
+      newX = gate@filters[[1]]
+      parent = gate@filters[[2]]
+      if (is(parent, 'filterReference')) parentName = parent@name
+      else parentName = parent@filterId
+      addObjectToGatingML(gatingMLNode, newX, flowEnv, parentName, gate@filterId)    
+    }
+    else stop(paste("Unexpected length of filters for class", class(gate)))
+  }
+  
+  # Add a compensation named x to the the Gating-ML node
+  addCompensation <- function(gatingMLNode, x, flowEnv)
+  {
+    myComp = objectNameToObject(x, flowEnv)
+    if(!is(myComp, "compensation")) stop(paste("Unexpected object insted of a compensation - ", class(myComp))) 
+    addDebugMessage(paste("Working on compensation ", myComp@compensationId, sep=""), flowEnv)
+    
+    myID = getObjectId(myComp, NULL, flowEnv)
+    if(isIdWrittenToXMLAlready(myID, flowEnv)) return(FALSE) 
+    
+    detectors <- colnames(myComp@spillover)
+    if (is.null(detectors)) 
+    {
+      stop(paste("Cannot export a spillover matrix without column names (", myComp@compensationId, ").", sep=""))
+      return
+    }
+    
+    fluorochromes <- rownames(myComp@spillover)
+    if(is.null(fluorochromes))
+    {
+      if(nrow(myComp@spillover) != ncol(myComp@spillover)) 
+      {
+        stop(paste("Cannot export a non-sqaure spillover (spectrum) matrix without row names (", myComp@compensationId, ").", sep=""))
+        return
+      }
+      else
+      {
+        fluorochromes <- detectors
       }
     }
-    name
-  }
-  
-  shouldTransformationBeSkipped <- function(x, flowEnv) { #from https://rdrr.io/bioc/flowUtils/src/R/writeGatingML.R 
-    trEnv = flowEnv[['.singleParTransforms']]
-    trans = flowEnv[[x]]
-    if(!is.null(trEnv) && !is.null(trans) && is(trans, "singleParameterTransform"))
+    
+    attrs = c("transforms:id" = myID)
+    gatingMLNode$addNode("transforms:spectrumMatrix", attrs = attrs, close = FALSE)
+    
+    gatingMLNode$addNode("transforms:fluorochromes", close = FALSE)
+    for (fname in fluorochromes) 
     {
-      key = createTransformIdentifier(trans)
-      if (!is.null(trEnv[[key]])){
-        if (x == trEnv[[key]]) FALSE
-        else TRUE
-      } else FALSE
-    } else FALSE
+      attrs = c("data-type:name" = fname)
+      gatingMLNode$addNode("data-type:fcs-dimension", attrs = attrs)
+    }
+    gatingMLNode$closeTag() # </transforms:fluorochromes>
+    
+    gatingMLNode$addNode("transforms:detectors", close = FALSE)
+    for (dname in detectors) 
+    {
+      attrs = c("data-type:name" = dname)
+      gatingMLNode$addNode("data-type:fcs-dimension", attrs = attrs)
+    }
+    gatingMLNode$closeTag() # </transforms:detectors>
+    
+    for (rowNo in 1:nrow(myComp@spillover))
+    {
+      gatingMLNode$addNode("transforms:spectrum", close = FALSE)
+      for (colNo in 1:ncol(myComp@spillover)) 
+      {
+        # attrs = c("transforms:value" = myComp@spillover[rowNo,colNo])
+        attrs = c("transforms:value" = as.vector(myComp@spillover[rowNo,colNo]))
+        gatingMLNode$addNode("transforms:coefficient", attrs = attrs)
+      }
+      gatingMLNode$closeTag() # </transforms:spectrum>
+    }
+    
+    gatingMLNode$closeTag() # </transforms:spectrumMatrix>
   }
   
+  # Add an asinhtGml2 transformation named x to the the Gating-ML node
+  addAsinhtGml2 <- function(gatingMLNode, x, flowEnv)
+  {
+    myTrans = objectNameToObject(x, flowEnv)
+    if(!is(myTrans, "asinhtGml2")) stop(paste("Unexpected object insted of asinhtGml2 - ", class(myTrans))) 
+    addDebugMessage(paste("Working on asinhtGml2 ", myTrans@transformationId, sep=""), flowEnv)
+    
+    myID = getObjectId(myTrans, NULL, flowEnv)
+    if(isIdWrittenToXMLAlready(myID, flowEnv)) return(FALSE) 
+    
+    attrs = c("transforms:id" = myID)
+    if (is.finite(myTrans@boundMin)) attrs = append(attrs, c("transforms:boundMin" = myTrans@boundMin))
+    if (is.finite(myTrans@boundMax)) attrs = append(attrs, c("transforms:boundMax" = myTrans@boundMax))
+    gatingMLNode$addNode("transforms:transformation", attrs = attrs, close = FALSE)
+    attrs = c("transforms:T" = myTrans@T, "transforms:M" = myTrans@M, "transforms:A" = myTrans@A)
+    gatingMLNode$addNode("transforms:fasinh", attrs = attrs)
+    gatingMLNode$closeTag() # </transforms:transformation>    
+  }
+  
+  # Add an asinht transformation named x to the the Gating-ML node.
+  # Encode asinht from Gating-ML 1.5 compatible parameterization using Gating-ML 2.0
+  # compatible parameterization as follows:
+  #
+  # asinht (ASinH from Gating-ML 1.5) is defined as 
+  # f(x) = asinh(a*x)*b
+  # asinhtGml2 (fasinh from Gating-ML 2.0) is defined as:
+  # f(x) = (asinh(x*sinh(M*log(10))/T) + A*log(10)) / ((M+A)*log(10))
+  # Therefore, we will encode asinht as asinhtGml2 by stating
+  # A = 0
+  # M = 1 / (b * log(10))
+  # T = (sinh(1/b)) / a
+  # which will give us exactly the right transformation in the Gating-ML 2.0 
+  # compatible parameterization. Btw. log is natural logarithm, i.e., based e
+  addAsinhtGml1.5 <- function(gatingMLNode, x, flowEnv)
+  {
+    myTrans = objectNameToObject(x, flowEnv)
+    if(!is(myTrans, "asinht")) stop(paste("Unexpected object insted of asinht - ", class(myTrans))) 
+    addDebugMessage(paste("Working on asinht ", myTrans@transformationId, sep=""), flowEnv)
+    
+    myID = getObjectId(myTrans, NULL, flowEnv)
+    if(isIdWrittenToXMLAlready(myID, flowEnv)) return(FALSE) 
+    
+    attrs = c("transforms:id" = myID)
+    gatingMLNode$addNode("transforms:transformation", attrs = attrs, close = FALSE)
+    
+    A = 0
+    M = 1 / (myTrans@b * log(10))
+    T = (sinh(1/myTrans@b)) / myTrans@a
+    attrs = c("transforms:T" = T, "transforms:M" = M, "transforms:A" = A)
+    
+    gatingMLNode$addNode("transforms:fasinh", attrs = attrs)
+    gatingMLNode$closeTag() # </transforms:transformation>    
+  }
+  
+  # Add a hyperlogtGml2 transformation named x to the the Gating-ML node
+  addHyperlogtGml2 <- function(gatingMLNode, x, flowEnv)
+  {
+    myTrans = objectNameToObject(x, flowEnv)
+    if(!is(myTrans, "hyperlogtGml2")) stop(paste("Unexpected object insted of hyperlogtGml2 - ", class(myTrans))) 
+    addDebugMessage(paste("Working on hyperlogtGml2 ", myTrans@transformationId, sep=""), flowEnv)
+    
+    myID = getObjectId(myTrans, NULL, flowEnv)
+    if(isIdWrittenToXMLAlready(myID, flowEnv)) return(FALSE) 
+    
+    attrs = c("transforms:id" = myID)
+    if (is.finite(myTrans@boundMin)) attrs = append(attrs, c("transforms:boundMin" = myTrans@boundMin))
+    if (is.finite(myTrans@boundMax)) attrs = append(attrs, c("transforms:boundMax" = myTrans@boundMax))
+    gatingMLNode$addNode("transforms:transformation", attrs = attrs, close = FALSE)
+    attrs = c("transforms:T" = myTrans@T, "transforms:M" = myTrans@M, "transforms:W" = myTrans@W, "transforms:A" = myTrans@A)
+    gatingMLNode$addNode("transforms:hyperlog", attrs = attrs)
+    gatingMLNode$closeTag() # </transforms:transformation>    
+  }
+  
+  # Add a logicletGml2 transformation named x to the the Gating-ML node
+  addLogicletGml2 <- function(gatingMLNode, x, flowEnv)
+  {
+    myTrans = objectNameToObject(x, flowEnv)
+    if(!is(myTrans, "logicletGml2")) stop(paste("Unexpected object insted of logicletGml2 - ", class(myTrans))) 
+    addDebugMessage(paste("Working on logicletGml2 ", myTrans@transformationId, sep=""), flowEnv)
+    
+    myID = getObjectId(myTrans, NULL, flowEnv)
+    if(isIdWrittenToXMLAlready(myID, flowEnv)) return(FALSE) 
+    
+    attrs = c("transforms:id" = myID)
+    if (is.finite(myTrans@boundMin)) attrs = append(attrs, c("transforms:boundMin" = myTrans@boundMin))
+    if (is.finite(myTrans@boundMax)) attrs = append(attrs, c("transforms:boundMax" = myTrans@boundMax))
+    gatingMLNode$addNode("transforms:transformation", attrs = attrs, close = FALSE)
+    attrs = c("transforms:T" = myTrans@T, "transforms:M" = myTrans@M, "transforms:W" = myTrans@W, "transforms:A" = myTrans@A)
+    gatingMLNode$addNode("transforms:logicle", attrs = attrs)
+    gatingMLNode$closeTag() # </transforms:transformation>    
+  }
+  
+  # Add a lintGml2 transformation named x to the the Gating-ML node
+  addLintGml2 <- function(gatingMLNode, x, flowEnv)
+  {
+    myTrans = objectNameToObject(x, flowEnv)
+    if(!is(myTrans, "lintGml2")) stop(paste("Unexpected object insted of lintGml2 - ", class(myTrans))) 
+    addDebugMessage(paste("Working on lintGml2 ", myTrans@transformationId, sep=""), flowEnv)
+    
+    myID = getObjectId(myTrans, NULL, flowEnv)
+    if(isIdWrittenToXMLAlready(myID, flowEnv)) return(FALSE) 
+    
+    attrs = c("transforms:id" = myID)
+    if (is.finite(myTrans@boundMin)) attrs = append(attrs, c("transforms:boundMin" = myTrans@boundMin))
+    if (is.finite(myTrans@boundMax)) attrs = append(attrs, c("transforms:boundMax" = myTrans@boundMax))
+    gatingMLNode$addNode("transforms:transformation", attrs = attrs, close = FALSE)
+    attrs = c("transforms:T" = myTrans@T, "transforms:A" = myTrans@A)
+    gatingMLNode$addNode("transforms:flin", attrs = attrs)
+    gatingMLNode$closeTag() # </transforms:transformation>    
+  }
+  
+  # Add a logtGml2 transformation named x to the the Gating-ML node
+  addLogtGml2 <- function(gatingMLNode, x, flowEnv)
+  {
+    myTrans = objectNameToObject(x, flowEnv)
+    if(!is(myTrans, "logtGml2")) stop(paste("Unexpected object insted of logtGml2 - ", class(myTrans))) 
+    addDebugMessage(paste("Working on logtGml2 ", myTrans@transformationId, sep=""), flowEnv)
+    
+    myID = getObjectId(myTrans, NULL, flowEnv)
+    if(isIdWrittenToXMLAlready(myID, flowEnv)) return(FALSE) 
+    
+    attrs = c("transforms:id" = myID)
+    if (is.finite(myTrans@boundMin)) attrs = append(attrs, c("transforms:boundMin" = myTrans@boundMin))
+    if (is.finite(myTrans@boundMax)) attrs = append(attrs, c("transforms:boundMax" = myTrans@boundMax))
+    gatingMLNode$addNode("transforms:transformation", attrs = attrs, close = FALSE)
+    attrs = c("transforms:T" = myTrans@T, "transforms:M" = myTrans@M)
+    gatingMLNode$addNode("transforms:flog", attrs = attrs)
+    gatingMLNode$closeTag() # </transforms:transformation>    
+  }
+  
+  # Add a ratiotGml2 transformation named x to the the Gating-ML node
+  addRatiotGml2 <- function(gatingMLNode, x, flowEnv)
+  {
+    myTrans = objectNameToObject(x, flowEnv)
+    if(!is(myTrans, "ratiotGml2")) stop(paste("Unexpected object insted of ratiotGml2 - ", class(myTrans))) 
+    addDebugMessage(paste("Working on ratiotGml2 ", myTrans@transformationId, sep=""), flowEnv)
+    
+    myID = getObjectId(myTrans, NULL, flowEnv)
+    if(isIdWrittenToXMLAlready(myID, flowEnv)) return(FALSE) 
+    
+    attrs = c("transforms:id" = myID)
+    if (is.finite(myTrans@boundMin)) attrs = append(attrs, c("transforms:boundMin" = myTrans@boundMin))
+    if (is.finite(myTrans@boundMax)) attrs = append(attrs, c("transforms:boundMax" = myTrans@boundMax))
+    gatingMLNode$addNode("transforms:transformation", attrs = attrs, close = FALSE)
+    attrs = c("transforms:A" = myTrans@pA, "transforms:B" = myTrans@pB, "transforms:C" = myTrans@pC)
+    gatingMLNode$addNode("transforms:fratio", attrs = attrs, close = FALSE)
+    addDimensionContents(gatingMLNode, myTrans@numerator, flowEnv)
+    addDimensionContents(gatingMLNode, myTrans@denominator, flowEnv)
+    gatingMLNode$closeTag() # </transforms:fratio>
+    gatingMLNode$closeTag() # </transforms:transformation>    
+  }
+  
+  # Add a ratio transformation (from Gating-ML 1.5) named x 
+  # to the the Gating-ML node. This will be translated to how "fratio" of Gating-ML 2.0
+  # (When we set A = 1, B = 0, C = 0 then ratio of Gating-ML 1.5 == fratio of Gating-ML 2.0)
+  addRatioGml1.5 <- function(gatingMLNode, x, flowEnv)
+  {
+    myTrans = objectNameToObject(x, flowEnv)
+    if(!is(myTrans, "ratio")) stop(paste("Unexpected object insted of ratio - ", class(myTrans))) 
+    addDebugMessage(paste("Working on ratio ", myTrans@transformationId, sep=""), flowEnv)
+    
+    myID = getObjectId(myTrans, NULL, flowEnv)
+    if(isIdWrittenToXMLAlready(myID, flowEnv)) return(FALSE) 
+    
+    attrs = c("transforms:id" = myID)
+    gatingMLNode$addNode("transforms:transformation", attrs = attrs, close = FALSE)
+    attrs = c("transforms:A" = "1", "transforms:B" = "0", "transforms:C" = "0")
+    gatingMLNode$addNode("transforms:fratio", attrs = attrs, close = FALSE)
+    addDimensionContents(gatingMLNode, myTrans@numerator, flowEnv)
+    addDimensionContents(gatingMLNode, myTrans@denominator, flowEnv)
+    gatingMLNode$closeTag() # </transforms:fratio>
+    gatingMLNode$closeTag() # </transforms:transformation>    
+  }
+  
+  
+  # Add a Gating-ML dimension to a Gating-ML node
   addDimensions <- function(gatingMLNode, x, flowEnv, quadGateDividerIdBasedName = NULL)
   {
     gate = objectNameToObject(x, flowEnv)
@@ -1538,75 +2121,12 @@ if(batch_mode){
       gatingMLNode$addNode("data-type:fcs-dimension", attrs = attrs)
   }
   
-  
-  modified.write.gatingML <- function(flowEnv, file = NULL){
-    
-    #THIS FUNCTION HAS BEEN MODIFIED BY A CLUELESS PERSON! DONT TRUST IT TOO MUCH! SOURCE:https://rdrr.io/bioc/flowUtils/src/R/writeGatingML.R
-    
-    if(!is.null(file) && !is(file, "character")) 
-      stop("A file has to be either NULL or a character string.", call. = FALSE)
-    if(is.null(flowEnv) || !is.environment(flowEnv))
-      stop("A flowEnv environment with objects to be saved is requred.", call. = FALSE)
-    if(!is.null(file) && substr(file, nchar(file) - 3, nchar(file)) != ".xml")
-      file <- paste(file, "xml", sep=".")
-    
-    flowEnv[['.debugMessages']] = c()
-    
-    namespaces <- c(
-      "gating" = "http://www.isac-net.org/std/Gating-ML/v2.0/gating", 
-      "xsi" = "http://www.w3.org/2001/XMLSchema-instance", 
-      "transforms" = "http://www.isac-net.org/std/Gating-ML/v2.0/transformations", 
-      "data-type" = "http://www.isac-net.org/std/Gating-ML/v2.0/datatypes")
-    
-    gatingMLNode = suppressWarnings(xmlTree("gating:Gating-ML", namespaces = namespaces, 
-                                            attrs = c("xsi:schemaLocation" = "http://www.isac-net.org/std/Gating-ML/v2.0/gating http://flowcyt.sourceforge.net/gating/2.0/xsd/Gating-ML.v2.0.xsd http://www.isac-net.org/std/Gating-ML/v2.0/transformations http://flowcyt.sourceforge.net/gating/2.0/xsd/Transformations.v2.0.xsd http://www.isac-net.org/std/Gating-ML/v2.0/datatypes http://flowcyt.sourceforge.net/gating/2.0/xsd/DataTypes.v2.0.xsd")))
-    
-    ##### THE FOLLOWING SEVERAL LINES ARE NOT COMMENTED OUT IN THE ORIGINAL
-    #gatingMLNode$addNode("data-type:custom_info", close = FALSE)
-    #gatingMLNode$addNode("info", "Gating-ML 2.0 export generated by R/flowUtils/flowCore")
-    #gatingMLNode$addNode("R-version", sessionInfo()$R.version$version.string)
-    #gatingMLNode$addNode("flowCore-version", as.character(packageVersion("flowCore")))
-    #gatingMLNode$addNode("flowUtils-version", as.character(packageVersion("flowUtils")))
-    #gatingMLNode$addNode("XML-version", as.character(packageVersion("XML")))
-    #gatingMLNode$closeTag()
-    
-    flowEnv[['.objectIDsWrittenToXMLOutput']] = list() # Use this list to collect XML Ids
-    
-    flowEnv[['.addedObjects']] = list() # List of object identifiers of objects that we have to temporarily add to flowEnv
-    for (x in ls(flowEnv)) addReferencedObjectsToEnv(x, flowEnv) 
-    
-    for (x in ls(flowEnv)) if(is(flowEnv[[x]], "transform"))
-      if(!shouldTransformationBeSkipped(x, flowEnv)) addObjectToGatingML(gatingMLNode, x, flowEnv)
-    for (x in ls(flowEnv)) if(!is(flowEnv[[x]], "transform")) addObjectToGatingML(gatingMLNode, x, flowEnv)
-    
-    if(!is.null(file)) sink(file = file)
-    cat(saveXML(gatingMLNode$value(), encoding = "UTF-8"))
-    if(!is.null(file)) sink()
-    
-    rm(list = as.character(flowEnv[['.addedObjects']]), envir = flowEnv)
-    rm('.addedObjects', envir = flowEnv)
-    
-    rm('.objectIDsWrittenToXMLOutput', envir = flowEnv) 
-    
-  }
-  
-  getObjectId <- function(object, forceGateId, flowEnv) { #from: https://rdrr.io/bioc/flowUtils/src/R/writeGatingML.R
-    if (is(object, "filter")) {
-      if (is.null(forceGateId)) myID = filterIdtoXMLId(object@filterId, flowEnv)
-      else myID = filterIdtoXMLId(forceGateId, flowEnv)    
-    } else if (is(object, "transform")) {
-      if (is.null(forceGateId)) myID = filterIdtoXMLId(object@transformationId, flowEnv)
-      else myID = filterIdtoXMLId(forceGateId, flowEnv)
-    } else if (is(object, "compensation")) {
-      if (is.null(forceGateId)) myID = filterIdtoXMLId(object@compensationId, flowEnv)
-      else myID = filterIdtoXMLId(forceGateId, flowEnv)
-    }
-    
-    else stop(paste("Unexpected object to get id from, class", class(object)))
-    myID
-  }
-  
-  filterIdtoXMLId <- function(x, flowEnv) { #from: https://rdrr.io/bioc/flowUtils/src/R/writeGatingML.R
+  # This converts the identifier to an XML safe identifier and also,
+  # if it is a singleParameterTransform and we have a different 
+  # 'representative' transform for those (saved in flowEnv[['.singleParTransforms']])
+  # then the identifier of the representative is used instead.
+  filterIdtoXMLId <- function(x, flowEnv)
+  {
     if(!(is.character(x))) stop(paste("Object of class", class(x), "cannot be converted to an XML identifier."))
     if(length(x) <= 0) stop(paste("An empty string cannot be converted to an XML identifier."))
     
@@ -1629,6 +2149,8 @@ if(batch_mode){
     x
   }
   
+  # Return true if you are sure that the character is safe to be placed in
+  # an XML identifier.
   isNCNameChar <- function(char) { #from: https://rdrr.io/bioc/flowUtils/src/R/writeGatingML.R
     # Based on the ASCII table and XML NCName syntax
     asciiValue = as.numeric(charToRaw(char))
@@ -1645,7 +2167,90 @@ if(batch_mode){
     TRUE    
   }
   
-  isIdWrittenToXMLAlready <- function(id, flowEnv) { #from: https://rdrr.io/bioc/flowUtils/src/R/writeGatingML.R
+  # Returns TRUE if and only if x is a singleParameterTransform
+  # and there is another equivalent singleParameterTransform
+  # in flowEnv that is the chosen representative among all
+  # equivalent transforms. This is used to merge transforms
+  # for Gating-ML 2.0 output since in Gating-ML 2.0, the same
+  # transformation is applicable to many FCS parameters. For us,
+  # the transformation with the shortest identifier is the chosen
+  # representative. This function requires the flowEnv[['.singleParTransforms']]
+  # to be set by calling the collectTransform function on all available
+  # transforms before shouldTransformationBeSkipped can be used.
+  shouldTransformationBeSkipped <- function(x, flowEnv)
+  {
+    trEnv = flowEnv[['.singleParTransforms']]
+    trans = flowEnv[[x]]
+    if(!is.null(trEnv) && !is.null(trans) && is(trans, "singleParameterTransform"))
+    {
+      key = createTransformIdentifier(trans)
+      if (!is.null(trEnv[[key]])){
+        if (x == trEnv[[key]]) FALSE
+        else TRUE
+      } else FALSE
+    } else FALSE
+  }
+  
+  # Resolve transformation reference, return the transformation that the
+  # reference is pointing to.
+  resolveTransformationReference <- function(trRef)
+  {
+    if(!is(trRef, "transformReference")) 
+      stop(paste("Cannot call resolveTransformationReference on", class(trRef)))
+    if(exists(trRef@transformationId, envir=trRef@searchEnv, inherits=FALSE))
+      trRef@searchEnv[[trRef@transformationId]]
+    else
+      stop(paste("Cannot find", trRef@transformationId, "in the environment."))
+  }
+  
+  # This will create an identifier of a singleParameterTransform that
+  # is based on the class and slot values, such as T, M, W, A, etc. as applicable
+  # for the various single parameter transformations. We will use this to 
+  # merge "the same transformations" applied to different FCS parameter into a single
+  # transformation in the Gating-ML 2.0 output.
+  createTransformIdentifier <- function(trans)
+  {
+    name <- class(trans)
+    for (slotName in slotNames(trans))
+    {
+      if(slotName != ".Data" && slotName != "parameters" && slotName != "transformationId")
+      {
+        slotValue = slot(trans, slotName)
+        if(is(slotValue, "numeric") || is(slotValue, "character"))
+        {
+          name <- paste(name, slotName, slot(trans, slotName), sep = "_")
+        }
+      }
+    }
+    name
+  }
+  
+  # The flowEnv[['.singleParTransforms']] environment will serve as a hashmap
+  # with keys based on values returned by createTransformIdentifier and
+  # values being the shortest transformationId value of all the transformations
+  # matching that key. That way, we can merge all these transformations into
+  # a single one in Gating-ML.
+  collectTransform <- function(x, flowEnv)
+  {
+    trEnv = flowEnv[['.singleParTransforms']]
+    trans = flowEnv[[x]]
+    key = createTransformIdentifier(trans)
+    if (is.null(trEnv[[key]]) || length(trEnv[[key]]) > trans@transformationId) trEnv[[key]] = trans@transformationId   
+  }
+  
+  # Add a debug message to out list of debug messages in flowEnv[['.debugMessages']]
+  addDebugMessage <- function(msg, flowEnv)
+  {
+    flowEnv[['.debugMessages']] = c(flowEnv[['.debugMessages']], msg)
+  }
+  
+  # Return TRUE of the provided id has been checked (and supposedly written)
+  # before. Otherwise, add the id to the list in flowEnv[['.objectIDsWrittenToXMLOutput']]
+  # and retusn FALSE. This function is used to prevent writing multiple objects
+  # with the same ID to the Gating-ML output in case a gate or transformation
+  # with the same ID is stored several times in the flowEnv.
+  isIdWrittenToXMLAlready <- function(id, flowEnv)
+  {
     idsList = flowEnv[['.objectIDsWrittenToXMLOutput']]
     if (is.null(idsList[[id]])) {
       idsList[[id]] = TRUE
@@ -1657,6 +2262,113 @@ if(batch_mode){
     }
   }
   
+  # Add an appropriate gating:compensation-ref attribute to the passed attrs
+  addCompensationRef <- function(attrs, parameter, flowEnv)
+  {
+    if(is(parameter, "unitytransform")) attrs = c(attrs, "gating:compensation-ref" = "uncompensated")
+    else if(is(parameter, "compensatedParameter")) 
+    {
+      if (parameter@spillRefId != "SpillFromFCS")
+        attrs = c(attrs, "gating:compensation-ref" = filterIdtoXMLId(parameter@spillRefId, flowEnv))
+      else 
+        attrs = c(attrs, "gating:compensation-ref" = "FCS")
+    }
+    else stop(paste("Unexpected parameter class", class(parameter)))
+    
+    attrs
+  }
+  
+  # Add to attrs the gating:min and/or gating:max attributes 
+  # based on dimension number i of a rectangle gate gate.
+  addRectGateMinMax <- function(attrs, gate, i)
+  {
+    if (is(gate, "rectangleGate"))
+    {
+      min = gate@min[[i]]
+      max = gate@max[[i]]
+      if(min != -Inf) attrs = c(attrs, "gating:min" = min)
+      if(max != Inf) attrs = c(attrs, "gating:max" = max)
+    } else stop(paste("Unexpected gate class", class(gate), "- expected a rectangleGate."))
+    
+    attrs
+  }
+  
+  # Get the XML compliant identifier of an object. This only works for object of type
+  # "filter", "transform" or "compensation". The filterIdtoXMLId function is incorporated,
+  # which includes the use of representative singleParameterTransforms instead of a different
+  # transform whenever it is applied to a different FCS parameter.
+  getObjectId <- function(object, forceGateId, flowEnv)
+  {
+    if (is(object, "filter")) {
+      if (is.null(forceGateId)) myID = filterIdtoXMLId(object@filterId, flowEnv)
+      else myID = filterIdtoXMLId(forceGateId, flowEnv)    
+    } else if (is(object, "transform")) {
+      if (is.null(forceGateId)) myID = filterIdtoXMLId(object@transformationId, flowEnv)
+      else myID = filterIdtoXMLId(forceGateId, flowEnv)
+    } else if (is(object, "compensation")) {
+      if (is.null(forceGateId)) myID = filterIdtoXMLId(object@compensationId, flowEnv)
+      else myID = filterIdtoXMLId(forceGateId, flowEnv)
+    }
+    
+    else stop(paste("Unexpected object to get id from, class", class(object)))
+    myID
+  }
+  
+  # If x is character then return flowEnv[[x]], otherwise return x
+  objectNameToObject <- function(x, flowEnv) 
+  {
+    if(is(x, "character")) flowEnv[[x]]
+    else x
+  }
+  
+  # Check object named x in flowEnv and make sure
+  # flowEnv contains objects referenced from x, such as parameter
+  # transformations used in x. If objects are missing then
+  # add them to flowEnv and keep track of what has been
+  # added in the flowEnv[['.addedObjects']] list so that it can be
+  # removed at the end of the write.gatingML function. 
+  addReferencedObjectsToEnv <- function(x, flowEnv) 
+  {
+    object = objectNameToObject(x, flowEnv)
+    if(is(object, "parameterFilter")) 
+      for(par in object@parameters) doubleCheckExistanceOfParameter(par, flowEnv)
+    else if (is(object, "singleParameterTransform")) 
+      doubleCheckExistanceOfParameter(object@parameters, flowEnv)
+    else if (is(object, "setOperationFilter"))
+      for(filt in object@filters) doubleCheckExistanceOfFilter(filt, flowEnv)
+    
+  }
+  
+  # If par is a transform then check whether it exists in the flowEnv environment, 
+  # and if it doesn't then add it there and make a note of it in flowEnv[['.addedObjects']]
+  doubleCheckExistanceOfParameter <- function(par, flowEnv)
+  {
+    if(is(par, "transform")) 
+    {
+      if(!is.null(par@transformationId) && par@transformationId != "" && !exists(par@transformationId, envir=flowEnv, inherits=FALSE)) 
+      {
+        flowEnv[[par@transformationId]] <- par
+        flowEnv[['.addedObjects']][[par@transformationId]] <- par@transformationId
+        addReferencedObjectsToEnv(par@transformationId, flowEnv)
+      }    
+    }
+  }
+  
+  # If filt is a concreteFilter then check whether it exists in the flowEnv environment, 
+  # and if it doesn't then add it there and make a note of it in flowEnv[['.addedObjects']]
+  doubleCheckExistanceOfFilter <- function(filt, flowEnv)
+  {
+    if(is(filt, "concreteFilter")) 
+    {
+      if(!is.null(filt@filterId) && filt@filterId != "" && !exists(filt@filterId, envir=flowEnv, inherits=FALSE)) 
+      {
+        flowEnv[[filt@filterId]] <- filt
+        flowEnv[['.addedObjects']][[filt@filterId]] <- filt@filterId
+        addReferencedObjectsToEnv(filt@filterId, flowEnv)
+      }    
+    }
+  }
+
   modified.write.gatingML(flowEnv, outputFile)
 }
 
