@@ -759,8 +759,7 @@ for(pop_to_SOM in seq_along(pops_to_SOM)){
       #} else {
       pop.exprs <- flowWorkspace::gh_pop_get_data(
         gs[[fSample]],
-        pops_to_SOM[pop_to_SOM] %>%
-          names(.)) %>%
+        pops_to_SOM[[pop_to_SOM]]) %>%
         flowCore::exprs()
       gates <- basename(
         flowWorkspace::gh_pop_get_children(
