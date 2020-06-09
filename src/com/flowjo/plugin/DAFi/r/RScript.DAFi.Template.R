@@ -239,15 +239,16 @@ hierarc.str <- function(DAFi_gate_name, n){
            1) %>%
       paste0("_DAFi_",
              .) %>%
-      strsplit(x =  pop_pars_v[i], 
-               split = .,
-               fixed = TRUE) %>%
-      .[[1]] %>%
-      head(.,
-           1)
+      nchar(.) %>%
+      `-`(nchar(pop_pars_v[i])) %>%
+      abs() %>%
+      substr(x = pop_pars_v[i],
+             start = 1,
+             stop = .)
     i <- i - 1
   }
-  return(pop_pars_v)
+  return(pop_pars_v %>%
+           unique)
 }
 
 sessionInfo()
@@ -761,16 +762,30 @@ for(pop_to_SOM in seq_along(pops_to_SOM)){
         gs[[fSample]],
         pops_to_SOM[[pop_to_SOM]]) %>%
         flowCore::exprs()
+      pop.pData <- flowWorkspace::gh_pop_get_data(
+        gs[[fSample]],
+        pops_to_SOM[[pop_to_SOM]]) %>%
+        parameters() %>%
+        pData()
+      colnames(pop.exprs) <- ifelse(
+        is.na(
+          pop.pData$desc),
+        yes = pop.pData$name,
+        no = pop.pData$desc
+        )
       gates <- basename(
         flowWorkspace::gh_pop_get_children(
           gs[[fSample]], 
-          pops_to_SOM[[pop_to_SOM]]))
+          pops_to_SOM[[pop_to_SOM]])
+        )
       for(gate in gates) {
         gate_par <- flowWorkspace::gh_pop_get_gate(
           gs[[fSample]],
           paste0(pops_to_SOM[[pop_to_SOM]],
                  "/",
-                 gate))@parameters %>% names
+                 gate))@parameters %>% 
+          names
+        gate_par <- colnames(pop.exprs)[pop.pData$name %in% gate_par]
         in.gate <- flowWorkspace::gh_pop_get_indices(
           gs[[fSample]],
           paste0(pops_to_SOM[[pop_to_SOM]],
@@ -802,15 +817,12 @@ for(pop_to_SOM in seq_along(pops_to_SOM)){
           keep.marker <- colnames(pop.exprs) %in% 
             gate_par
         }
+        print("gate:")
         print(gate)
-        print(flowWorkspace::gh_pop_get_data(gs[[fSample]],
-                                             pops_to_SOM[pop_to_SOM] %>%
-                                               names(.)) %>%
-                #.[,parNames] %>%
-                .[,keep.marker] %>%
-                flowCore::parameters() %>%
-                flowCore::pData() %>%
-                .$desc)
+        print("markers t-stat:")
+        print(markers.t)
+        print("used markers: ")
+        print(colnames(pop.exprs)[keep.marker])
         fSOM <- FlowSOM::ReadInput(
           flowWorkspace::gh_pop_get_data(gs[[fSample]],
                                          pops_to_SOM[pop_to_SOM] %>%
