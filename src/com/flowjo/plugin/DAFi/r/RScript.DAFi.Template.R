@@ -795,7 +795,8 @@ for(pop_to_SOM in seq_along(pops_to_SOM)){
                      gs[[fSample]],
                      pops_to_SOM[[pop_to_SOM]])
                    ]
-        if(sum(in.gate) > 10){
+        if(sum(in.gate) > 10 &
+           sum(!in.gate) > 10) {
           markers.t <- apply(pop.exprs,
                              2, 
                              function(marker) 
@@ -1299,10 +1300,43 @@ if(batch_mode){
   #write.csv(parNames, paste0(fj_csv_ouput_file, ".pars.csv"), row.names=FALSE)
   
   # create heatmaps with median expression of all selected paramaters on DAFi vs traditional gates
+  # as well as pseudocolor for the bidimensional gate
   if(!dir.exists(plotDir)){
     dir.create(plotDir)
   }
   for(DAFi_node in DAFi_nodes) {
+    #gate_par <- flowWorkspace::gh_pop_get_gate(
+    # gs[[1]],
+    # paste0(pops_to_SOM[[pop_to_SOM]],
+    #        "/",
+    #        gate))@parameters %>% 
+    # names
+    #filtLs <- filterList(gs_pop_get_gate(gs[[1]],
+    #                                    gsub(pattern = "DAFi_", 
+    #                                         replacement = "",
+    #                                         x = DAFi_node,
+    #                                         fixed = TRUE)))
+    #ggcyto(gs[[1]], 
+    #      aes(x = !!gate_par[1],
+    #          y = !!gate_par[2]),
+    #      subset = DAFi_node) + 
+    # geom_hex(bins = 256) + 
+    # geom_polygon(data = filtLs, 
+    #              fill = NA, 
+    #              col = "purple") +
+    # theme_bw()
+    #ggcyto(gs[[1]], 
+    #      aes(x = !!gate_par[1],
+    #          y = !!gate_par[2]),
+    #      subset = gsub(pattern = "DAFi_", 
+    #                    replacement = "",
+    #                    x = DAFi_node,
+    #                    fixed = TRUE)) + 
+    # geom_hex(bins = 256) + 
+    # geom_polygon(data = filtLs, 
+    #              fill = NA, 
+    #              col = "purple") +
+    # theme_bw()
     # get median
     mark.exprs <- cbind(
       flowWorkspace::gh_pop_get_data(gs[[1]],
@@ -1329,7 +1363,7 @@ if(batch_mode){
                                     fixed = FALSE),]
     pData.asDF <- flowCore::parameters(gh_pop_get_data(gs[[1]],
                                                        DAFi_node)) %>%
-      Biobase::pData()
+      flowCore::pData()
     rownames(mark.exprs) <- pData.asDF$desc[pData.asDF$name %in%
                                               rownames(mark.exprs)]
     
