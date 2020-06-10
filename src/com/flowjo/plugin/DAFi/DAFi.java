@@ -161,8 +161,8 @@ public class DAFi extends R_Algorithm {
     public static final int defaultXDim = 10;
     public static final int defaultYDim = 10;
     public static final int defaultMinPopSize = 500;
-    public static final int defaultMinDim = 4;
-    public static final int defaultMaxDim = 10;
+    public static final int defaultMinDim = 3;
+    public static final int defaultMaxDim = 6;
     public static final String defaultApplyOnPrev = "None";
     //public static final boolean defaultScale = false;
     public static final boolean defaultTrans = true;
@@ -930,7 +930,7 @@ public class DAFi extends R_Algorithm {
         GuiFactory.setSizes(fMinDimField, new Dimension(fixedFieldWidth, fixedFieldHeigth));
         GuiFactory.setSizes(fjLabelMinDim, new Dimension(fixedLabelWidth, fixedLabelHeigth));
 
-        fMaxDimField = new RangedIntegerTextField(3, 100);
+        fMaxDimField = new RangedIntegerTextField(3, 1000000);
         fMaxDimField.setInt(fnMaxDim);
         fMaxDimField.setToolTipText("<html><p width=\"" + fixedToolTipWidth + "\">" + maxDimTooltip + "</p></html>");
         GuiFactory.setSizes(fMaxDimField, new Dimension(fixedFieldWidth, fixedFieldHeigth));

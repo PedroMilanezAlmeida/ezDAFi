@@ -230,7 +230,7 @@ hierarc.str <- function(DAFi_gate_name, n){
   pop_pars_v <- vector("character",
                        n)
   pop_pars_v[i] <- DAFi_gate_name
-  while(i > 1){
+  while(i > 1) {
     pop_pars_v[i-1] <- strsplit(x =  pop_pars_v[i], 
                                 split = "_DAFi_",
                                 fixed = TRUE) %>%
@@ -1305,38 +1305,161 @@ if(batch_mode){
     dir.create(plotDir)
   }
   for(DAFi_node in DAFi_nodes) {
-    #gate_par <- flowWorkspace::gh_pop_get_gate(
-    # gs[[1]],
-    # paste0(pops_to_SOM[[pop_to_SOM]],
-    #        "/",
-    #        gate))@parameters %>% 
-    # names
-    #filtLs <- filterList(gs_pop_get_gate(gs[[1]],
-    #                                    gsub(pattern = "DAFi_", 
-    #                                         replacement = "",
-    #                                         x = DAFi_node,
-    #                                         fixed = TRUE)))
-    #ggcyto(gs[[1]], 
-    #      aes(x = !!gate_par[1],
-    #          y = !!gate_par[2]),
-    #      subset = DAFi_node) + 
-    # geom_hex(bins = 256) + 
-    # geom_polygon(data = filtLs, 
-    #              fill = NA, 
-    #              col = "purple") +
-    # theme_bw()
-    #ggcyto(gs[[1]], 
-    #      aes(x = !!gate_par[1],
-    #          y = !!gate_par[2]),
-    #      subset = gsub(pattern = "DAFi_", 
-    #                    replacement = "",
-    #                    x = DAFi_node,
-    #                    fixed = TRUE)) + 
-    # geom_hex(bins = 256) + 
-    # geom_polygon(data = filtLs, 
-    #              fill = NA, 
-    #              col = "purple") +
-    # theme_bw()
+    gate_par <- flowWorkspace::gh_pop_get_gate(
+     gs[[1]],
+     gsub(pattern = "DAFi_", 
+          replacement = "",
+          x = DAFi_node,
+          fixed = TRUE))@parameters %>% 
+     names
+    filtLs <- filterList(gs_pop_get_gate(gs[[1]],
+                                        gsub(pattern = "DAFi_", 
+                                             replacement = "",
+                                             x = DAFi_node,
+                                             fixed = TRUE)))
+    if(length(gate_par) == 2) {
+      ggcyto.DAFi <- suppressMessages(
+        ggcyto(gs[[1]], 
+               aes(x = !!gate_par[1],
+                   y = !!gate_par[2]),
+               subset = DAFi_node) + 
+          ggtitle(paste0(
+            (gh_pop_get_indices(gs[[1]],
+                                DAFi_node) %>%
+               sum),
+            " events :: ",
+            DAFi_node %>%
+              basename())) +
+          geom_hex(bins = ifelse((gh_pop_get_indices(gs[[1]],
+                                                     DAFi_node) %>%
+                                    sum) %>%
+                                   ">"(512),
+                                 yes = 64,
+                                 no = 32)) + 
+          geom_polygon(data = filtLs, 
+                       fill = NA, 
+                       col = "black") +
+          theme_bw() +
+          ggcyto_par_set(limits = "instrument") +
+          axis_x_inverse_trans() +
+          axis_y_inverse_trans()
+      )
+      ggcyto.DAFi <- as.ggplot(ggcyto.DAFi)
+      ggcyto.trad <- suppressMessages(
+        ggcyto(gs[[1]],
+               aes(x = !!gate_par[1],
+                   y = !!gate_par[2]),
+               subset = gsub(pattern = "DAFi_", 
+                             replacement = "",
+                             x = DAFi_node,
+                             fixed = TRUE)) + 
+          ggtitle(paste0(
+            (gh_pop_get_indices(gs[[1]],
+                                gsub(pattern = "DAFi_", 
+                                     replacement = "",
+                                     x = DAFi_node,
+                                     fixed = TRUE)) %>%
+               sum),
+            " events :: ",
+            gsub(pattern = "DAFi_", 
+                 replacement = "",
+                 x = DAFi_node,
+                 fixed = TRUE) %>%
+              basename())) +
+          geom_hex(bins = ifelse((gh_pop_get_indices(gs[[1]],
+                                                     gsub(pattern = "DAFi_", 
+                                                          replacement = "",
+                                                          x = DAFi_node,
+                                                          fixed = TRUE)) %>%
+                                    sum) %>%
+                                   ">"(512),
+                                 yes = 64,
+                                 no = 32)) + 
+          geom_polygon(data = filtLs, 
+                       fill = NA, 
+                       col = "black") +
+          theme_bw() +
+          ggcyto_par_set(limits = "instrument") +
+          axis_x_inverse_trans() +
+          axis_y_inverse_trans()
+      )
+      ggcyto.trad <- as.ggplot(ggcyto.trad)
+      arrangeGrob(ggcyto.trad,
+                  ggcyto.DAFi,
+                  nrow = 1) %>%
+        ggsave(filename = paste0(plotDir,
+                                 "/PSEUDOCOLOR.",
+                                 sampleFCS,
+                                 gsub(pattern = "/",
+                                      replacement = "_", 
+                                      x = DAFi_node,
+                                      fixed = TRUE),
+                                 ".pdf"),
+               width = 6,
+               height = 3)
+    }
+    if(length(gate_par) == 1) {
+      ggcyto.DAFi <- suppressMessages(
+        ggcyto(gs[[1]], 
+               aes(x = !!gate_par[1]),
+               subset = DAFi_node) + 
+          ggtitle(paste0(
+            (gh_pop_get_indices(gs[[1]],
+                                DAFi_node) %>%
+               sum),
+            " events :: ",
+            DAFi_node %>%
+              basename())) +
+          geom_density(fill = "black",
+                       aes(y = ..scaled..)) + 
+          geom_gate(data = filtLs) +
+          theme_bw() +
+          ggcyto_par_set(limits = "instrument") +
+          axis_x_inverse_trans()
+      )
+      ggcyto.DAFi <- as.ggplot(ggcyto.DAFi)
+      ggcyto.trad <- suppressMessages(
+        ggcyto(gs[[1]],
+               aes(x = !!gate_par[1]),
+               subset = gsub(pattern = "DAFi_", 
+                             replacement = "",
+                             x = DAFi_node,
+                             fixed = TRUE)) + 
+          ggtitle(paste0(
+            (gh_pop_get_indices(gs[[1]],
+                                gsub(pattern = "DAFi_", 
+                                     replacement = "",
+                                     x = DAFi_node,
+                                     fixed = TRUE)) %>%
+               sum),
+            " events :: ",
+            gsub(pattern = "DAFi_", 
+                 replacement = "",
+                 x = DAFi_node,
+                 fixed = TRUE) %>%
+              basename())) +
+          geom_density(fill = "black",
+                       aes(y = ..scaled..)) + 
+          geom_gate(data = filtLs) +
+          theme_bw() +
+          ggcyto_par_set(limits = "instrument") +
+          axis_x_inverse_trans()
+      )
+      ggcyto.trad <- as.ggplot(ggcyto.trad)
+      arrangeGrob(ggcyto.trad,
+                  ggcyto.DAFi,
+                  nrow = 1) %>%
+        ggsave(filename = paste0(plotDir,
+                                 "/HISTOGRAM.",
+                                 sampleFCS,
+                                 gsub(pattern = "/",
+                                      replacement = "_", 
+                                      x = DAFi_node,
+                                      fixed = TRUE),
+                                 ".pdf"),
+               width = 6,
+               height = 3)
+    }
     # get median
     mark.exprs <- cbind(
       flowWorkspace::gh_pop_get_data(gs[[1]],
@@ -1387,7 +1510,7 @@ if(batch_mode){
                       fixed = TRUE) %>%
                  basename(),
                filename = paste0(plotDir,
-                                 "/",
+                                 "/HEATMAP.",
                                  sampleFCS,
                                  gsub(pattern = "/",
                                       replacement = "_", 
