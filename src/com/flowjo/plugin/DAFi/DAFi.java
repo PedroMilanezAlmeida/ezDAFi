@@ -124,7 +124,7 @@ public class DAFi extends R_Algorithm {
     private static final String orPerformDAFiLabel = "or perform new DAFi";
     //private static final String scaleLabel = "Scale parameters to mean = 0 and sd = 1 (use with care)";
     //private static final String scaleTooltip = "Should the data be scaled prior to clustering?";
-    private static final String transLabel = "Transform parameters (usually, yes)";
+    private static final String transLabel = "Apply FJ data transformation";
     private static final String transTooltip = "If not working with raw FCS files but pre-processed CSV files from other applications such as CITE-seq or histo-cytometry, the data may already have been transformed and this box should be unchecked.";
     private static final String batchLabel = "Advanced (results not re-imported to FlowJo; batch mode)";
     private static final String batchTooltip = "DAFi all samples, plot back-gating results and continue analysis in R. Gates will not be re-imported to FlowJo.";
@@ -161,7 +161,7 @@ public class DAFi extends R_Algorithm {
     public static final int defaultXDim = 10;
     public static final int defaultYDim = 10;
     public static final int defaultMinPopSize = 500;
-    public static final int defaultMinDim = 3;
+    public static final int defaultMinDim = 4;
     public static final int defaultMaxDim = 6;
     public static final String defaultApplyOnPrev = "None";
     //public static final boolean defaultScale = false;
@@ -187,13 +187,9 @@ public class DAFi extends R_Algorithm {
 
     private static final String channelsLabelLine0 = "Make sure the selected population has at least one child gate.";
     private static final String channelsLabelLine1 = "";
-    private static final String channelsLabelLine2 = "FCS channels to be used by DAFi. Select multiple items by pressing";
-    private static final String channelsLabelLine3 = "the Shift key or toggle items by holding the Ctrl (or Cmd) keys.";
-    private static final String channelsLabelLine4 = "FSC and SSC must be included if they are used in any gates, such as";
-    private static final String channelsLabelLine5 = "in a CD14 x SSC gate and in a Viability x FSC gate.";
 
-    private static final String pathToScriptLabelLine1 = "The RScript created in this analysis is located within the folder";
-    private static final String pathToScriptLabelLine2 = "of workspace under /WORKSPACE_NAME/DAFI/RScript.'numbers'.R.txt,";
+    private static final String pathToScriptLabelLine1 = "The RScript created in this analysis is located in the same folder as";
+    private static final String pathToScriptLabelLine2 = "the FJ workspace, under /WORKSPACE_NAME/DAFI/RScript.'numbers'.R.txt,";
     private static final String pathToScriptLabelLine3 = "where 'numbers' is time of creation in milliseconds.";
     private static final String pathToScriptLabelLine4 = "";
 
@@ -776,17 +772,9 @@ public class DAFi extends R_Algorithm {
 
         FJLabel fjLabel0 = new FJLabel(channelsLabelLine0);
         FJLabel fjLabel1 = new FJLabel(channelsLabelLine1);
-        FJLabel fjLabel2 = new FJLabel(channelsLabelLine2);
-        FJLabel fjLabel3 = new FJLabel(channelsLabelLine3);
-        FJLabel fjLabel4 = new FJLabel(channelsLabelLine4);
-        FJLabel fjLabel5 = new FJLabel(channelsLabelLine5);
 
         componentList.add(fjLabel0);
         componentList.add(fjLabel1);
-        componentList.add(fjLabel2);
-        componentList.add(fjLabel3);
-        componentList.add(fjLabel4);
-        componentList.add(fjLabel5);
 
         componentList.add(addFlowJoParameterSelector(list));
 
@@ -902,6 +890,21 @@ public class DAFi extends R_Algorithm {
         fApplyOnChildrenCheckbox.setSelected(fApplyOnChildren);
         componentList.add(new HBox(new Component[]{fApplyOnChildrenCheckbox}));
 
+        FJLabel fjLabelDimX = new FJLabel(dimXLabel);
+        fDimXField = new RangedIntegerTextField(3, 100);
+        fDimXField.setInt(fndimx);
+        fDimXField.setToolTipText("<html><p width=\"" + fixedToolTipWidth + "\">" + dimXTooltip + "</p></html>");
+        GuiFactory.setSizes(fDimXField, new Dimension(fixedFieldWidth, fixedFieldHeigth));
+        GuiFactory.setSizes(fjLabelDimX, new Dimension(fixedLabelWidth, fixedLabelHeigth));
+
+        fDimYField = new RangedIntegerTextField(3, 100);
+        fDimYField.setInt(fndimy);
+        fDimYField.setToolTipText("<html><p width=\"" + fixedToolTipWidth + "\">" + dimYTooltip + "</p></html>");
+        GuiFactory.setSizes(fDimYField, new Dimension(fixedFieldWidth, fixedFieldHeigth));
+
+        HBox hboxDimXY = new HBox(new Component[]{fjLabelDimX, fDimXField, /*fjLabelDimY,*/new FJLabel("x"), fDimYField});
+        componentList.add(hboxDimXY);
+
         refreshComponentsEnabled(fApplyOnPrevCombo);
 
         //FJLabel LabelApplyOnPrev = new FJLabel(applyOnPrevLabel);
@@ -938,21 +941,6 @@ public class DAFi extends R_Algorithm {
         HBox hboxDimMinMax = new HBox(new Component[]{fjLabelMinDim, fMinDimField, /*fjLabelMinDim,*/new FJLabel("max:"), fMaxDimField});
         componentList.add(hboxDimMinMax);
         componentList.add(new HBox(new Component[]{new FJLabel(mustBeMinDimLabel)}));
-
-        FJLabel fjLabelDimX = new FJLabel(dimXLabel);
-        fDimXField = new RangedIntegerTextField(3, 100);
-        fDimXField.setInt(fndimx);
-        fDimXField.setToolTipText("<html><p width=\"" + fixedToolTipWidth + "\">" + dimXTooltip + "</p></html>");
-        GuiFactory.setSizes(fDimXField, new Dimension(fixedFieldWidth, fixedFieldHeigth));
-        GuiFactory.setSizes(fjLabelDimX, new Dimension(fixedLabelWidth, fixedLabelHeigth));
-
-        fDimYField = new RangedIntegerTextField(3, 100);
-        fDimYField.setInt(fndimy);
-        fDimYField.setToolTipText("<html><p width=\"" + fixedToolTipWidth + "\">" + dimYTooltip + "</p></html>");
-        GuiFactory.setSizes(fDimYField, new Dimension(fixedFieldWidth, fixedFieldHeigth));
-
-        HBox hboxDimXY = new HBox(new Component[]{fjLabelDimX, fDimXField, /*fjLabelDimY,*/new FJLabel("x"), fDimYField});
-        componentList.add(hboxDimXY);
 
         fKMeansSomOptionCheckbox = new FJCheckBox(kMeansSomLabel);
         fKMeansSomOptionCheckbox.setToolTipText("<html><p width=\"" + fixedToolTipWidth + "\">" + kMeansSomTooltip + "</p></html>");
@@ -1013,7 +1001,8 @@ public class DAFi extends R_Algorithm {
           indexes[i] = i;
       }
       fParameterNameList.setSelectedIndices(indexes);
-      return scrollableList;
+      //return scrollableList;
+        return null;
     }
 
 

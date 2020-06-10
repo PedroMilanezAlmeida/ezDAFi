@@ -287,6 +287,8 @@ fj_sample_file_abs_path <- "FJ_SAMPLE_FILE_ABS_PATH"
 fj_transform <- FJ_TRANSFORM
 plotDir <- paste0(dirname(fj_data_file_path),
                   "/plots")
+statsDir <- paste0(dirname(fj_data_file_path),
+                   "/stats")
 min.nPar <- FJ_MIN_N_PAR
 min.nPar <- ifelse(min.nPar < 3,
                    yes = 3,
@@ -772,12 +774,12 @@ for(pop_to_SOM in seq_along(pops_to_SOM)){
           pop.pData$desc),
         yes = pop.pData$name,
         no = pop.pData$desc
-        )
+      )
       gates <- basename(
         flowWorkspace::gh_pop_get_children(
           gs[[fSample]], 
           pops_to_SOM[[pop_to_SOM]])
-        )
+      )
       for(gate in gates) {
         gate_par <- flowWorkspace::gh_pop_get_gate(
           gs[[fSample]],
@@ -814,14 +816,17 @@ for(pop_to_SOM in seq_along(pops_to_SOM)){
             unique()
           keep.marker <- colnames(pop.exprs) %in% 
             keep.marker
+          print("gate:")
+          print(gate)
+          print("markers t-stat:")
+          print(markers.t)
         } else { #close if call for when there is no cell in traditional gate
           keep.marker <- colnames(pop.exprs) %in% 
             gate_par
+          print("gate:")
+          print(gate)
+          print("markers t-stat: not enough cells to generate t-statistic")
         }
-        print("gate:")
-        print(gate)
-        print("markers t-stat:")
-        print(markers.t)
         print("used markers: ")
         print(colnames(pop.exprs)[keep.marker])
         fSOM <- FlowSOM::ReadInput(
@@ -1295,9 +1300,195 @@ if(batch_mode){
           function(pop)
             mean(pop > 5e4))
   )
-  #write results
-  write.csv(labels, file = fj_csv_ouput_file, row.names=FALSE, quote=TRUE)
-  #write.csv(parNames, paste0(fj_csv_ouput_file, ".pars.csv"), row.names=FALSE)
+  #write derived parameters
+  write.csv(labels, 
+            file = fj_csv_ouput_file, 
+            row.names = FALSE, 
+            quote = TRUE)
+  
+  #get stats
+  pop.stats.count <- gh_pop_get_stats(gs[[1]],
+                                      type =  "count")
+  pop.stats.percent <- gh_pop_get_stats(gs[[1]],
+                                        type =  "percent")
+  pop.stats.percent$percent <- pop.stats.percent$percent * 100
+  
+  pop.stats.count.DAFi <- pop.stats.count[pop.stats.count$pop %in% 
+                                            DAFi_nodes,]$count
+  names(pop.stats.count.DAFi) <- pop.stats.count[pop.stats.count$pop %in% 
+                                                   DAFi_nodes,]$pop
+  pop.stats.count.DAFi <- data.frame(pop.stats.count.DAFi) %>%
+    t
+  rownames(pop.stats.count.DAFi) <- sampleFCS
+  
+  pop.stats.percent.DAFi <- pop.stats.percent[pop.stats.percent$pop %in% 
+                                                DAFi_nodes,]$percent
+  names(pop.stats.percent.DAFi) <- pop.stats.percent[pop.stats.percent$pop %in% 
+                                                       DAFi_nodes,]$pop
+  pop.stats.percent.DAFi <- data.frame(pop.stats.percent.DAFi) %>%
+    t
+  rownames(pop.stats.percent.DAFi) <- sampleFCS
+  
+  pop.stats.count.trad <- pop.stats.count[
+    match(gsub(pattern = "DAFi_", 
+               replacement = "",
+               x = DAFi_nodes,
+               fixed = TRUE),
+          pop.stats.count$pop),
+    ]$count
+  names(pop.stats.count.trad) <- pop.stats.count[
+    match(gsub(pattern = "DAFi_", 
+               replacement = "",
+               x = DAFi_nodes,
+               fixed = TRUE),
+          pop.stats.count$pop),
+    ]$pop
+  pop.stats.count.trad <- data.frame(pop.stats.count.trad) %>%
+    t
+  rownames(pop.stats.count.trad) <- sampleFCS
+  
+  pop.stats.percent.trad <- pop.stats.percent[
+    match(gsub(pattern = "DAFi_", 
+               replacement = "",
+               x = DAFi_nodes,
+               fixed = TRUE),
+          pop.stats.count$pop)
+    ,]$percent
+  names(pop.stats.percent.trad) <- pop.stats.percent[
+    match(gsub(pattern = "DAFi_", 
+               replacement = "",
+               x = DAFi_nodes,
+               fixed = TRUE),
+          pop.stats.count$pop)
+    ,]$pop
+  pop.stats.percent.trad <- data.frame(pop.stats.percent.trad) %>%
+    t
+  rownames(pop.stats.percent.trad) <- sampleFCS
+  #write stats
+  if(!dir.exists(statsDir)) {
+    dir.create(statsDir)
+  }
+  if(!paste0(statsDir,
+             "/",
+             "DAFi_count_",
+             popOfInt,
+             ".csv") %>%
+     file.exists()) {
+    write.table(x = c("sample", colnames(pop.stats.count.DAFi)) %>%
+                  t,
+                append = FALSE,
+                sep = ",",
+                file = paste0(statsDir,
+                              "/",
+                              "DAFi_count_",
+                              popOfInt,
+                              ".csv"),
+                row.names = FALSE, 
+                quote = TRUE,
+                col.names = FALSE)
+  }
+  write.table(x = pop.stats.count.DAFi,
+              append = TRUE,
+              sep = ",",
+              file = paste0(statsDir,
+                            "/",
+                            "DAFi_count_",
+                            popOfInt,
+                            ".csv"),
+              row.names = TRUE, 
+              quote = TRUE,
+              col.names = FALSE)
+  if(!paste0(statsDir,
+             "/",
+             "DAFi_percent_",
+             popOfInt,
+             ".csv") %>%
+     file.exists()) {
+    write.table(x = c("sample", colnames(pop.stats.percent.DAFi)) %>%
+                  t,
+                append = FALSE,
+                sep = ",",
+                file = paste0(statsDir,
+                              "/",
+                              "DAFi_percent_",
+                              popOfInt,
+                              ".csv"),
+                row.names = FALSE, 
+                quote = TRUE,
+                col.names = FALSE)
+  }
+  write.table(x = pop.stats.percent.DAFi,
+              append = TRUE,
+              sep = ",",
+              file = paste0(statsDir,
+                            "/",
+                            "DAFi_percent_",
+                            popOfInt,
+                            ".csv"),
+              row.names = TRUE, 
+              quote = TRUE,
+              col.names = FALSE)
+  if(!paste0(statsDir,
+             "/",
+             "trad_count_",
+             popOfInt,
+             ".csv") %>%
+     file.exists()) {
+    write.table(x = c("sample", colnames(pop.stats.count.trad)) %>%
+                  t,
+                append = FALSE,
+                sep = ",",
+                file = paste0(statsDir,
+                              "/",
+                              "trad_count_",
+                              popOfInt,
+                              ".csv"),
+                row.names = FALSE, 
+                quote = TRUE,
+                col.names = FALSE)
+  }
+  write.table(x = pop.stats.count.trad,
+              append = TRUE,
+              sep = ",",
+              file = paste0(statsDir,
+                            "/",
+                            "trad_count_",
+                            popOfInt,
+                            ".csv"),
+              row.names = TRUE, 
+              quote = TRUE,
+              col.names = FALSE)
+  if(!paste0(statsDir,
+             "/",
+             "trad_percent_",
+             popOfInt,
+             ".csv") %>%
+     file.exists()) {
+    write.table(x = c("sample", colnames(pop.stats.percent.trad)) %>%
+                  t,
+                append = FALSE,
+                sep = ",",
+                file = paste0(statsDir,
+                              "/",
+                              "trad_percent_",
+                              popOfInt,
+                              ".csv"),
+                row.names = FALSE, 
+                quote = TRUE,
+                col.names = FALSE)
+  }
+  write.table(x = pop.stats.percent.trad,
+              append = TRUE,
+              sep = ",",
+              file = paste0(statsDir,
+                            "/",
+                            "trad_percent_",
+                            popOfInt,
+                            ".csv"),
+              row.names = TRUE, 
+              quote = TRUE,
+              col.names = FALSE)
+  
   
   # create heatmaps with median expression of all selected paramaters on DAFi vs traditional gates
   # as well as pseudocolor for the bidimensional gate
@@ -1306,160 +1497,150 @@ if(batch_mode){
   }
   for(DAFi_node in DAFi_nodes) {
     gate_par <- flowWorkspace::gh_pop_get_gate(
-     gs[[1]],
-     gsub(pattern = "DAFi_", 
-          replacement = "",
-          x = DAFi_node,
-          fixed = TRUE))@parameters %>% 
-     names
+      gs[[1]],
+      gsub(pattern = "DAFi_", 
+           replacement = "",
+           x = DAFi_node,
+           fixed = TRUE))@parameters %>% 
+      names
     filtLs <- filterList(gs_pop_get_gate(gs[[1]],
-                                        gsub(pattern = "DAFi_", 
-                                             replacement = "",
-                                             x = DAFi_node,
-                                             fixed = TRUE)))
-    if(length(gate_par) == 2) {
-      ggcyto.DAFi <- suppressMessages(
-        ggcyto(gs[[1]], 
-               aes(x = !!gate_par[1],
-                   y = !!gate_par[2]),
-               subset = DAFi_node) + 
-          ggtitle(paste0(
-            (gh_pop_get_indices(gs[[1]],
-                                DAFi_node) %>%
-               sum),
-            " events :: ",
-            DAFi_node %>%
-              basename())) +
-          geom_hex(bins = ifelse((gh_pop_get_indices(gs[[1]],
-                                                     DAFi_node) %>%
-                                    sum) %>%
-                                   ">"(512),
-                                 yes = 64,
-                                 no = 32)) + 
-          geom_polygon(data = filtLs, 
-                       fill = NA, 
-                       col = "black") +
-          theme_bw() +
-          ggcyto_par_set(limits = "instrument") +
-          axis_x_inverse_trans() +
-          axis_y_inverse_trans()
-      )
-      ggcyto.DAFi <- as.ggplot(ggcyto.DAFi)
-      ggcyto.trad <- suppressMessages(
-        ggcyto(gs[[1]],
-               aes(x = !!gate_par[1],
-                   y = !!gate_par[2]),
-               subset = gsub(pattern = "DAFi_", 
-                             replacement = "",
-                             x = DAFi_node,
-                             fixed = TRUE)) + 
-          ggtitle(paste0(
-            (gh_pop_get_indices(gs[[1]],
-                                gsub(pattern = "DAFi_", 
-                                     replacement = "",
-                                     x = DAFi_node,
-                                     fixed = TRUE)) %>%
-               sum),
-            " events :: ",
-            gsub(pattern = "DAFi_", 
-                 replacement = "",
-                 x = DAFi_node,
-                 fixed = TRUE) %>%
-              basename())) +
-          geom_hex(bins = ifelse((gh_pop_get_indices(gs[[1]],
-                                                     gsub(pattern = "DAFi_", 
-                                                          replacement = "",
-                                                          x = DAFi_node,
-                                                          fixed = TRUE)) %>%
-                                    sum) %>%
-                                   ">"(512),
-                                 yes = 64,
-                                 no = 32)) + 
-          geom_polygon(data = filtLs, 
-                       fill = NA, 
-                       col = "black") +
-          theme_bw() +
-          ggcyto_par_set(limits = "instrument") +
-          axis_x_inverse_trans() +
-          axis_y_inverse_trans()
-      )
-      ggcyto.trad <- as.ggplot(ggcyto.trad)
-      arrangeGrob(ggcyto.trad,
-                  ggcyto.DAFi,
-                  nrow = 1) %>%
-        ggsave(filename = paste0(plotDir,
-                                 "/PSEUDOCOLOR.",
-                                 sampleFCS,
-                                 gsub(pattern = "/",
-                                      replacement = "_", 
-                                      x = DAFi_node,
-                                      fixed = TRUE),
-                                 ".pdf"),
-               width = 6,
-               height = 3)
-    }
-    if(length(gate_par) == 1) {
-      ggcyto.DAFi <- suppressMessages(
-        ggcyto(gs[[1]], 
-               aes(x = !!gate_par[1]),
-               subset = DAFi_node) + 
-          ggtitle(paste0(
-            (gh_pop_get_indices(gs[[1]],
-                                DAFi_node) %>%
-               sum),
-            " events :: ",
-            DAFi_node %>%
-              basename())) +
-          geom_density(fill = "black",
-                       aes(y = ..scaled..)) + 
-          geom_gate(data = filtLs) +
-          theme_bw() +
-          ggcyto_par_set(limits = "instrument") +
-          axis_x_inverse_trans()
-      )
-      ggcyto.DAFi <- as.ggplot(ggcyto.DAFi)
-      ggcyto.trad <- suppressMessages(
-        ggcyto(gs[[1]],
-               aes(x = !!gate_par[1]),
-               subset = gsub(pattern = "DAFi_", 
-                             replacement = "",
-                             x = DAFi_node,
-                             fixed = TRUE)) + 
-          ggtitle(paste0(
-            (gh_pop_get_indices(gs[[1]],
-                                gsub(pattern = "DAFi_", 
-                                     replacement = "",
-                                     x = DAFi_node,
-                                     fixed = TRUE)) %>%
-               sum),
-            " events :: ",
-            gsub(pattern = "DAFi_", 
-                 replacement = "",
-                 x = DAFi_node,
-                 fixed = TRUE) %>%
-              basename())) +
-          geom_density(fill = "black",
-                       aes(y = ..scaled..)) + 
-          geom_gate(data = filtLs) +
-          theme_bw() +
-          ggcyto_par_set(limits = "instrument") +
-          axis_x_inverse_trans()
-      )
-      ggcyto.trad <- as.ggplot(ggcyto.trad)
-      arrangeGrob(ggcyto.trad,
-                  ggcyto.DAFi,
-                  nrow = 1) %>%
-        ggsave(filename = paste0(plotDir,
-                                 "/HISTOGRAM.",
-                                 sampleFCS,
-                                 gsub(pattern = "/",
-                                      replacement = "_", 
-                                      x = DAFi_node,
-                                      fixed = TRUE),
-                                 ".pdf"),
-               width = 6,
-               height = 3)
-    }
+                                         gsub(pattern = "DAFi_", 
+                                              replacement = "",
+                                              x = DAFi_node,
+                                              fixed = TRUE)))
+    tryCatch({
+      if(length(gate_par) == 2) {
+        ggcyto.DAFi <- suppressMessages(
+          ggcyto(gs[[1]], 
+                 aes(x = !!gate_par[1],
+                     y = !!gate_par[2]),
+                 subset = DAFi_node) + 
+            ggtitle(paste0("DAFi :: ",
+                           (gh_pop_get_indices(gs[[1]],
+                                               DAFi_node) %>%
+                              sum),
+                           " events")) +
+            geom_hex(binwidth = c(1,1)) + 
+            geom_polygon(data = filtLs, 
+                         fill = NA, 
+                         col = "black") +
+            theme_bw() +
+            ggcyto_par_set(limits = "instrument") +
+            axis_x_inverse_trans() +
+            axis_y_inverse_trans()
+        )
+        ggcyto.DAFi <- as.ggplot(ggcyto.DAFi)
+        ggcyto.trad <- suppressMessages(
+          ggcyto(gs[[1]],
+                 aes(x = !!gate_par[1],
+                     y = !!gate_par[2]),
+                 subset = gsub(pattern = "DAFi_", 
+                               replacement = "",
+                               x = DAFi_node,
+                               fixed = TRUE)) + 
+            ggtitle(paste0("traditional :: ",
+                           (gh_pop_get_indices(gs[[1]],
+                                               gsub(pattern = "DAFi_", 
+                                                    replacement = "",
+                                                    x = DAFi_node,
+                                                    fixed = TRUE)) %>%
+                              sum),
+                           " events")) +
+            geom_hex(binwidth = c(1,1)) + 
+            geom_polygon(data = filtLs, 
+                         fill = NA, 
+                         col = "black") +
+            theme_bw() +
+            ggcyto_par_set(limits = "instrument") +
+            axis_x_inverse_trans() +
+            axis_y_inverse_trans()
+        )
+        ggcyto.trad <- as.ggplot(ggcyto.trad)
+        arrangeGrob(ggcyto.trad,
+                    ggcyto.DAFi,
+                    nrow = 1,
+                    top = gsub(pattern = "DAFi_", 
+                               replacement = "",
+                               x = DAFi_node,
+                               fixed = TRUE) %>%
+                      basename()) %>%
+          ggsave(filename = paste0(plotDir,
+                                   "/PSEUDOCOLOR.",
+                                   gsub(pattern = "/",
+                                        replacement = "_", 
+                                        x = DAFi_node,
+                                        fixed = TRUE),
+                                   "_",
+                                   sampleFCS,
+                                   ".pdf"),
+                 width = 6,
+                 height = 3.5)
+      }
+      if(length(gate_par) == 1) {
+        ggcyto.DAFi <- suppressMessages(
+          ggcyto(gs[[1]], 
+                 aes(x = !!gate_par[1]),
+                 subset = DAFi_node) + 
+            ggtitle(paste0("DAFi :: ",
+                           (gh_pop_get_indices(gs[[1]],
+                                               DAFi_node) %>%
+                              sum),
+                           " events")) +
+            geom_density(fill = "black",
+                         aes(y = ..scaled..)) + 
+            geom_gate(data = filtLs) +
+            theme_bw() +
+            ggcyto_par_set(limits = "instrument") +
+            axis_x_inverse_trans()
+        )
+        ggcyto.DAFi <- as.ggplot(ggcyto.DAFi)
+        ggcyto.trad <- suppressMessages(
+          ggcyto(gs[[1]],
+                 aes(x = !!gate_par[1]),
+                 subset = gsub(pattern = "DAFi_", 
+                               replacement = "",
+                               x = DAFi_node,
+                               fixed = TRUE)) + 
+            ggtitle(paste0("traditional :: ",
+                           (gh_pop_get_indices(gs[[1]],
+                                               gsub(pattern = "DAFi_", 
+                                                    replacement = "",
+                                                    x = DAFi_node,
+                                                    fixed = TRUE)) %>%
+                              sum),
+                           " events")) +
+            geom_density(fill = "black",
+                         aes(y = ..scaled..)) + 
+            geom_gate(data = filtLs) +
+            theme_bw() +
+            ggcyto_par_set(limits = "instrument") +
+            axis_x_inverse_trans()
+        )
+        ggcyto.trad <- as.ggplot(ggcyto.trad)
+        arrangeGrob(ggcyto.trad,
+                    ggcyto.DAFi,
+                    nrow = 1,
+                    top = gsub(pattern = "DAFi_", 
+                               replacement = "",
+                               x = DAFi_node,
+                               fixed = TRUE) %>%
+                      basename()) %>%
+          ggsave(filename = paste0(plotDir,
+                                   "/HISTOGRAM.",
+                                   gsub(pattern = "/",
+                                        replacement = "_", 
+                                        x = DAFi_node,
+                                        fixed = TRUE),
+                                   "_",
+                                   sampleFCS,
+                                   ".pdf"),
+                 width = 6,
+                 height = 3.5)
+      }
+    },
+    error = function(e)
+      print(paste0("Single cell plot failed for: ",
+                   DAFi_node)))
     # get median
     mark.exprs <- cbind(
       flowWorkspace::gh_pop_get_data(gs[[1]],
@@ -1489,41 +1670,41 @@ if(batch_mode){
       flowCore::pData()
     rownames(mark.exprs) <- pData.asDF$desc[pData.asDF$name %in%
                                               rownames(mark.exprs)]
-    
-    tryCatch({mark.exprs %>%
-      .[order(abs(.[,1] - .[,2]),
-              decreasing = TRUE),] %>%
-      pheatmap(mat = .,
-               cluster_cols = FALSE,
-               cluster_rows = FALSE, 
-               scale = "none",
-               #               color = hcl.colors(256, 
-               #                                  palette = "RdYlBu",
-               #                                 alpha = NULL, 
-               #                                 rev = FALSE, 
-               #                                 fixup = TRUE),
-               labels_col = c("DAFi", "traditional"),
-               main = DAFi_node %>%
-                 gsub(pattern = "DAFi_",
-                      replacement = "", 
-                      x = .,
-                      fixed = TRUE) %>%
-                 basename(),
-               filename = paste0(plotDir,
-                                 "/HEATMAP.",
-                                 sampleFCS,
-                                 gsub(pattern = "/",
-                                      replacement = "_", 
-                                      x = DAFi_node,
-                                      fixed = TRUE),
-                                 ".pdf"),
-               width = 3,
-               height = ifelse(0.25 * dim(.)[1] < 4,
-                               yes = 4,
-                               no = 0.25 * dim(.)[1]))},
-               error = function(e)
-                 print(paste0("Plot failed for: ",
-                              DAFi_node)))
+    tryCatch({
+      mark.exprs %>%
+        .[order(abs(.[,1] - .[,2]),
+                decreasing = TRUE),] %>%
+        pheatmap(mat = .,
+                 cluster_cols = FALSE,
+                 cluster_rows = FALSE, 
+                 scale = "none",
+                 #               color = hcl.colors(256, 
+                 #                                  palette = "RdYlBu",
+                 #                                 alpha = NULL, 
+                 #                                 rev = FALSE, 
+                 #                                 fixup = TRUE),
+                 labels_col = c("DAFi", "traditional"),
+                 main = DAFi_node %>%
+                   gsub(pattern = "DAFi_",
+                        replacement = "", 
+                        x = .,
+                        fixed = TRUE) %>%
+                   basename(),
+                 filename = paste0(plotDir,
+                                   "/HEATMAP.",
+                                   gsub(pattern = "/",
+                                        replacement = "_", 
+                                        x = DAFi_node,
+                                        fixed = TRUE),
+                                   sampleFCS,
+                                   ".pdf"),
+                 width = 3,
+                 height = ifelse(0.25 * dim(.)[1] < 4,
+                                 yes = 4,
+                                 no = 0.25 * dim(.)[1]))},
+      error = function(e)
+        print(paste0("Heatmap failed for: ",
+                     DAFi_node)))
   }
   
   all.labels.ls <- foreach::foreach(DAFi_node = DAFi_nodes) %do% {
