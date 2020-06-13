@@ -244,6 +244,16 @@ public class DAFi extends R_Algorithm {
     public ExternalAlgorithmResults invokeAlgorithm(SElement fcmlQueryElement, File sampleFile, File outputFolder) {
         ExternalAlgorithmResults results = new ExternalAlgorithmResults();
 
+        // trying to separate each run using time in millisecond
+        // in case you want to add time to separate between runs
+        long millisTime = currentTimeMillis();
+
+        System.out.println("millisTime: " + millisTime);
+        String outputFolderMillisTime = outputFolder.getAbsolutePath() + File.separator + millisTime;
+        System.out.println("outputFolderMillisTime: " + outputFolderMillisTime);
+        outputFolder = new File(outputFolderMillisTime);
+        new File(outputFolderMillisTime).mkdirs();
+
         String savedSampleURI = fOptions.get(sampleURISlot);
         String savedSamplePopNode = fOptions.get(samplePopNodeSlot);
 
@@ -330,7 +340,7 @@ public class DAFi extends R_Algorithm {
 
             DAFiRFlowCalc calculator = new DAFiRFlowCalc();
             // Added the population node
-            File DAFiResult = calculator.runDAFi(wsName, wsDir, sampleFile, sampleFile.getAbsolutePath(), sampleName, popNode.getName(), sampleNode.getName(), parameterNames, fOptions, outputFolder.getAbsolutePath(), useExistingFiles());
+            File DAFiResult = calculator.runDAFi(wsName, wsDir, sampleFile, sampleName, popNode.getName(), sampleNode.getName(), parameterNames, fOptions, outputFolder.getAbsolutePath(), useExistingFiles(), millisTime);
             calculator.deleteScriptFile();
             checkROutFile(calculator);
 
@@ -740,24 +750,24 @@ public class DAFi extends R_Algorithm {
         // We need the plugin output folder and we want to add that to the algorithmElement so that later on, we can scan that folder for any existing .RData files.
         // Unfortunately, FJPluginHelper.getPluginOutputFolder(fcmlElem, this) seems to be returning null sometimes,
         // i.e., this may be called before the plugin output folder is set. Therefore, this is a work around:
-        Sample sample = FJPluginHelper.getSample(fcmlElem);
-        if (sample != null) {
-            Workspace ws = sample.getWorkspace();
-            if (ws != null) {
-                try {
-                    WSDocument wsd = ws.getDoc();
-                    wsd.save(); //save workspace before running plugin
-                    String wsDir = wsd.getWorkspaceDirectory().getAbsolutePath();
-                    String wsName = wsd.getFilename();
-                    String outputFolder = wsDir + File.separator + wsName.substring(0, wsName.lastIndexOf('.')) + File.separator + this.getName() ;
-                    File pluginFolder = new File(outputFolder);
-                    if (pluginFolder.exists())
-                        algorithmElement.setAttribute(pluginFolderAttName, outputFolder);
-                } catch (Exception e) {
-                }
-                ;
-            }
-        }
+        //Sample sample = FJPluginHelper.getSample(fcmlElem);
+        //if (sample != null) {
+        //    Workspace ws = sample.getWorkspace();
+        //  if (ws != null) {
+        //      try {
+        //          WSDocument wsd = ws.getDoc();
+        //          wsd.save(); //save workspace before running plugin
+        //          String wsDir = wsd.getWorkspaceDirectory().getAbsolutePath();
+        //          String wsName = wsd.getFilename();
+        //          String outputFolder = wsDir + File.separator + wsName.substring(0, wsName.lastIndexOf('.')) + File.separator + this.getName() + File.separator + millisTime;
+        //          File pluginFolder = new File(outputFolder);
+        //          if (pluginFolder.exists())
+        //              algorithmElement.setAttribute(pluginFolderAttName, outputFolder);
+        //      } catch (Exception e) {
+        //      }
+        //      ;
+        //  }
+        //}
         fsElement = fcmlElem;
         List<Component> ret = super.getPromptComponents(fcmlElem, algorithmElement, parameterNames);
 
@@ -1137,9 +1147,6 @@ public class DAFi extends R_Algorithm {
     }
 
     private static final double epsilon = 0.1;
-
-    // in case you want to add time to separate between runs
-    // public static final long millisTime = currentTimeMillis();
 
     // Use FlowJo's CSV reader instead of manually and get the column where the categorical is found
     private List<Float> extractUniqueValuesForParameter(File sampleFile) {

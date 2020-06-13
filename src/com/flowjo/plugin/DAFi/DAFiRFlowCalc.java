@@ -21,13 +21,13 @@ public class DAFiRFlowCalc extends RFlowCalculator {
     public static final String FALSE = "FALSE";
 
 
-    public File runDAFi(String wsName, String wsDir, File sampleFile, String sampleFileAbsolutePath, String sampleName, String populationName, String sampleNodeName, List<String> parameterNames, Map<String, String> options, String outputFolderPath, boolean useExistingFiles)
+    public File runDAFi(String wsName, String wsDir, File sampleFile, String sampleName, String populationName, String sampleNodeName, List<String> parameterNames, Map<String, String> options, String outputFolderPath, boolean useExistingFiles, long millisTime)
     {
         sampleName = sampleName.replaceAll(".ExtNode", "").replaceAll(".fcs", "").replaceAll(".LMD", "").trim();
         File outputFolder = new File(outputFolderPath);
 
         StringWriter scriptWriter = new StringWriter();
-        File DAFiScript = createDAFiscript(wsName, wsDir, sampleFile, sampleFileAbsolutePath, sampleName, populationName, sampleNodeName, parameterNames, options, outputFolder, scriptWriter);
+        File DAFiScript = createDAFiscript(wsName, wsDir, sampleFile, sampleName, populationName, sampleNodeName, parameterNames, options, outputFolder, scriptWriter, millisTime);
         if(DAFiScript == null) return null;
         if(useExistingFiles && DAFiScript.exists()) return DAFiScript;
 
@@ -47,21 +47,30 @@ public class DAFiRFlowCalc extends RFlowCalculator {
         return DAFiScript;
     }
 
-    protected File createDAFiscript(String wsName, String wsDir, File sampleFile, String sampleFileAbsolutePath, String sampleName, String populationName, String sampleNodeName, List<String> parameterNames, Map<String, String> options, File outputFolder, StringWriter scriptWriter)
+    protected File createDAFiscript(String wsName, String wsDir, File sampleFile, String sampleName, String populationName, String sampleNodeName, List<String> parameterNames, Map<String, String> options, File outputFolder, StringWriter scriptWriter, long millisTime)
     {
         InputStream scriptStream = DAFiRFlowCalc.class.getResourceAsStream(DAFiTemplatePath);
 
         String outFileName = (new StringBuilder()).append(FilenameUtils.fixFileNamePart(sampleName)).append(".DAFi").append(".csv").toString();
-        if(outputFolder == null) outputFolder = sampleFile.getParentFile();
+
+        if(outputFolder == null) {
+            String outputFolderMillisTime = sampleFile.getParentFile().getAbsolutePath() + File.separator + millisTime;
+            outputFolder = new File(outputFolderMillisTime);
+        }
+        String outputFolderString = outputFolder.getAbsolutePath();
 
         File outFile = new File(outputFolder, outFileName);
         outFileName = outFile.getAbsolutePath();
-        String dataFilePath = sampleFile.getAbsolutePath();
         File gatingMLOutFile = new File(outFile, ".gating-ml2.xml");
+
+        String dataFilePath = sampleFile.getAbsolutePath();
+
+        String millisTimeString = Long.toString(millisTime);
+        System.out.println("millisTimeString:" + millisTimeString);
 
         if(EngineManager.isWindows()) outFileName = outFileName.replaceAll("\\\\", "/");
         if(EngineManager.isWindows()) dataFilePath = dataFilePath.replaceAll("\\\\", "/");
-        if(EngineManager.isWindows()) sampleFileAbsolutePath = sampleFileAbsolutePath.replaceAll("\\\\", "/");
+        if(EngineManager.isWindows()) outputFolderString = outputFolderString.replaceAll("\\\\", "/");
 
         //String sParScale = options.get(com.flowjo.plugin.DAFi.DAFi.scaleOptionName);
         String sParTrans = options.get(com.flowjo.plugin.DAFi.DAFi.transOptionName);
@@ -195,7 +204,8 @@ public class DAFiRFlowCalc extends RFlowCalculator {
                 scriptLine = scriptLine.replace("FJ_PAR_ADD_CELLIDS_TO_RESULT", sAddCellIdToResults);
                 scriptLine = scriptLine.replace("FJ_POPULATION_NAME", populationName);
                 scriptLine = scriptLine.replace("FJ_SAMPLE_NODE_NAME", sampleNodeName);
-                scriptLine = scriptLine.replace("FJ_SAMPLE_FILE_ABS_PATH", sampleFileAbsolutePath);
+                scriptLine = scriptLine.replace("FJ_MILLIS_TIME", millisTimeString);
+                scriptLine = scriptLine.replace("FJ_OUTPUT_FOLDER", outputFolderString);
 
                 if(scriptLine.contains("FJ_PARAMS_LIST")) {
                     String parListStr = "";

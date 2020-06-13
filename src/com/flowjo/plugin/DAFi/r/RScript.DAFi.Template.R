@@ -280,11 +280,14 @@ fj_par_xdim
 fj_par_ydim <- FJ_PAR_YDIM
 fj_par_ydim
 fj_csv_ouput_file <- "FJ_CSV_OUPUT_FILE"
+fj_csv_ouput_file
+fj_output_folder <- "FJ_OUTPUT_FOLDER"
+fj_output_folder
 fj_par_children <- FJ_PAR_CHILDREN
 fj_sample_node_name <- "FJ_SAMPLE_NODE_NAME"
 fj_population_name <- "FJ_POPULATION_NAME"
-fj_sample_file_abs_path <- "FJ_SAMPLE_FILE_ABS_PATH"
 fj_transform <- FJ_TRANSFORM
+fj_millis_time <- "FJ_MILLIS_TIME"
 plotDir <- paste0(dirname(fj_data_file_path),
                   "/plots")
 statsDir <- paste0(dirname(fj_data_file_path),
@@ -1398,6 +1401,21 @@ if(batch_mode){
                 row.names = FALSE, 
                 quote = TRUE,
                 col.names = FALSE)
+  } else if(
+    !((suppressMessages(
+      read.csv(file = DAFi.count.file,
+               header = FALSE,
+               nrows = 1)) %>%
+      unlist(use.names = FALSE) %>%
+      as.character() ==
+      c("sample",
+        colnames(pop.stats.count.DAFi))) %>%
+      all)
+  ) {
+    stop("It appears that the gates of \"",
+         popOfInt,
+         "\" changed since ezDAFi's last run.\nPlease delete stats before rerunning.", 
+         call.=FALSE)
   }
   if(!(sampleFCS %in%
        read.csv(file = DAFi.count.file,
@@ -1407,12 +1425,35 @@ if(batch_mode){
                                    length(DAFi_nodes))))[,1])) {
     write.table(x = pop.stats.count.DAFi,
                 append = TRUE,
-              sep = ",",
-              file = DAFi.count.file,
-              row.names = TRUE, 
-              quote = TRUE,
-              col.names = FALSE)
-    }
+                sep = ",",
+                file = DAFi.count.file,
+                row.names = TRUE, 
+                quote = TRUE,
+                col.names = FALSE)
+  } else {
+    sampleFCS.pos <- which(
+      read.csv(file = DAFi.count.file,
+               header = FALSE,
+               colClasses = c("character",
+                              rep("NULL",
+                                  length(DAFi_nodes))))[,1] ==
+        sampleFCS
+    )
+    DAFi.count.df <- read.csv(file = DAFi.count.file,
+                              header = FALSE,
+                              skip = 1)
+    colnames(DAFi.count.df) <- c("sample",
+                                 colnames(pop.stats.count.DAFi))
+    DAFi.count.df[(sampleFCS.pos - 1),] <- c(sampleFCS,
+                                             pop.stats.count.DAFi[1,])
+    write.table(x = DAFi.count.df,
+                append = FALSE,
+                sep = ",",
+                file = DAFi.count.file,
+                row.names = FALSE, 
+                quote = TRUE,
+                col.names = TRUE)
+  }
   if(!DAFi.percent.file %>%
      file.exists()) {
     write.table(x = c("sample", 
@@ -1424,6 +1465,22 @@ if(batch_mode){
                 row.names = FALSE, 
                 quote = TRUE,
                 col.names = FALSE)
+  } else if(
+    !((suppressMessages(
+      read.csv(file = DAFi.percent.file,
+               header = FALSE,
+               nrows = 1)
+    ) %>%
+    unlist(use.names = FALSE) %>%
+    as.character() ==
+    c("sample",
+      colnames(pop.stats.percent.DAFi))) %>%
+    all)
+  ) {
+    stop("It appears that the gates of \"",
+         popOfInt,
+         "\" changed since ezDAFi's last run.\nPlease delete stats before rerunning.",
+         call.=FALSE)
   }
   if(!(sampleFCS %in%
        read.csv(file = DAFi.percent.file,
@@ -1438,6 +1495,29 @@ if(batch_mode){
                 row.names = TRUE, 
                 quote = TRUE,
                 col.names = FALSE)
+  } else {
+    sampleFCS.pos <- which(
+      read.csv(file = DAFi.percent.file,
+               header = FALSE,
+               colClasses = c("character",
+                              rep("NULL",
+                                  length(DAFi_nodes))))[,1] ==
+        sampleFCS
+    )
+    DAFi.percent.df <- read.csv(file = DAFi.percent.file,
+                              header = FALSE,
+                              skip = 1)
+    colnames(DAFi.percent.df) <- c("sample",
+                                 colnames(pop.stats.percent.DAFi))
+    DAFi.percent.df[(sampleFCS.pos - 1),] <- c(sampleFCS,
+                                             pop.stats.percent.DAFi[1,])
+    write.table(x = DAFi.percent.df,
+                append = FALSE,
+                sep = ",",
+                file = DAFi.percent.file,
+                row.names = FALSE, 
+                quote = TRUE,
+                col.names = TRUE)
   }
   if(!trad.count.file %>%
      file.exists()) {
@@ -1450,6 +1530,21 @@ if(batch_mode){
                 row.names = FALSE, 
                 quote = TRUE,
                 col.names = FALSE)
+  } else if(
+    !((suppressMessages(
+      read.csv(file = trad.count.file,
+               header = FALSE,
+               nrows = 1)) %>%
+      unlist(use.names = FALSE) %>%
+      as.character() ==
+      c("sample",
+        colnames(pop.stats.count.trad))) %>%
+      all)
+  ) {
+    stop("It appears that the gates of \"",
+         popOfInt,
+         "\" changed since ezDAFi's last run.\nPlease delete stats before rerunning.",
+         call.=FALSE)
   }
   if(!(sampleFCS %in%
        read.csv(file = trad.count.file,
@@ -1464,6 +1559,29 @@ if(batch_mode){
                 row.names = TRUE, 
                 quote = TRUE,
                 col.names = FALSE)
+  } else {
+    sampleFCS.pos <- which(
+      read.csv(file = trad.count.file,
+               header = FALSE,
+               colClasses = c("character",
+                              rep("NULL",
+                                  length(DAFi_nodes))))[,1] ==
+        sampleFCS
+    )
+    trad.count.df <- read.csv(file = trad.count.file,
+                              header = FALSE,
+                              skip = 1)
+    colnames(trad.count.df) <- c("sample",
+                                 colnames(pop.stats.count.trad))
+    trad.count.df[(sampleFCS.pos - 1),] <- c(sampleFCS,
+                                             pop.stats.count.trad[1,])
+    write.table(x = trad.count.df,
+                append = FALSE,
+                sep = ",",
+                file = trad.count.file,
+                row.names = FALSE, 
+                quote = TRUE,
+                col.names = TRUE)
   }
   if(!trad.percent.file %>%
      file.exists()) {
@@ -1476,6 +1594,21 @@ if(batch_mode){
                 row.names = FALSE, 
                 quote = TRUE,
                 col.names = FALSE)
+  } else if(
+    !((suppressMessages(
+      read.csv(file = trad.percent.file,
+               header = FALSE,
+               nrows = 1)) %>%
+      unlist(use.names = FALSE) %>%
+      as.character() ==
+      c("sample",
+        colnames(pop.stats.percent.trad))) %>%
+      all)
+  ) {
+    stop("It appears that the gates of \"",
+         popOfInt,
+         "\" changed since ezDAFi's last run.\nPlease delete stats before rerunning.",
+         call.=FALSE)
   }
   if(!(sampleFCS %in%
        read.csv(file = trad.percent.file,
@@ -1490,6 +1623,29 @@ if(batch_mode){
                 row.names = TRUE, 
                 quote = TRUE,
                 col.names = FALSE)
+  } else {
+    sampleFCS.pos <- which(
+      read.csv(file = trad.percent.file,
+               header = FALSE,
+               colClasses = c("character",
+                              rep("NULL",
+                                  length(DAFi_nodes))))[,1] ==
+        sampleFCS
+    )
+    trad.percent.df <- read.csv(file = trad.percent.file,
+                              header = FALSE,
+                              skip = 1)
+    colnames(trad.percent.df) <- c("sample",
+                                 colnames(pop.stats.percent.trad))
+    trad.percent.df[(sampleFCS.pos - 1),] <- c(sampleFCS,
+                                             pop.stats.percent.trad[1,])
+    write.table(x = trad.percent.df,
+                append = FALSE,
+                sep = ",",
+                file = trad.percent.file,
+                row.names = FALSE, 
+                quote = TRUE,
+                col.names = TRUE)
   }
   
   # create heatmaps with median expression of all selected paramaters on DAFi vs traditional gates
@@ -1838,7 +1994,9 @@ if(batch_mode){
     }
   }
   
-  outputFile <- paste0(fj_data_file_path,
+  outputFile <- paste0(fj_output_folder,
+                       "/",
+                       basename(fj_data_file_path),
                        ".gating-ml2.xml")
   
   #############################################
