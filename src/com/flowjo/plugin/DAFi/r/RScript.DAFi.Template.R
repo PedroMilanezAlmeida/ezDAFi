@@ -1412,9 +1412,9 @@ if(batch_mode){
         colnames(pop.stats.count.DAFi))) %>%
       all)
   ) {
-    stop("It appears that the gates of \"",
+    stop("Either the gates of \"",
          popOfInt,
-         "\" changed since ezDAFi's last run.\nPlease delete stats before rerunning.", 
+         "\" changed since ezDAFi's last run\nor batch analysis was called on samples with different gating strategies.\nPlease delete stats before rerunning and make sure the same gating\nstrategy is applied to all samples.", 
          call.=FALSE)
   }
   if(!(sampleFCS %in%
@@ -1477,9 +1477,9 @@ if(batch_mode){
       colnames(pop.stats.percent.DAFi))) %>%
     all)
   ) {
-    stop("It appears that the gates of \"",
+    stop("Either the gates of \"",
          popOfInt,
-         "\" changed since ezDAFi's last run.\nPlease delete stats before rerunning.",
+         "\" changed since ezDAFi's last run\nor batch analysis was called on samples with different gating strategies.\nPlease delete stats before rerunning and make sure the same gating\nstrategy is applied to all samples.", 
          call.=FALSE)
   }
   if(!(sampleFCS %in%
@@ -1541,9 +1541,9 @@ if(batch_mode){
         colnames(pop.stats.count.trad))) %>%
       all)
   ) {
-    stop("It appears that the gates of \"",
+    stop("Either the gates of \"",
          popOfInt,
-         "\" changed since ezDAFi's last run.\nPlease delete stats before rerunning.",
+         "\" changed since ezDAFi's last run\nor batch analysis was called on samples with different gating strategies.\nPlease delete stats before rerunning and make sure the same gating\nstrategy is applied to all samples.", 
          call.=FALSE)
   }
   if(!(sampleFCS %in%
@@ -1605,9 +1605,9 @@ if(batch_mode){
         colnames(pop.stats.percent.trad))) %>%
       all)
   ) {
-    stop("It appears that the gates of \"",
+    stop("Either the gates of \"",
          popOfInt,
-         "\" changed since ezDAFi's last run.\nPlease delete stats before rerunning.",
+         "\" changed since ezDAFi's last run\nor batch analysis was called on samples with different gating strategies.\nPlease delete stats before rerunning and make sure the same gating\nstrategy is applied to all samples.", 
          call.=FALSE)
   }
   if(!(sampleFCS %in%
