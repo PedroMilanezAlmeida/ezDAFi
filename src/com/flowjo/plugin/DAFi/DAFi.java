@@ -117,8 +117,8 @@ public class DAFi extends R_Algorithm {
     private static final String mustBeMinPopSizeLabel = "(min # of events must be larger than SOM grid size W x H!)";
     private static final String minPopSizeTooltip = "Smallest number of cells to apply DAFi on.";
     private static final String minDimLabel = "Number of dimensions:";
-    //private static final String mustBeMinDimLabel = "(Number of dimensions must be 2 or larger)";
-    private static final String minDimTooltip = "Number of dimensions to apply DAFi on. Small number of dimensions can create holes in pops, while high number of dimensions can include contaminants due to high dimensional noise.";
+    private static final String mustBeMinDimLabel = "(must be 2 or larger; use 1 for auto-selection)";
+    private static final String minDimTooltip = "Number of dimensions to apply DAFi on. High number of dimensions lead to high dimensional noise.";
     //private static final String maxDimTooltip = "Largest number of dimensions to apply DAFi on. Reduce this if your DAFi population is returning too many false positives.";
 
     private static final String orPerformDAFiLabel = "or perform new DAFi.";
@@ -161,7 +161,7 @@ public class DAFi extends R_Algorithm {
     public static final int defaultXDim = 10;
     public static final int defaultYDim = 10;
     public static final int defaultMinPopSize = 500;
-    public static final int defaultMinDim = 5;
+    public static final int defaultMinDim = 1;
     //public static final int defaultMaxDim = 10;
     public static final String defaultApplyOnPrev = "None";
     //public static final boolean defaultScale = false;
@@ -878,10 +878,10 @@ public class DAFi extends R_Algorithm {
                 fShowRScript = One.equals(savedShowRScript) || True.equals(savedShowRScript);
 
             int savedMinPopSize = option.getInt(minPopSizeOptionName, -1);
-            if (savedMinPopSize >= 100 && savedMinPopSize <= 1000000) fnMinPopSize = savedMinPopSize;
+            if (savedMinPopSize >= 100 && savedMinPopSize <= 99999999) fnMinPopSize = savedMinPopSize;
 
             int savedMinDim = option.getInt(minDimOptionName, -1);
-            if (savedMinDim >= 3 && savedMinDim <= 1000000) fnMinDim = savedMinDim;
+            if (savedMinDim >= 1 && savedMinDim <= 999999) fnMinDim = savedMinDim;
 
             //int savedMaxDim = option.getInt(maxDimOptionName, -1);
             //if (savedMaxDim >= 3 && savedMaxDim <= 1000000) fnMaxDim = savedMaxDim;
@@ -894,11 +894,6 @@ public class DAFi extends R_Algorithm {
               refreshComponentsEnabled(fApplyOnPrevCombo);
           }
         });
-
-        fApplyOnChildrenCheckbox = new FJCheckBox(applyOnChildrenLabel);
-        fApplyOnChildrenCheckbox.setToolTipText("<html><p width=\"" + fixedToolTipWidth + "\">" + applyOnChildrenTooltip + "</p></html>");
-        fApplyOnChildrenCheckbox.setSelected(fApplyOnChildren);
-        componentList.add(new HBox(new Component[]{fApplyOnChildrenCheckbox}));
 
         FJLabel fjLabelDimX = new FJLabel(dimXLabel);
         fDimXField = new RangedIntegerTextField(3, 100);
@@ -926,7 +921,7 @@ public class DAFi extends R_Algorithm {
         //componentList.add(new HBox(new Component[]{new FJLabel(orPerformDAFiLabel)}));
 
         FJLabel fjLabelMinPopSize = new FJLabel(minPopSizeLabel);
-        fMinPopSizeField = new RangedIntegerTextField(100, 1000000);
+        fMinPopSizeField = new RangedIntegerTextField(100, 99999999);
         fMinPopSizeField.setInt(fnMinPopSize);
         fMinPopSizeField.setToolTipText("<html><p width=\"" + fixedToolTipWidth + "\">" + minPopSizeTooltip + "</p></html>");
         GuiFactory.setSizes(fMinPopSizeField, new Dimension(fixedFieldWidth, fixedFieldHeigth));
@@ -937,7 +932,7 @@ public class DAFi extends R_Algorithm {
         componentList.add(new HBox(new Component[]{new FJLabel(mustBeMinPopSizeLabel)}));
 
         FJLabel fjLabelMinDim = new FJLabel(minDimLabel);
-        fMinDimField = new RangedIntegerTextField(2, 1000000);
+        fMinDimField = new RangedIntegerTextField(1, 999999);
         fMinDimField.setInt(fnMinDim);
         fMinDimField.setToolTipText("<html><p width=\"" + fixedToolTipWidth + "\">" + minDimTooltip + "</p></html>");
         GuiFactory.setSizes(fMinDimField, new Dimension(fixedFieldWidth, fixedFieldHeigth));
@@ -950,7 +945,12 @@ public class DAFi extends R_Algorithm {
 
         HBox hboxDimMinMax = new HBox(new Component[]{fjLabelMinDim, fMinDimField});//, /*fjLabelMinDim,*/new FJLabel("max:"), fMaxDimField});
         componentList.add(hboxDimMinMax);
-        //componentList.add(new HBox(new Component[]{new FJLabel(mustBeMinDimLabel)}));
+        componentList.add(new HBox(new Component[]{new FJLabel(mustBeMinDimLabel)}));
+
+        fApplyOnChildrenCheckbox = new FJCheckBox(applyOnChildrenLabel);
+        fApplyOnChildrenCheckbox.setToolTipText("<html><p width=\"" + fixedToolTipWidth + "\">" + applyOnChildrenTooltip + "</p></html>");
+        fApplyOnChildrenCheckbox.setSelected(fApplyOnChildren);
+        componentList.add(new HBox(new Component[]{fApplyOnChildrenCheckbox}));
 
         fKMeansSomOptionCheckbox = new FJCheckBox(kMeansSomLabel);
         fKMeansSomOptionCheckbox.setToolTipText("<html><p width=\"" + fixedToolTipWidth + "\">" + kMeansSomTooltip + "</p></html>");

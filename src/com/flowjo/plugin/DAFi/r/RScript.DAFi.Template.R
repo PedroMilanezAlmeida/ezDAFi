@@ -293,6 +293,9 @@ plotDir <- paste0(dirname(fj_data_file_path),
 statsDir <- paste0(dirname(fj_data_file_path),
                    "/stats")
 min.nPar <- FJ_MIN_N_PAR
+#if(min.nPar == 1) {
+#  min.nPar <- 2
+#}
 #min.nPar <- ifelse(min.nPar < 3,
 #                   yes = 3,
 #                  no = min.nPar)
@@ -810,7 +813,7 @@ for(pop_to_SOM in seq_along(pops_to_SOM)){
             abs() %>%
             sort(decreasing = TRUE)
           hist.t <- hist(markers.t,
-                         breaks = length(markers.t),
+                         breaks = "FD",
                          plot = FALSE)
           #elbow <- elbow_finder(markers.t)[1]
           hist.t.threshold <- hist.t$breaks[which(hist.t$counts == 0)[1] + 1]
@@ -819,16 +822,32 @@ for(pop_to_SOM in seq_along(pops_to_SOM)){
           #                   hist.n)
           #keep.marker <- markers.t[1:keep.marker] %>%
           #  names
-          top.nPar <- markers.t[1:min.nPar] %>%
-            names
+          if(min.nPar != 1) {
+            top.nPar <- markers.t[1:min.nPar] %>%
+              names
+            keep.marker <- c(gate_par, top.nPar) %>%
+              unique() %>%
+              .[1:min.nPar]
+          } else {
+            #hist.n <- sum(markers.t > hist.t.threshold)
+            #top.nPar <- markers.t[1:hist.n] %>%
+            #  names
+            elbow <- elbow_finder(markers.t)[1]
+            top.nPar <- markers.t[1:elbow] %>%
+              names
+            keep.marker <- c(gate_par, 
+                             top.nPar) %>%
+              unique()
+            if(length(keep.marker) == 1){
+              keep.marker <- c(keep.marker, 
+                               names(markers.t)[2])
+            }
+          }
           #keep.marker <- max(min.nPar,
           #                   elbow_finder(markers.t)[1])
           #keep.marker <- min(keep.marker, max.nPar)
           #keep.marker <- markers.t[1:keep.marker] %>%
           #  names
-          keep.marker <- c(gate_par, top.nPar) %>%
-            unique() %>%
-            .[1:min.nPar]
           keep.marker <- colnames(pop.exprs) %in% 
             keep.marker
           print("gate:")
@@ -839,7 +858,7 @@ for(pop_to_SOM in seq_along(pops_to_SOM)){
           print("hist: ")
           print(markers.t[markers.t > hist.t.threshold])
           print("elbow: ")
-          print(markers.t[1:elbow_finder(markers.t)[1]])
+          print(markers.t[1:elbow])
         } else { #else call: if there are too few cells in traditional gate
           keep.marker <- colnames(pop.exprs) %in% 
             gate_par
@@ -959,23 +978,39 @@ for(pop_to_SOM in seq_along(pops_to_SOM)){
         # most of this section is from
         #http://jef.works/blog/2017/09/13/graph-based-community-detection-for-clustering-analysis/
         # find nearest neighbors
-        #k <- 5
+        #k <- 10
         #nn.idx <- RANN::nn2(codes,
-        #                   k = k)$nn.idx
+        #                  k = k)$nn.idx
         # following code is from
         #https://rdrr.io/github/CamaraLab/STvEA/src/R/seurat_anchor_correction.R
         # build adjacency matrix
         #j <- as.numeric(x = t(x = nn.idx))
         #i <- ((1:length(x = j)) - 1) %/% k + 1
         #nn.mat <- Matrix::sparseMatrix(i = i,
-        #                              j = j, 
-        #                              x = 1,
-        #                              dims = c(nrow(codes),
-        #                                       nrow(codes)))
+        #                             j = j, 
+        #                             x = 1,
+        #                             dims = c(nrow(codes),
+        #                                      nrow(codes)))
         #rownames(nn.mat) <- colnames(nn.mat) <- seq_len(nrow(codes))
+        #source: https://rpubs.com/nurakawa/spectral-clustering
+        #dg <- Matrix::colSums(nn.mat) # degrees of vertices
+        #graph_laplacian <- diag(dg) - nn.mat
+        #ei <- eigen(graph_laplacian,
+        #           symmetric = TRUE)
+        #ei.vec <- ei$vectors[,(dim(nn.mat)[1] - min.nPar):(dim(nn.mat)[1] - 1)]
+        #spec.clust <- kmeans(x = ei.vec,
+        #                    centers = 20,
+        #                    iter.max = 100)
+        #spec.codes <- apply(codes,
+        #                   2,
+        #                   function(marker)
+        #                     sapply(seq_len(20),
+        #                            function(cluster)
+        #                              mean(marker[spec.clust$cluster == cluster])))
+        #codes <- spec.codes
         # build and simplify graphs (remove self-loops).
         #kM.g <- igraph::graph.adjacency(nn.mat, 
-        #                               mode = "undirected")
+         #                              mode = "undirected")
         #kM.g <- igraph::simplify(kM.g)
         #Finally, build communities with short random walks in the graph and update the identity of each single cell based on nearest meta-cell and the results of meta-clustering.
         #kM.km <- igraph::cluster_walktrap(kM.g)
@@ -1042,6 +1077,11 @@ for(pop_to_SOM in seq_along(pops_to_SOM)){
           flowWorkspace::gh_pop_get_indices(gs_SOM[[1]],
                                             gate)
           ] <- TRUE
+        #spec_labels <- rep(FALSE,
+        #                  dim(spec.clust$centers)[1])
+        #spec_labels[flowWorkspace::gh_pop_get_indices(gs_SOM[[1]],
+        #                                             gate)] <- TRUE
+        #SOM_labels <- spec_labels[spec.clust$cluster]
         if(fj_par_som){
           cell_DAFi_label <- SOM_labels[fSOM$map$mapping[,1]]
         } else {
