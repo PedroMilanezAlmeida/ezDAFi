@@ -116,10 +116,10 @@ public class DAFi extends R_Algorithm {
     private static final String minPopSizeLabel = "min # of events";
     private static final String mustBeMinPopSizeLabel = "(min # of events must be larger than SOM grid size W x H!)";
     private static final String minPopSizeTooltip = "Smallest number of cells to apply DAFi on.";
-    private static final String minDimLabel = "Number of dimensions:";
-    private static final String mustBeMinDimLabel = "(must be 2 or larger; use 1 for auto-selection)";
-    private static final String minDimTooltip = "Number of dimensions to apply DAFi on. High number of dimensions lead to high dimensional noise.";
-    //private static final String maxDimTooltip = "Largest number of dimensions to apply DAFi on. Reduce this if your DAFi population is returning too many false positives.";
+    private static final String minDimLabel = "# of dimensions: min";
+    private static final String mustBeMinDimLabel = "(use min AND max = 1 for auto-selection)";
+    private static final String minDimTooltip = "Min and max number of dimensions to apply DAFi on. High number of dimensions lead to high dimensional noise, low number of dimensions lead to no improvement over manual gate.";
+    private static final String maxDimTooltip = "Largest number of dimensions to apply DAFi on. Reduce this if your DAFi population is returning too many false positives.";
 
     private static final String orPerformDAFiLabel = "or perform new DAFi.";
     //private static final String scaleLabel = "Scale parameters to mean = 0 and sd = 1 (use with care)";
@@ -130,11 +130,10 @@ public class DAFi extends R_Algorithm {
     private static final String batchTooltip = "DAFi all samples, plot back-gating results and continue analysis in R. Gates will not be re-imported to FlowJo.";
     private static final String showRScriptLabel = "Show RScript (.txt format) upon completion.";
     private static final String showRScriptTooltip = "Show the resulting RScript file (in .txt format), created doing the DAFi process.";
-    private static final String kMeansSomLabel = "<html>Cluster with self organizing maps."
-            + "<br>(otherwise with k-means [k = W x H], which can be faster).";
+    private static final String kMeansSomLabel = "Cluster with self organizing maps (uncheck for k-means).";
     private static final String kMeansSomTooltip = "Which algorithm should be used for clustering? If having speed issues, uncheck to use k-means (max iterations = 100).";
     private static final String applyOnChildrenLabel = "<html>Apply on children only."
-        + "<br>(otherwise also on children of children, recursively).";
+        + "<br>(otherwise, recursive).";
     private static final String applyOnChildrenTooltip = "If checked, DAFi will refine only the children of the selected population. If unchecked, all children of children will be refined recursively (i.e., all sub-populations downstream of the selected one).";
 
     //public static final String scaleOptionName = "scale";
@@ -147,7 +146,7 @@ public class DAFi extends R_Algorithm {
     public static final String yDimOptionName = "ydim";
     public static final String minPopSizeOptionName = "minPopSize";
     public static final String minDimOptionName = "minDim";
-    //public static final String maxDimOptionName = "maxDim";
+    public static final String maxDimOptionName = "maxDim";
     public static final String applyOnPrevOptionName = "applyOn"; // "None" or file path to an RData file with a DAFi object
     public static final String pluginFolderAttName = "pluginFolder";
     public static final String sampleURISlot = "sampleURI";
@@ -160,9 +159,9 @@ public class DAFi extends R_Algorithm {
 
     public static final int defaultXDim = 10;
     public static final int defaultYDim = 10;
-    public static final int defaultMinPopSize = 500;
-    public static final int defaultMinDim = 1;
-    //public static final int defaultMaxDim = 10;
+    public static final int defaultMinPopSize = 50;
+    public static final int defaultMinDim = 4;
+    public static final int defaultMaxDim = 8;
     public static final String defaultApplyOnPrev = "None";
     //public static final boolean defaultScale = false;
     public static final boolean defaultTrans = true;
@@ -180,7 +179,7 @@ public class DAFi extends R_Algorithm {
     private int fndimx = defaultXDim, fndimy = defaultYDim;
     private int fnMinPopSize = defaultMinPopSize;
     private int fnMinDim = defaultMinDim;
-    //private int fnMaxDim = defaultMaxDim;
+    private int fnMaxDim = defaultMaxDim;
     private String fAnalysisPathSampleURI = "test1";
     private String fAnalysisPathSamplePopNode = "test2";
     private String fAnalysisPathSampleFile = "test3";
@@ -244,16 +243,6 @@ public class DAFi extends R_Algorithm {
     public ExternalAlgorithmResults invokeAlgorithm(SElement fcmlQueryElement, File sampleFile, File outputFolder) {
         ExternalAlgorithmResults results = new ExternalAlgorithmResults();
 
-        // trying to separate each run using time in millisecond
-        // in case you want to add time to separate between runs
-        long millisTime = currentTimeMillis();
-
-        System.out.println("millisTime: " + millisTime);
-        String outputFolderMillisTime = outputFolder.getAbsolutePath() + File.separator + millisTime;
-        System.out.println("outputFolderMillisTime: " + outputFolderMillisTime);
-        outputFolder = new File(outputFolderMillisTime);
-        new File(outputFolderMillisTime).mkdirs();
-
         String savedSampleURI = fOptions.get(sampleURISlot);
         String savedSamplePopNode = fOptions.get(samplePopNodeSlot);
 
@@ -284,6 +273,16 @@ public class DAFi extends R_Algorithm {
         runAgain = false;
 
         System.out.println("!sampleFile.exists(): " + !sampleFile.exists());
+
+        // trying to separate each run using time in millisecond
+        // in case you want to add time to separate between runs
+        long millisTime = currentTimeMillis();
+
+        System.out.println("millisTime: " + millisTime);
+        String outputFolderMillisTime = outputFolder.getAbsolutePath() + File.separator + millisTime;
+        System.out.println("outputFolderMillisTime: " + outputFolderMillisTime);
+        outputFolder = new File(outputFolderMillisTime);
+        new File(outputFolderMillisTime).mkdirs();
 
         if (!sampleFile.exists()) {
             // results.setErrorMessage("Input file did not exist"); // We purposely don't want to set the error as there may be undesirable side-effects
@@ -827,7 +826,7 @@ public class DAFi extends R_Algorithm {
         fApplyOnChildren = defaultApplyOnChildren;
         fnMinPopSize = defaultMinPopSize;
         fnMinDim = defaultMinDim;
-        //fnMaxDim = defaultMaxDim;
+        fnMaxDim = defaultMaxDim;
 
         // If there are option set already (e.g., from the workspace), then
         // let's retrieve those and use them instead of defaults.
@@ -839,10 +838,10 @@ public class DAFi extends R_Algorithm {
             SElement option = iterator.next();
 
             int savedDimx = option.getInt(xDimOptionName, -1);
-            if (savedDimx >= 3 && savedDimx <= 100) fndimx = savedDimx;
+            if (savedDimx >= 1 && savedDimx <= 100) fndimx = savedDimx;
 
             int savedDimy = option.getInt(yDimOptionName, -1);
-            if (savedDimy >= 3 && savedDimy <= 100) fndimy = savedDimy;
+            if (savedDimy >= 1 && savedDimy <= 100) fndimy = savedDimy;
 
             int nApplyOnPrevComboItemsCount = fApplyOnPrevCombo.getItemCount();
             String savedApplyOnPrevOption = option.getString(applyOnPrevOptionName);
@@ -878,13 +877,13 @@ public class DAFi extends R_Algorithm {
                 fShowRScript = One.equals(savedShowRScript) || True.equals(savedShowRScript);
 
             int savedMinPopSize = option.getInt(minPopSizeOptionName, -1);
-            if (savedMinPopSize >= 100 && savedMinPopSize <= 99999999) fnMinPopSize = savedMinPopSize;
+            if (savedMinPopSize >= 16 && savedMinPopSize <= 99999999) fnMinPopSize = savedMinPopSize;
 
             int savedMinDim = option.getInt(minDimOptionName, -1);
             if (savedMinDim >= 1 && savedMinDim <= 999999) fnMinDim = savedMinDim;
 
-            //int savedMaxDim = option.getInt(maxDimOptionName, -1);
-            //if (savedMaxDim >= 3 && savedMaxDim <= 1000000) fnMaxDim = savedMaxDim;
+            int savedMaxDim = option.getInt(maxDimOptionName, -1);
+            if (savedMaxDim >= 1 && savedMaxDim <= 999999) fnMaxDim = savedMaxDim;
 
         }
 
@@ -908,7 +907,8 @@ public class DAFi extends R_Algorithm {
         GuiFactory.setSizes(fDimYField, new Dimension(fixedFieldWidth, fixedFieldHeigth));
 
         HBox hboxDimXY = new HBox(new Component[]{fjLabelDimX, fDimXField, /*fjLabelDimY,*/new FJLabel("x"), fDimYField});
-        componentList.add(hboxDimXY);
+        // UNDO COMMENT OUT BELOW TO MAKE IT POSSIBLE FOR THE USER TO CHOOSE NUMBER OF CENTROIDS
+        //componentList.add(hboxDimXY);
 
         refreshComponentsEnabled(fApplyOnPrevCombo);
 
@@ -921,15 +921,16 @@ public class DAFi extends R_Algorithm {
         //componentList.add(new HBox(new Component[]{new FJLabel(orPerformDAFiLabel)}));
 
         FJLabel fjLabelMinPopSize = new FJLabel(minPopSizeLabel);
-        fMinPopSizeField = new RangedIntegerTextField(100, 99999999);
+        fMinPopSizeField = new RangedIntegerTextField(16, 99999999);
         fMinPopSizeField.setInt(fnMinPopSize);
         fMinPopSizeField.setToolTipText("<html><p width=\"" + fixedToolTipWidth + "\">" + minPopSizeTooltip + "</p></html>");
         GuiFactory.setSizes(fMinPopSizeField, new Dimension(fixedFieldWidth, fixedFieldHeigth));
         GuiFactory.setSizes(fjLabelMinPopSize, new Dimension(fixedLabelWidth, fixedLabelHeigth));
 
         HBox hboxMinPopSize = new HBox(new Component[]{fjLabelMinPopSize, fMinPopSizeField});
-        componentList.add(hboxMinPopSize);
-        componentList.add(new HBox(new Component[]{new FJLabel(mustBeMinPopSizeLabel)}));
+        // UNDO COMMENT OUT BELOW TO MAKE IT POSSIBLE FOR THE USER TO SELECT MIN POP SIZE TO RUN DAFi ON
+        //componentList.add(hboxMinPopSize);
+        //componentList.add(new HBox(new Component[]{new FJLabel(mustBeMinPopSizeLabel)}));
 
         FJLabel fjLabelMinDim = new FJLabel(minDimLabel);
         fMinDimField = new RangedIntegerTextField(1, 999999);
@@ -938,19 +939,20 @@ public class DAFi extends R_Algorithm {
         GuiFactory.setSizes(fMinDimField, new Dimension(fixedFieldWidth, fixedFieldHeigth));
         GuiFactory.setSizes(fjLabelMinDim, new Dimension(fixedLabelWidth, fixedLabelHeigth));
 
-        //fMaxDimField = new RangedIntegerTextField(2, 1000000);
-        //fMaxDimField.setInt(fnMaxDim);
-        //fMaxDimField.setToolTipText("<html><p width=\"" + fixedToolTipWidth + "\">" + maxDimTooltip + "</p></html>");
-        //GuiFactory.setSizes(fMaxDimField, new Dimension(fixedFieldWidth, fixedFieldHeigth));
+        fMaxDimField = new RangedIntegerTextField(1, 999999);
+        fMaxDimField.setInt(fnMaxDim);
+        fMaxDimField.setToolTipText("<html><p width=\"" + fixedToolTipWidth + "\">" + maxDimTooltip + "</p></html>");
+        GuiFactory.setSizes(fMaxDimField, new Dimension(fixedFieldWidth, fixedFieldHeigth));
 
-        HBox hboxDimMinMax = new HBox(new Component[]{fjLabelMinDim, fMinDimField});//, /*fjLabelMinDim,*/new FJLabel("max:"), fMaxDimField});
+        HBox hboxDimMinMax = new HBox(new Component[]{fjLabelMinDim, fMinDimField, /*fjLabelMinDim,*/new FJLabel("max:"), fMaxDimField});
         componentList.add(hboxDimMinMax);
         componentList.add(new HBox(new Component[]{new FJLabel(mustBeMinDimLabel)}));
 
         fApplyOnChildrenCheckbox = new FJCheckBox(applyOnChildrenLabel);
         fApplyOnChildrenCheckbox.setToolTipText("<html><p width=\"" + fixedToolTipWidth + "\">" + applyOnChildrenTooltip + "</p></html>");
         fApplyOnChildrenCheckbox.setSelected(fApplyOnChildren);
-        componentList.add(new HBox(new Component[]{fApplyOnChildrenCheckbox}));
+        // UNDO COMMENT OUT BELOW TO MAKE IT POSSIBLE FOR THE USER TO APPLY DAFi TO CHILDREN BUT NOT TO GRANDCHILDREN
+        //componentList.add(new HBox(new Component[]{fApplyOnChildrenCheckbox}));
 
         fKMeansSomOptionCheckbox = new FJCheckBox(kMeansSomLabel);
         fKMeansSomOptionCheckbox.setToolTipText("<html><p width=\"" + fixedToolTipWidth + "\">" + kMeansSomTooltip + "</p></html>");
@@ -970,7 +972,8 @@ public class DAFi extends R_Algorithm {
         fBatchOptionCheckbox = new FJCheckBox(batchLabel);
         fBatchOptionCheckbox.setToolTipText("<html><p width=\"" + fixedToolTipWidth + "\">" + batchTooltip + "</p></html>");
         fBatchOptionCheckbox.setSelected(fBatch);
-        componentList.add(new HBox(new Component[]{fBatchOptionCheckbox}));
+        // UNDO COMMENT OUT BELOW TO MAKE IT POSSIBLE FOR THE USER TO FINISH UP ANALYSIS IN R
+        //componentList.add(new HBox(new Component[]{fBatchOptionCheckbox}));
 
         fTransOptionCheckbox = new FJCheckBox(transLabel);
         fTransOptionCheckbox.setToolTipText("<html><p width=\"" + fixedToolTipWidth + "\">" + transTooltip + "</p></html>");
@@ -981,10 +984,10 @@ public class DAFi extends R_Algorithm {
         GuiFactory.setSizes(hSpaceLabelCiting, new Dimension(fixedLabelWidth, hSpaceHeigth));
         componentList.add(hSpaceLabelCiting);
 
-        componentList.add(new FJLabel(pathToScriptLabelLine1));
-        componentList.add(new FJLabel(pathToScriptLabelLine2));
-        componentList.add(new FJLabel(pathToScriptLabelLine3));
-        componentList.add(new FJLabel(pathToScriptLabelLine4));
+        //componentList.add(new FJLabel(pathToScriptLabelLine1));
+        //componentList.add(new FJLabel(pathToScriptLabelLine2));
+        //componentList.add(new FJLabel(pathToScriptLabelLine3));
+        //componentList.add(new FJLabel(pathToScriptLabelLine4));
 
         componentList.add(new FJLabel(citingLabelLine1));
         componentList.add(new FJLabel(citingLabelLine2));
@@ -1119,7 +1122,7 @@ public class DAFi extends R_Algorithm {
         fOptions.put(sampleFileSlot, fAnalysisPathSampleFile);
         fOptions.put(minPopSizeOptionName, Integer.toString(fMinPopSizeField.getInt()));
         fOptions.put(minDimOptionName, Integer.toString(fMinDimField.getInt()));
-        //fOptions.put(maxDimOptionName, Integer.toString(fMaxDimField.getInt()));
+        fOptions.put(maxDimOptionName, Integer.toString(fMaxDimField.getInt()));
         fOptions.put(xDimOptionName, Integer.toString(fDimXField.getInt()));
         fOptions.put(yDimOptionName, Integer.toString(fDimYField.getInt()));
         //fOptions.put(scaleOptionName, fScaleOptionCheckbox.isSelected() ? One : Zero);

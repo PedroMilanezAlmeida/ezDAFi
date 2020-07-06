@@ -79,7 +79,7 @@ public class DAFiRFlowCalc extends RFlowCalculator {
         String sParApplyOnChildren = options.get(com.flowjo.plugin.DAFi.DAFi.applyOnChildrenOptionName);
         String sParMinPopSize = options.get(com.flowjo.plugin.DAFi.DAFi.minPopSizeOptionName);
         String sParMinDim = options.get(com.flowjo.plugin.DAFi.DAFi.minDimOptionName);
-        //String sParMaxDim = options.get(com.flowjo.plugin.DAFi.DAFi.maxDimOptionName);
+        String sParMaxDim = options.get(com.flowjo.plugin.DAFi.DAFi.maxDimOptionName);
         String sParXDim = options.get(com.flowjo.plugin.DAFi.DAFi.xDimOptionName);
         String sParYDim = options.get(com.flowjo.plugin.DAFi.DAFi.yDimOptionName);
         String sParApplyOnPrev = options.get(com.flowjo.plugin.DAFi.DAFi.applyOnPrevOptionName);
@@ -129,18 +129,18 @@ public class DAFiRFlowCalc extends RFlowCalculator {
         }
 
         try {
-            if ((Integer.parseInt(sParMinDim) < 3) || (Integer.parseInt(sParMinDim) > 1000000))
+            if ((Integer.parseInt(sParMinDim) < 1) || (Integer.parseInt(sParMinDim) > 999999))
                 sParMinDim= Integer.toString(com.flowjo.plugin.DAFi.DAFi.defaultMinDim);
         } catch (Exception e) {
             sParMinDim = Integer.toString(com.flowjo.plugin.DAFi.DAFi.defaultMinDim);
         }
 
-        //try {
-        //  if ((Integer.parseInt(sParMaxDim) < 3) || (Integer.parseInt(sParMaxDim) > 1000000))
-        //      sParMaxDim= Integer.toString(com.flowjo.plugin.DAFi.DAFi.defaultMaxDim);
-        //} catch (Exception e) {
-        //  sParMaxDim = Integer.toString(com.flowjo.plugin.DAFi.DAFi.defaultMaxDim);
-        //}
+        try {
+          if ((Integer.parseInt(sParMaxDim) < 1) || (Integer.parseInt(sParMaxDim) > 999999))
+              sParMaxDim= Integer.toString(com.flowjo.plugin.DAFi.DAFi.defaultMaxDim);
+        } catch (Exception e) {
+          sParMaxDim = Integer.toString(com.flowjo.plugin.DAFi.DAFi.defaultMaxDim);
+        }
 
         try {
             if ((Integer.parseInt(sParXDim) < 3) || (Integer.parseInt(sParXDim) > 32))
@@ -158,13 +158,13 @@ public class DAFiRFlowCalc extends RFlowCalculator {
 
         int minPopSize = com.flowjo.plugin.DAFi.DAFi.defaultMinPopSize;
         int minDim = com.flowjo.plugin.DAFi.DAFi.defaultMinDim;
-        //int maxDim = com.flowjo.plugin.DAFi.DAFi.defaultMaxDim;
+        int maxDim = com.flowjo.plugin.DAFi.DAFi.defaultMaxDim;
         int xDim = com.flowjo.plugin.DAFi.DAFi.defaultXDim;
         int yDim = com.flowjo.plugin.DAFi.DAFi.defaultYDim;
         try {
             minPopSize = Integer.parseInt(sParMinPopSize);
             minDim = Integer.parseInt(sParMinDim);
-            //maxDim = Integer.parseInt(sParMaxDim);
+            maxDim = Integer.parseInt(sParMaxDim);
             xDim = Integer.parseInt(sParXDim);
             yDim = Integer.parseInt(sParYDim);
         } catch (Exception e) {}
@@ -197,7 +197,7 @@ public class DAFiRFlowCalc extends RFlowCalculator {
                 scriptLine = scriptLine.replace("FJ_PAR_CHILDREN", sParApplyOnChildren);
                 scriptLine = scriptLine.replace("FJ_PAR_MINPOPSIZE", sParMinPopSize);
                 scriptLine = scriptLine.replace("FJ_MIN_N_PAR", sParMinDim);
-                //scriptLine = scriptLine.replace("FJ_MAX_N_PAR", sParMaxDim);
+                scriptLine = scriptLine.replace("FJ_MAX_N_PAR", sParMaxDim);
                 scriptLine = scriptLine.replace("FJ_PAR_XDIM", sParXDim);
                 scriptLine = scriptLine.replace("FJ_PAR_YDIM", sParYDim);
                 scriptLine = scriptLine.replace("FJ_PAR_APPLY_ON_PREV", sParApplyOnPrev);

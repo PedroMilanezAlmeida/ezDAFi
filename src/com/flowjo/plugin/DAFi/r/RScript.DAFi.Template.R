@@ -275,10 +275,10 @@ fj_par_scale <- TRUE
 fj_par_scale
 fj_par_som <- FJ_PAR_SOM
 fj_par_som
-fj_par_xdim <- FJ_PAR_XDIM
-fj_par_xdim
-fj_par_ydim <- FJ_PAR_YDIM
-fj_par_ydim
+#fj_par_xdim <- FJ_PAR_XDIM ### fj_par_xdim AND fj_par_ydim are defined dynamically with pop size
+#fj_par_xdim
+#fj_par_ydim <- FJ_PAR_YDIM
+#fj_par_ydim
 fj_csv_ouput_file <- "FJ_CSV_OUPUT_FILE"
 fj_csv_ouput_file
 fj_output_folder <- "FJ_OUTPUT_FOLDER"
@@ -299,15 +299,15 @@ min.nPar <- FJ_MIN_N_PAR
 #min.nPar <- ifelse(min.nPar < 3,
 #                   yes = 3,
 #                  no = min.nPar)
-#max.nPar <- FJ_MAX_N_PAR
-#if(max.nPar < min.nPar) {
-# max.nPar <- min.nPar
-#}
+max.nPar <- FJ_MAX_N_PAR
+if(max.nPar < min.nPar) {
+  max.nPar <- min.nPar
+}
 
 # avoid issue with large numbers of centroids and small minPopSize
-if(minPopSize < fj_par_xdim * fj_par_ydim) {
-  minPopSize <- (fj_par_xdim * fj_par_ydim) + 1
-}
+#if(minPopSize < fj_par_xdim * fj_par_ydim) {
+#  minPopSize <- (fj_par_xdim * fj_par_ydim) + 1
+#}
 
 ## Code to read gates from wsp file
 #find and load wsp file
@@ -526,16 +526,6 @@ flowCore::fsApply(flowWorkspace::gs_pop_get_data(gs),
 pData.asDF <- flowCore::parameters(gh_pop_get_data(gs[[1]])) %>%
   flowCore::pData()
 
-if(min.nPar >
-   pData.asDF %>%
-   dim(.) %>%
-   .[1]) {
-  min.nPar <-
-    pData.asDF %>%
-    dim(.) %>%
-    .[1]
-}
-
 ## In CSV files, the parameter names are often like FJComp-xxx while in parNames we may be getting Comp-dsfdsdxxx
 #FJCompToComp <- function(char_vec) {
 # if (any(grepl("FJComp", char_vec))) {
@@ -749,6 +739,13 @@ pops_to_SOM <- pops_to_SOM[
          function(pop_to_SOM)
            !identical(pop_to_SOM, character(0))) %>%
     unlist(., use.names = FALSE)]
+#number of events in each nonDAFi gate
+if(!batch_mode){
+  sapply(pops_to_SOM,
+         function(pop_to_SOM)
+           dim(flowWorkspace::gh_pop_get_data(gs[[1]],
+                                              pop_to_SOM))[1])
+}
 #actual DAFi
 for(pop_to_SOM in seq_along(pops_to_SOM)){
   print(pops_to_SOM[pop_to_SOM] %>%
@@ -765,34 +762,66 @@ for(pop_to_SOM in seq_along(pops_to_SOM)){
       #                                                               pops_to_SOM[pop_to_SOM] %>%
       #                                                                 names(.))[,parIndices]);
       #} else {
-      pop.exprs <- flowWorkspace::gh_pop_get_data(
-        gs[[fSample]],
-        pops_to_SOM[[pop_to_SOM]]) %>%
-        flowCore::exprs()
-      #pop.pData <- flowWorkspace::gh_pop_get_data(
-      #  gs[[fSample]],
-      #  pops_to_SOM[[pop_to_SOM]]) %>%
-      #  parameters() %>%
-      #  pData()
-      colnames(pop.exprs) <- ifelse(
-        is.na(
-          pData.asDF$desc),
-        yes = pData.asDF$name,
-        no = pData.asDF$desc
-      )
       gates <- basename(
         flowWorkspace::gh_pop_get_children(
           gs[[fSample]], 
           pops_to_SOM[[pop_to_SOM]])
       )
       for(gate in gates) {
+        pop.exprs <- flowWorkspace::gh_pop_get_data(
+          gs[[fSample]],
+          pops_to_SOM[[pop_to_SOM]]) %>%
+          flowCore::exprs()
+        colnames(pop.exprs) <- ifelse(
+          is.na(pData.asDF$desc),
+          yes = pData.asDF$name,
+          no = pData.asDF$desc
+        )
+        irrel.par <- grepl(pattern = "FSC|SSC|Time", 
+                           x = colnames(pop.exprs), 
+                           ignore.case = FALSE, 
+                           fixed = FALSE)
+        irrel.par.expr <- pop.exprs[,irrel.par]
+        pop.exprs <- pop.exprs[,!irrel.par]
+        if(min.nPar >
+           pop.exprs %>%
+           dim(.) %>%
+           .[2]) {
+          min.nPar <-
+            pop.exprs %>%
+            dim(.) %>%
+            .[2]
+        }
+        if(max.nPar >
+           pop.exprs %>%
+           dim(.) %>%
+           .[2]) {
+          max.nPar <-
+            pop.exprs %>%
+            dim(.) %>%
+            .[2]
+        }
+        # we need the gating parameters since if they're not present we cannot gate the centroids
         gate_par <- flowWorkspace::gh_pop_get_gate(
           gs[[fSample]],
           paste0(pops_to_SOM[[pop_to_SOM]],
                  "/",
                  gate))@parameters %>% 
           names
-        gate_par <- colnames(pop.exprs)[pData.asDF$name %in% gate_par]
+        gate_par <- ifelse(is.na(pData.asDF$desc[pData.asDF$name %in% gate_par]),
+                           yes = pData.asDF$name[pData.asDF$name %in% gate_par],
+                           no = pData.asDF$desc[pData.asDF$name %in% gate_par])
+        if((!gate_par %in%
+            colnames(pop.exprs)) %>%
+           any) {
+          pop.exprs <- cbind(pop.exprs,
+                             irrel.par.expr[,colnames(irrel.par.expr) %in%
+                                              gate_par])
+          colnames(pop.exprs)[colnames(pop.exprs) == ""] <- 
+            colnames(irrel.par.expr)[colnames(irrel.par.expr) %in%
+                                       gate_par]
+        }
+        # get cells within gate of interest to derive t-stat
         in.gate <- flowWorkspace::gh_pop_get_indices(
           gs[[fSample]],
           paste0(pops_to_SOM[[pop_to_SOM]],
@@ -815,37 +844,42 @@ for(pop_to_SOM in seq_along(pops_to_SOM)){
           hist.t <- hist(markers.t,
                          breaks = "FD",
                          plot = FALSE)
-          #elbow <- elbow_finder(markers.t)[1]
-          hist.t.threshold <- hist.t$breaks[which(hist.t$counts == 0)[1] + 1]
-          #hist.n <- sum(markers.t > hist.t.threshold)
+          elbow <- elbow_finder(markers.t)[1]
+          hist.t.threshold <- hist.t$breaks[
+            which(hist.t$counts == 0)[1] + 1
+            ]
+          hist.n <- sum(markers.t > hist.t.threshold)
           #keep.marker <- min(elbow, 
           #                   hist.n)
           #keep.marker <- markers.t[1:keep.marker] %>%
           #  names
-          if(min.nPar != 1) {
-            top.nPar <- markers.t[1:min.nPar] %>%
-              names
-            keep.marker <- c(gate_par, top.nPar) %>%
-              unique() %>%
-              .[1:min.nPar]
-          } else {
+          if(min.nPar == 1 &
+             max.nPar == 1) {
             #hist.n <- sum(markers.t > hist.t.threshold)
             #top.nPar <- markers.t[1:hist.n] %>%
             #  names
-            elbow <- elbow_finder(markers.t)[1]
+            #elbow <- elbow_finder(markers.t)[1]
             top.nPar <- markers.t[1:elbow] %>%
               names
-            keep.marker <- c(gate_par, 
+            keep.marker <- c(gate_par, #gating parameters must be included otherwise centroids cannot be gated
                              top.nPar) %>%
               unique()
-            if(length(keep.marker) == 1){
-              keep.marker <- c(keep.marker, 
-                               names(markers.t)[2])
-            }
+          } else {
+            keep.marker <- max(min.nPar,
+                               elbow)
+            keep.marker <- min(keep.marker,
+                               max.nPar)
+            top.nPar <- markers.t[1:keep.marker] %>%
+              names
+            keep.marker <- c(gate_par, #gating parameters must be included otherwise centroids cannot be gated
+                             top.nPar) %>%
+              unique() %>%
+              .[1:keep.marker]
           }
-          #keep.marker <- max(min.nPar,
-          #                   elbow_finder(markers.t)[1])
-          #keep.marker <- min(keep.marker, max.nPar)
+          if(length(keep.marker) == 1){
+            keep.marker <- c(keep.marker, 
+                             names(markers.t)[2])
+          }
           #keep.marker <- markers.t[1:keep.marker] %>%
           #  names
           keep.marker <- colnames(pop.exprs) %in% 
@@ -868,6 +902,9 @@ for(pop_to_SOM in seq_along(pops_to_SOM)){
         }
         print("used markers: ")
         print(colnames(pop.exprs)[keep.marker])
+        keep.marker <- ifelse(pData.asDF$desc %in% colnames(pop.exprs)[keep.marker],
+                              yes = pData.asDF$desc %in% colnames(pop.exprs)[keep.marker],
+                              no = pData.asDF$name %in% colnames(pop.exprs)[keep.marker])
         #pca with markers only
         #rm(pop.exprs)
         #pop.exprs.scale <- flowWorkspace::gh_pop_get_data(
@@ -914,14 +951,28 @@ for(pop_to_SOM in seq_along(pops_to_SOM)){
           transform = FALSE,
           scale = fj_par_scale,
           silent = TRUE)
-        if(fj_par_som){ #if user decides to use self-organizing maps
+        if(dim(fSOM$data)[1] > 1000) { 
+          fj_par_xdim <- 10 # 100 centroids showed consistent results at high speed
+        } else if(dim(fSOM$data)[1] > 50) { 
+          fj_par_xdim <- dim(fSOM$data)[1] %>% # if the number of cells is small,
+            log() %>% # the number of centroids scales with the number of cells
+            "*"(10) %>%
+            sqrt() %>% # number of centroids = (fj_par_xdim) ^ 2
+            floor()
+        } else {
+          fj_par_xdim <- dim(fSOM$data)[1] %>% # for very small number of cells, the sqrt is more appropiate
+            "^"(1/4) %>% # smallest number of cells possible (hard cut in plugin): 36
+            floor() # as above, number of centroids = (fj_par_xdim) ^ 2
+        }
+        if(fj_par_som){ #if user decides to use self-organizing maps but pop is smaller than 1%, use kmeans
+          #if(mean(in.gate) > 0.025) { #use SOM only if pop is more than 1% if cells, otherwise kmeans
           # Code to generate SOM centroids
           set.seed(2020)
           fSOM <- FlowSOM::BuildSOM(fSOM,
                                     colsToUse = NULL,
                                     silent = TRUE,
                                     xdim = fj_par_xdim,
-                                    ydim = fj_par_ydim)
+                                    ydim = fj_par_xdim)
           # Code to gate flowSOM results
           # retrieve codes
           if(fj_par_scale) {
@@ -938,7 +989,7 @@ for(pop_to_SOM in seq_along(pops_to_SOM)){
           # Code to generate kmeans centroids
           set.seed(2020)
           fkMeans <- stats::kmeans(x = fSOM$data,#[,parNames],
-                                   centers = fj_par_xdim*fj_par_ydim,
+                                   centers = fj_par_xdim*fj_par_xdim,
                                    iter.max = 100)
           if(fkMeans$ifault == 4){ # https://stackoverflow.com/a/30055776
             fkMeans <- stats::kmeans(x = fSOM$data,
@@ -1010,7 +1061,7 @@ for(pop_to_SOM in seq_along(pops_to_SOM)){
         #codes <- spec.codes
         # build and simplify graphs (remove self-loops).
         #kM.g <- igraph::graph.adjacency(nn.mat, 
-         #                              mode = "undirected")
+        #                              mode = "undirected")
         #kM.g <- igraph::simplify(kM.g)
         #Finally, build communities with short random walks in the graph and update the identity of each single cell based on nearest meta-cell and the results of meta-clustering.
         #kM.km <- igraph::cluster_walktrap(kM.g)
@@ -1160,6 +1211,11 @@ tree_pos_DAFi_gate_to_SOM <- strsplit(x = DAFi_nodes,
   lapply(length) %>%
   unlist(.)
 DAFi_nodes <- DAFi_nodes[order(tree_pos_DAFi_gate_to_SOM)] #order is very important to ensure hierarchy of gates
+
+nonDAFi_nodes <- gsub(pattern = "DAFi_", 
+                      replacement = "",
+                      x = DAFi_nodes,
+                      fixed = TRUE)
 
 DAFi_leaf_nodes <- post_DAFi_gates[
   grep(pattern = "DAFi_",
@@ -1371,78 +1427,129 @@ if(batch_mode){
             normalizePath(.) %>%
             shQuote(.))
 } else {
+  # get logical gate for each DAFi node
   all_cell_DAFi_label <- foreach::foreach(DAFi_node = DAFi_nodes) %do% {
     flowWorkspace::gh_pop_get_indices(gs[[1]],
                                       DAFi_node)
   }
   names(all_cell_DAFi_label) <- DAFi_nodes
+  # same for nonDAFi nodes
+  all_cell_nonDAFi_label <- foreach::foreach(nonDAFi_node = nonDAFi_nodes) %do% {
+    flowWorkspace::gh_pop_get_indices(gs[[1]],
+                                      nonDAFi_node)
+  }
+  names(all_cell_nonDAFi_label) <- nonDAFi_nodes
   
+  # retrieve flowjo cell index
   EventNumberDP <- read.csv(file = fj_data_file_path,
                             check.names=FALSE)$EventNumberDP
   
+  # given flowjo cell index, get whether or not cell is in DAFi node
   FJ_event_DAFi_label <- foreach::foreach(DAFi_node = DAFi_nodes) %do% {
     all_cell_DAFi_label[[DAFi_node]][EventNumberDP]
   }
   names(FJ_event_DAFi_label) <- DAFi_nodes
-  
-  ## Extract DAFi clustering to pass back to FlowJo (or SeqGeq)
-  labels.ls <- foreach::foreach(DAFi_node = DAFi_nodes) %do% {
-    ## Please note "FJ_event_DAFi_label" here stemming from DAFi
-    ## FlowJo, let's do labels as 100, 200, 300, all with a tiny bit of noise (to make FlowJo cluster those better)
-    label <- as.matrix(as.integer(FJ_event_DAFi_label[[DAFi_node]]) * 1e5 + 
-                         rnorm(n = length(FJ_event_DAFi_label[[DAFi_node]]),
-                               mean = 0,
-                               sd = 1000))
+  # same for nonDAFi nodes
+  FJ_event_nonDAFi_label <- foreach::foreach(nonDAFi_node = nonDAFi_nodes) %do% {
+    all_cell_nonDAFi_label[[nonDAFi_node]][EventNumberDP]
   }
-  names(labels.ls) <- DAFi_nodes
+  names(FJ_event_nonDAFi_label) <- nonDAFi_nodes
   
-  labels <- matrix(unlist(labels.ls,
-                          use.names = FALSE),
-                   ncol = length(labels.ls),
-                   byrow = FALSE)
-  colnames(labels) <- foreach::foreach(DAFi_node = DAFi_nodes,
-                                       .final = unlist) %do% {
-                                         DAFi_node %>%
-                                           strsplit(x = .,
-                                                    split = popOfInt,
-                                                    fixed = TRUE) %>%
-                                           .[[1]] %>%
-                                           tail(.,1) %>%
-                                           gsub(pattern = "^/",
-                                                replacement = "",
-                                                x = .) %>%
-                                           gsub(pattern = "/",
-                                                replacement = "_",
-                                                x = .,
-                                                fixed = TRUE) %>%
-                                           gsub(pattern = ",",
-                                                replacement = ".",
-                                                x = .,
-                                                fixed = TRUE) %>%
-                                           trimws(.,
-                                                  which = "right") %>%
-                                           paste0(popOfInt,
-                                                  "_",
-                                                  .) %>%
-                                           gsub(pattern = ",",
-                                                replacement = ".",
-                                                x = .,
-                                                fixed = TRUE)
-                                       }
+  # extract DAFi gating results to pass back to FlowJo
+  DAFi_labels.ls <- foreach::foreach(DAFi_node = DAFi_nodes) %do% {
+    DAFi_label <- as.matrix(as.integer(FJ_event_DAFi_label[[DAFi_node]]) * 1e5 + 
+                              rnorm(n = length(FJ_event_DAFi_label[[DAFi_node]]),
+                                    mean = 0,
+                                    sd = 1000))
+  }
+  names(DAFi_labels.ls) <- DAFi_nodes
+  # same for nonDAFi nodes
+  nonDAFi_labels.ls <- foreach::foreach(nonDAFi_node = nonDAFi_nodes) %do% {
+    nonDAFi_label <- as.matrix(as.integer(FJ_event_nonDAFi_label[[nonDAFi_node]]) * 1e5 + 
+                                 rnorm(n = length(FJ_event_nonDAFi_label[[nonDAFi_node]]),
+                                       mean = 0,
+                                       sd = 1000))
+  }
+  names(nonDAFi_labels.ls) <- nonDAFi_nodes
+  
+  # get results in right format for CSV (results are only saved in the end of the script!)
+  DAFi_labels <- matrix(
+    unlist(DAFi_labels.ls,
+           use.names = FALSE),
+    ncol = length(DAFi_labels.ls),
+    byrow = FALSE)
+  colnames(DAFi_labels) <- foreach::foreach(DAFi_node = DAFi_nodes,
+                                            .final = unlist) %do% {
+                                              DAFi_node %>%
+                                                strsplit(x = .,
+                                                         split = popOfInt,
+                                                         fixed = TRUE) %>%
+                                                .[[1]] %>%
+                                                tail(.,1) %>%
+                                                gsub(pattern = "^/",
+                                                     replacement = "",
+                                                     x = .) %>%
+                                                gsub(pattern = "/",
+                                                     replacement = "_",
+                                                     x = .,
+                                                     fixed = TRUE) %>%
+                                                gsub(pattern = ",",
+                                                     replacement = ".",
+                                                     x = .,
+                                                     fixed = TRUE) %>%
+                                                trimws(.,
+                                                       which = "right") %>%
+                                                paste0(popOfInt,
+                                                       "_",
+                                                       .) %>%
+                                                gsub(pattern = ",",
+                                                     replacement = ".",
+                                                     x = .,
+                                                     fixed = TRUE)
+                                            }
+  # same for nonDAFi nodes
+  nonDAFi_labels <- matrix(
+    unlist(nonDAFi_labels.ls,
+           use.names = FALSE),
+    ncol = length(nonDAFi_labels.ls),
+    byrow = FALSE)
+  colnames(nonDAFi_labels) <- foreach::foreach(nonDAFi_node = nonDAFi_nodes,
+                                               .final = unlist) %do% {
+                                                 nonDAFi_node %>%
+                                                   strsplit(x = .,
+                                                            split = popOfInt,
+                                                            fixed = TRUE) %>%
+                                                   .[[1]] %>%
+                                                   tail(.,1) %>%
+                                                   gsub(pattern = "^/",
+                                                        replacement = "",
+                                                        x = .) %>%
+                                                   gsub(pattern = "/",
+                                                        replacement = "_",
+                                                        x = .,
+                                                        fixed = TRUE) %>%
+                                                   gsub(pattern = ",",
+                                                        replacement = ".",
+                                                        x = .,
+                                                        fixed = TRUE) %>%
+                                                   trimws(.,
+                                                          which = "right") %>%
+                                                   paste0(popOfInt,
+                                                          "_",
+                                                          .) %>%
+                                                   gsub(pattern = ",",
+                                                        replacement = ".",
+                                                        x = .,
+                                                        fixed = TRUE)
+                                               }
   
   #sanity check
   print(
-    apply(labels,
+    apply(DAFi_labels,
           2,
           function(pop)
             mean(pop > 5e4))
   )
-  #write derived parameters
-  write.csv(labels, 
-            file = fj_csv_ouput_file, 
-            row.names = FALSE, 
-            quote = TRUE)
-  
   #get stats
   pop.stats.count <- gh_pop_get_stats(gs[[1]],
                                       type =  "count")
@@ -1954,14 +2061,14 @@ if(batch_mode){
                                                                    dirname()) %>%
                                     exprs() %>%
                                     .[,gate_par[1]]
-                                )) > (6  * mad(
+                                )) / mad(
                                   flowWorkspace::gh_pop_get_data(gs[[1]],
                                                                  nonDAFi_node %>%
                                                                    dirname()) %>%
                                     exprs() %>%
                                     .[,gate_par[1]]
-                                ))) %>%
-          which
+                                ))
+        xlim.outliers <- xlim.outliers > quantile(xlim.outliers, prob = 0.999)
         xlim.exprs <- flowWorkspace::gh_pop_get_data(gs[[1]],
                                                      nonDAFi_node %>%
                                                        dirname()) %>%
@@ -1985,15 +2092,6 @@ if(batch_mode){
             coord_cartesian(xlim = xlim.exprs) +
             geom_density(fill = "black",
                          aes(y = ..scaled..)) +
-            geom_segment(aes(x = x1, 
-                             y = y1, 
-                             xend = xend, 
-                             yend = yend,
-                             color = "red"),
-                         data = filtLs) +
-            geom_vline(xintercept = c(filtLs$x1,
-                                      filtLs$x2),
-                       color = "red") +
             xlab(ifelse(is.na(pData.asDF[pData.asDF$name %in% 
                                            gate_par[1],]$desc),
                         yes = pData.asDF[pData.asDF$name %in% 
@@ -2006,6 +2104,16 @@ if(batch_mode){
                            "\n",
                            sampleFCS))
         )
+        if(!filtLs$x1 < -1e100) {
+          plot.cells <- plot.cells +
+            geom_vline(xintercept = filtLs$x1,
+                       color = "red")
+        }
+        if(!filtLs$xend > 1e100) {
+          plot.cells <- plot.cells +
+            geom_vline(xintercept = filtLs$xend,
+                       color = "red")
+        }
         ggsave(plot = plot.cells,
                filename = paste0(plotDir,
                                  "/HISTOGRAM.",
@@ -2068,6 +2176,7 @@ if(batch_mode){
                                         replacement = "_", 
                                         x = DAFi_node,
                                         fixed = TRUE),
+                                   "_",
                                    sampleFCS,
                                    ".pdf"),
                  width = 3,
@@ -3097,7 +3206,20 @@ if(batch_mode){
     }
   }
   
+  #write DAFi gates
   modified.write.gatingML(flowEnv, outputFile)
+  #write derived parameters
+  write.csv(DAFi_labels, 
+            file = fj_csv_ouput_file, 
+            row.names = FALSE, 
+            quote = TRUE)
+  write.csv(nonDAFi_labels, 
+            file = sub(pattern = ".csv.DAFi.csv$",
+                       replacement = ".csv.nonDAFi.csv",
+                       x = fj_csv_ouput_file,
+                       fixed = FALSE), 
+            row.names = FALSE, 
+            quote = TRUE)
 }
 
 # R seems to be saving the .RData when exiting, so let's clean up to at least make that tiny (i.e., empty environment)
