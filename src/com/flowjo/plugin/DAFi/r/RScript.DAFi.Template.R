@@ -777,29 +777,21 @@ for(pop_to_SOM in seq_along(pops_to_SOM)){
           yes = pData.asDF$name,
           no = pData.asDF$desc
         )
-        irrel.par <- grepl(pattern = "FSC|SSC|Time", 
+        irrel.par <- grepl(pattern = "^FSC|^SSC|^Time", 
                            x = colnames(pop.exprs), 
                            ignore.case = FALSE, 
                            fixed = FALSE)
         irrel.par.expr <- pop.exprs[,irrel.par]
         pop.exprs <- pop.exprs[,!irrel.par]
         if(min.nPar >
-           pop.exprs %>%
-           dim(.) %>%
-           .[2]) {
+           dim(pop.exprs)[2]) {
           min.nPar <-
-            pop.exprs %>%
-            dim(.) %>%
-            .[2]
+            dim(pop.exprs)[2]
         }
         if(max.nPar >
-           pop.exprs %>%
-           dim(.) %>%
-           .[2]) {
+           dim(pop.exprs)[2]) {
           max.nPar <-
-            pop.exprs %>%
-            dim(.) %>%
-            .[2]
+            dim(pop.exprs)[2]
         }
         # we need the gating parameters since if they're not present we cannot gate the centroids
         gate_par <- flowWorkspace::gh_pop_get_gate(
@@ -833,22 +825,23 @@ for(pop_to_SOM in seq_along(pops_to_SOM)){
                    ]
         if(sum(in.gate) > 10 &
            sum(!in.gate) > 10) {
+          # rank markers by t-stat absolute value
           markers.t <- apply(pop.exprs,
                              2, 
                              function(marker) 
                                t.test(marker[in.gate],
                                       marker[!in.gate],
-                                      var.equal = FALSE)$statistic)%>%
+                                      var.equal = FALSE)$statistic) %>%
             abs() %>%
             sort(decreasing = TRUE)
-          hist.t <- hist(markers.t,
-                         breaks = "FD",
-                         plot = FALSE)
+          #hist.t <- hist(markers.t,
+          #               breaks = "FD",
+          #              plot = FALSE)
           elbow <- elbow_finder(markers.t)[1]
-          hist.t.threshold <- hist.t$breaks[
-            which(hist.t$counts == 0)[1] + 1
-            ]
-          hist.n <- sum(markers.t > hist.t.threshold)
+          #hist.t.threshold <- hist.t$breaks[
+          # which(hist.t$counts == 0)[1] + 1
+          # ]
+          #hist.n <- sum(markers.t > hist.t.threshold)
           #keep.marker <- min(elbow, 
           #                   hist.n)
           #keep.marker <- markers.t[1:keep.marker] %>%
@@ -889,8 +882,8 @@ for(pop_to_SOM in seq_along(pops_to_SOM)){
           print("markers t-stat:")
           print(markers.t)
           #          plot(markers.t)
-          print("hist: ")
-          print(markers.t[markers.t > hist.t.threshold])
+          #print("hist: ")
+          #print(markers.t[markers.t > hist.t.threshold])
           print("elbow: ")
           print(markers.t[1:elbow])
         } else { #else call: if there are too few cells in traditional gate
@@ -2011,9 +2004,10 @@ if(batch_mode){
         )
         if(!dim(pop.exprs)[1] < 100) {
           plot.cells <- plot.cells +
-            geom_hex(binwidth = c((xlim.exprs[2] - xlim.exprs[1])/256,
-                                  (ylim.exprs[2] - ylim.exprs[1])/256),
-                     aes(fill = stat(log(count)))
+            geom_hex(
+              binwidth = c((xlim.exprs[2] - xlim.exprs[1])/256,
+                           (ylim.exprs[2] - ylim.exprs[1])/256),
+              mapping = aes(fill = stat(log(count)))
             ) +
             scale_fill_viridis_c(option = "inferno")
         } else {
