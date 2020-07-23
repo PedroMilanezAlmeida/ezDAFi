@@ -73,6 +73,7 @@ public class DAFiRFlowCalc extends RFlowCalculator {
         if(EngineManager.isWindows()) outputFolderString = outputFolderString.replaceAll("\\\\", "/");
 
         //String sParScale = options.get(com.flowjo.plugin.DAFi.DAFi.scaleOptionName);
+        String sParPlotStats = options.get(com.flowjo.plugin.DAFi.DAFi.plotStatsOptionName);
         String sParTrans = options.get(com.flowjo.plugin.DAFi.DAFi.transOptionName);
         String sParBatch = options.get(com.flowjo.plugin.DAFi.DAFi.batchOptionName);
         String sParkMeansSom = options.get(com.flowjo.plugin.DAFi.DAFi.kMeansSomOptionName);
@@ -91,6 +92,11 @@ public class DAFiRFlowCalc extends RFlowCalculator {
 //            sParScale = TRUE; // TRUE is the default
         //      else
         //sParScale = FALSE;
+
+        if (sParPlotStats == null || sParPlotStats.isEmpty() || com.flowjo.plugin.DAFi.DAFi.One.equals(sParPlotStats) || com.flowjo.plugin.DAFi.DAFi.True.equals(sParPlotStats))
+            sParPlotStats = TRUE; // TRUE is the default
+              else
+        sParPlotStats = FALSE;
 
         if (sParTrans == null || sParTrans.isEmpty() || com.flowjo.plugin.DAFi.DAFi.One.equals(sParTrans) || com.flowjo.plugin.DAFi.DAFi.True.equals(sParTrans))
             sParTrans = TRUE; // TRUE is the default
@@ -191,6 +197,7 @@ public class DAFiRFlowCalc extends RFlowCalculator {
                 scriptLine = scriptLine.replace("FJ_CSV_OUPUT_FILE", outFileName);
                 scriptLine = scriptLine.replace("FJ_GATING_ML_OUTPUT_FILE", gatingMLOutFile.getAbsolutePath());
                 //scriptLine = scriptLine.replace("FJ_PAR_SCALE", sParScale);
+                scriptLine = scriptLine.replace("FJ_PLOT_STATS", sParPlotStats);
                 scriptLine = scriptLine.replace("FJ_TRANSFORM", sParTrans);
                 scriptLine = scriptLine.replace("FJ_BATCH_MODE", sParBatch);
                 scriptLine = scriptLine.replace("FJ_PAR_SOM", sParkMeansSom);

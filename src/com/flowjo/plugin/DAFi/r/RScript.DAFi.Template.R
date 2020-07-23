@@ -288,10 +288,14 @@ fj_sample_node_name <- "FJ_SAMPLE_NODE_NAME"
 fj_population_name <- "FJ_POPULATION_NAME"
 fj_transform <- FJ_TRANSFORM
 fj_millis_time <- "FJ_MILLIS_TIME"
-plotDir <- paste0(dirname(fj_data_file_path),
-                  "/plots")
-statsDir <- paste0(dirname(fj_data_file_path),
-                   "/stats")
+plotDir <- paste0(wspDir,
+                  "/",
+                  wspName,
+                  "_DAFi_plots")
+statsDir <- paste0(wspDir,
+                   "/",
+                   wspName,
+                   "_DAFi_stats")
 min.nPar <- FJ_MIN_N_PAR
 #if(min.nPar == 1) {
 #  min.nPar <- 2
@@ -303,19 +307,18 @@ max.nPar <- FJ_MAX_N_PAR
 if(max.nPar < min.nPar) {
   max.nPar <- min.nPar
 }
-
+fj_plot_stats <- FJ_PLOT_STATS
 # avoid issue with large numbers of centroids and small minPopSize
 #if(minPopSize < fj_par_xdim * fj_par_ydim) {
 #  minPopSize <- (fj_par_xdim * fj_par_ydim) + 1
 #}
 
 ## Code to read gates from wsp file
-#find and load wsp file
+#load wsp file
 wspName <- paste0(wspDir, 
                   "/",
                   wspName)
 wspName
-
 ws <- CytoML::open_flowjo_xml(wspName)
 
 ##find raw .fcs files
@@ -1543,629 +1546,481 @@ if(batch_mode){
           function(pop)
             mean(pop > 5e4))
   )
-  #get stats
-  pop.stats.count <- gh_pop_get_stats(gs[[1]],
-                                      type =  "count")
-  pop.stats.percent <- gh_pop_get_stats(gs[[1]],
-                                        type =  "percent")
-  pop.stats.percent$percent <- pop.stats.percent$percent * 100
-  
-  pop.stats.count.DAFi <- pop.stats.count[pop.stats.count$pop %in% 
-                                            DAFi_nodes,]$count
-  names(pop.stats.count.DAFi) <- pop.stats.count[pop.stats.count$pop %in% 
-                                                   DAFi_nodes,]$pop
-  pop.stats.count.DAFi <- data.frame(pop.stats.count.DAFi) %>%
-    t
-  rownames(pop.stats.count.DAFi) <- sampleFCS
-  
-  pop.stats.percent.DAFi <- pop.stats.percent[pop.stats.percent$pop %in% 
-                                                DAFi_nodes,]$percent
-  names(pop.stats.percent.DAFi) <- pop.stats.percent[pop.stats.percent$pop %in% 
-                                                       DAFi_nodes,]$pop
-  pop.stats.percent.DAFi <- data.frame(pop.stats.percent.DAFi) %>%
-    t
-  rownames(pop.stats.percent.DAFi) <- sampleFCS
-  
-  pop.stats.count.trad <- pop.stats.count[
-    match(gsub(pattern = "DAFi_", 
-               replacement = "",
-               x = DAFi_nodes,
-               fixed = TRUE),
-          pop.stats.count$pop),
-    ]$count
-  names(pop.stats.count.trad) <- pop.stats.count[
-    match(gsub(pattern = "DAFi_", 
-               replacement = "",
-               x = DAFi_nodes,
-               fixed = TRUE),
-          pop.stats.count$pop),
-    ]$pop
-  pop.stats.count.trad <- data.frame(pop.stats.count.trad) %>%
-    t
-  rownames(pop.stats.count.trad) <- sampleFCS
-  
-  pop.stats.percent.trad <- pop.stats.percent[
-    match(gsub(pattern = "DAFi_", 
-               replacement = "",
-               x = DAFi_nodes,
-               fixed = TRUE),
-          pop.stats.count$pop)
-    ,]$percent
-  names(pop.stats.percent.trad) <- pop.stats.percent[
-    match(gsub(pattern = "DAFi_", 
-               replacement = "",
-               x = DAFi_nodes,
-               fixed = TRUE),
-          pop.stats.count$pop)
-    ,]$pop
-  pop.stats.percent.trad <- data.frame(pop.stats.percent.trad) %>%
-    t
-  rownames(pop.stats.percent.trad) <- sampleFCS
-  #write stats
-  if(!dir.exists(statsDir)) {
-    dir.create(statsDir)
-  }
-  DAFi.count.file <- paste0(statsDir,
-                            "/",
-                            "DAFi_count_",
-                            popOfInt,
-                            ".csv")
-  DAFi.percent.file <- paste0(statsDir,
+  if(fj_plot_stats){
+    #get stats
+    pop.stats.count <- gh_pop_get_stats(gs[[1]],
+                                        type =  "count")
+    pop.stats.percent <- gh_pop_get_stats(gs[[1]],
+                                          type =  "percent")
+    pop.stats.percent$percent <- pop.stats.percent$percent * 100
+    
+    pop.stats.count.DAFi <- pop.stats.count[pop.stats.count$pop %in% 
+                                              DAFi_nodes,]$count
+    names(pop.stats.count.DAFi) <- pop.stats.count[pop.stats.count$pop %in% 
+                                                     DAFi_nodes,]$pop
+    pop.stats.count.DAFi <- data.frame(pop.stats.count.DAFi) %>%
+      t
+    rownames(pop.stats.count.DAFi) <- sampleFCS
+    
+    pop.stats.percent.DAFi <- pop.stats.percent[pop.stats.percent$pop %in% 
+                                                  DAFi_nodes,]$percent
+    names(pop.stats.percent.DAFi) <- pop.stats.percent[pop.stats.percent$pop %in% 
+                                                         DAFi_nodes,]$pop
+    pop.stats.percent.DAFi <- data.frame(pop.stats.percent.DAFi) %>%
+      t
+    rownames(pop.stats.percent.DAFi) <- sampleFCS
+    
+    pop.stats.count.trad <- pop.stats.count[
+      match(gsub(pattern = "DAFi_", 
+                 replacement = "",
+                 x = DAFi_nodes,
+                 fixed = TRUE),
+            pop.stats.count$pop),
+      ]$count
+    names(pop.stats.count.trad) <- pop.stats.count[
+      match(gsub(pattern = "DAFi_", 
+                 replacement = "",
+                 x = DAFi_nodes,
+                 fixed = TRUE),
+            pop.stats.count$pop),
+      ]$pop
+    pop.stats.count.trad <- data.frame(pop.stats.count.trad) %>%
+      t
+    rownames(pop.stats.count.trad) <- sampleFCS
+    
+    pop.stats.percent.trad <- pop.stats.percent[
+      match(gsub(pattern = "DAFi_", 
+                 replacement = "",
+                 x = DAFi_nodes,
+                 fixed = TRUE),
+            pop.stats.count$pop)
+      ,]$percent
+    names(pop.stats.percent.trad) <- pop.stats.percent[
+      match(gsub(pattern = "DAFi_", 
+                 replacement = "",
+                 x = DAFi_nodes,
+                 fixed = TRUE),
+            pop.stats.count$pop)
+      ,]$pop
+    pop.stats.percent.trad <- data.frame(pop.stats.percent.trad) %>%
+      t
+    rownames(pop.stats.percent.trad) <- sampleFCS
+    #write stats
+    if(!dir.exists(statsDir)) {
+      dir.create(statsDir)
+    }
+    DAFi.count.file <- paste0(statsDir,
                               "/",
-                              "DAFi_percent_",
+                              "DAFi_count_",
                               popOfInt,
                               ".csv")
-  trad.count.file <- paste0(statsDir,
-                            "/",
-                            "trad_count_",
-                            popOfInt,
-                            ".csv")
-  trad.percent.file <- paste0(statsDir,
+    DAFi.percent.file <- paste0(statsDir,
+                                "/",
+                                "DAFi_percent_",
+                                popOfInt,
+                                ".csv")
+    trad.count.file <- paste0(statsDir,
                               "/",
-                              "trad_percent_",
+                              "trad_count_",
                               popOfInt,
                               ".csv")
-  if(!DAFi.count.file %>%
-     file.exists()) {
-    write.table(x = c("sample",
-                      colnames(pop.stats.count.DAFi)) %>%
-                  t,
-                append = FALSE,
-                sep = ",",
-                file = DAFi.count.file,
-                row.names = FALSE, 
-                quote = TRUE,
-                col.names = FALSE)
-  } else if(
-    !((suppressMessages(
-      read.csv(file = DAFi.count.file,
-               header = FALSE,
-               nrows = 1)) %>%
-      unlist(use.names = FALSE) %>%
-      as.character() ==
-      c("sample",
-        colnames(pop.stats.count.DAFi))) %>%
-      all)
-  ) {
-    stop("Either the gates of \"",
-         popOfInt,
-         "\" changed since ezDAFi's last run\nor batch analysis was called on samples with different gating strategies.\nPlease delete stats before rerunning and make sure the same gating\nstrategy is applied to all samples.", 
-         call.=FALSE)
-  }
-  if(!(sampleFCS %in%
-       read.csv(file = DAFi.count.file,
-                header = TRUE,
-                colClasses = c("character",
-                               rep("NULL",
-                                   length(DAFi_nodes))))[,1])) {
-    write.table(x = pop.stats.count.DAFi,
-                append = TRUE,
-                sep = ",",
-                file = DAFi.count.file,
-                row.names = TRUE, 
-                quote = TRUE,
-                col.names = FALSE)
-  } else {
-    sampleFCS.pos <- which(
-      read.csv(file = DAFi.count.file,
-               header = FALSE,
-               colClasses = c("character",
-                              rep("NULL",
-                                  length(DAFi_nodes))))[,1] ==
-        sampleFCS
-    )
-    DAFi.count.df <- read.csv(file = DAFi.count.file,
-                              header = FALSE,
-                              skip = 1)
-    colnames(DAFi.count.df) <- c("sample",
-                                 colnames(pop.stats.count.DAFi))
-    DAFi.count.df[(sampleFCS.pos - 1),] <- c(sampleFCS,
-                                             pop.stats.count.DAFi[1,])
-    write.table(x = DAFi.count.df,
-                append = FALSE,
-                sep = ",",
-                file = DAFi.count.file,
-                row.names = FALSE, 
-                quote = TRUE,
-                col.names = TRUE)
-  }
-  if(!DAFi.percent.file %>%
-     file.exists()) {
-    write.table(x = c("sample", 
-                      colnames(pop.stats.percent.DAFi)) %>%
-                  t,
-                append = FALSE,
-                sep = ",",
-                file = DAFi.percent.file,
-                row.names = FALSE, 
-                quote = TRUE,
-                col.names = FALSE)
-  } else if(
-    !((suppressMessages(
-      read.csv(file = DAFi.percent.file,
-               header = FALSE,
-               nrows = 1)
-    ) %>%
-    unlist(use.names = FALSE) %>%
-    as.character() ==
-    c("sample",
-      colnames(pop.stats.percent.DAFi))) %>%
-    all)
-  ) {
-    stop("Either the gates of \"",
-         popOfInt,
-         "\" changed since ezDAFi's last run\nor batch analysis was called on samples with different gating strategies.\nPlease delete stats before rerunning and make sure the same gating\nstrategy is applied to all samples.", 
-         call.=FALSE)
-  }
-  if(!(sampleFCS %in%
-       read.csv(file = DAFi.percent.file,
-                header = TRUE,
-                colClasses = c("character",
-                               rep("NULL",
-                                   length(DAFi_nodes))))[,1])) {
-    write.table(x = pop.stats.percent.DAFi,
-                append = TRUE,
-                sep = ",",
-                file = DAFi.percent.file,
-                row.names = TRUE, 
-                quote = TRUE,
-                col.names = FALSE)
-  } else {
-    sampleFCS.pos <- which(
-      read.csv(file = DAFi.percent.file,
-               header = FALSE,
-               colClasses = c("character",
-                              rep("NULL",
-                                  length(DAFi_nodes))))[,1] ==
-        sampleFCS
-    )
-    DAFi.percent.df <- read.csv(file = DAFi.percent.file,
+    trad.percent.file <- paste0(statsDir,
+                                "/",
+                                "trad_percent_",
+                                popOfInt,
+                                ".csv")
+    if(!DAFi.count.file %>%
+       file.exists()) {
+      write.table(x = c("sample",
+                        colnames(pop.stats.count.DAFi)) %>%
+                    t,
+                  append = FALSE,
+                  sep = ",",
+                  file = DAFi.count.file,
+                  row.names = FALSE, 
+                  quote = TRUE,
+                  col.names = FALSE)
+    } else if(
+      !((suppressMessages(
+        read.csv(file = DAFi.count.file,
+                 header = FALSE,
+                 nrows = 1)) %>%
+        unlist(use.names = FALSE) %>%
+        as.character() ==
+        c("sample",
+          colnames(pop.stats.count.DAFi))) %>%
+        all)
+    ) {
+      stop("Either the gates of \"",
+           popOfInt,
+           "\" changed since ezDAFi's last run\nor batch analysis was called on samples with different gating strategies.\nPlease delete stats before rerunning and make sure the same gating\nstrategy is applied to all samples.", 
+           call.=FALSE)
+    }
+    if(!(sampleFCS %in%
+         read.csv(file = DAFi.count.file,
+                  header = TRUE,
+                  colClasses = c("character",
+                                 rep("NULL",
+                                     length(DAFi_nodes))))[,1])) {
+      write.table(x = pop.stats.count.DAFi,
+                  append = TRUE,
+                  sep = ",",
+                  file = DAFi.count.file,
+                  row.names = TRUE, 
+                  quote = TRUE,
+                  col.names = FALSE)
+    } else {
+      sampleFCS.pos <- which(
+        read.csv(file = DAFi.count.file,
+                 header = FALSE,
+                 colClasses = c("character",
+                                rep("NULL",
+                                    length(DAFi_nodes))))[,1] ==
+          sampleFCS
+      )
+      DAFi.count.df <- read.csv(file = DAFi.count.file,
                                 header = FALSE,
                                 skip = 1)
-    colnames(DAFi.percent.df) <- c("sample",
-                                   colnames(pop.stats.percent.DAFi))
-    DAFi.percent.df[(sampleFCS.pos - 1),] <- c(sampleFCS,
-                                               pop.stats.percent.DAFi[1,])
-    write.table(x = DAFi.percent.df,
-                append = FALSE,
-                sep = ",",
-                file = DAFi.percent.file,
-                row.names = FALSE, 
-                quote = TRUE,
-                col.names = TRUE)
-  }
-  if(!trad.count.file %>%
-     file.exists()) {
-    write.table(x = c("sample",
-                      colnames(pop.stats.count.trad)) %>%
-                  t,
-                append = FALSE,
-                sep = ",",
-                file = trad.count.file,
-                row.names = FALSE, 
-                quote = TRUE,
-                col.names = FALSE)
-  } else if(
-    !((suppressMessages(
-      read.csv(file = trad.count.file,
-               header = FALSE,
-               nrows = 1)) %>%
+      colnames(DAFi.count.df) <- c("sample",
+                                   colnames(pop.stats.count.DAFi))
+      DAFi.count.df[(sampleFCS.pos - 1),] <- c(sampleFCS,
+                                               pop.stats.count.DAFi[1,])
+      write.table(x = DAFi.count.df,
+                  append = FALSE,
+                  sep = ",",
+                  file = DAFi.count.file,
+                  row.names = FALSE, 
+                  quote = TRUE,
+                  col.names = TRUE)
+    }
+    if(!DAFi.percent.file %>%
+       file.exists()) {
+      write.table(x = c("sample", 
+                        colnames(pop.stats.percent.DAFi)) %>%
+                    t,
+                  append = FALSE,
+                  sep = ",",
+                  file = DAFi.percent.file,
+                  row.names = FALSE, 
+                  quote = TRUE,
+                  col.names = FALSE)
+    } else if(
+      !((suppressMessages(
+        read.csv(file = DAFi.percent.file,
+                 header = FALSE,
+                 nrows = 1)
+      ) %>%
       unlist(use.names = FALSE) %>%
       as.character() ==
       c("sample",
-        colnames(pop.stats.count.trad))) %>%
+        colnames(pop.stats.percent.DAFi))) %>%
       all)
-  ) {
-    stop("Either the gates of \"",
-         popOfInt,
-         "\" changed since ezDAFi's last run\nor batch analysis was called on samples with different gating strategies.\nPlease delete stats before rerunning and make sure the same gating\nstrategy is applied to all samples.", 
-         call.=FALSE)
-  }
-  if(!(sampleFCS %in%
-       read.csv(file = trad.count.file,
-                header = TRUE,
-                colClasses = c("character",
-                               rep("NULL",
-                                   length(DAFi_nodes))))[,1])) {
-    write.table(x = pop.stats.count.trad,
-                append = TRUE,
-                sep = ",",
-                file = trad.count.file,
-                row.names = TRUE, 
-                quote = TRUE,
-                col.names = FALSE)
-  } else {
-    sampleFCS.pos <- which(
-      read.csv(file = trad.count.file,
-               header = FALSE,
-               colClasses = c("character",
-                              rep("NULL",
-                                  length(DAFi_nodes))))[,1] ==
-        sampleFCS
-    )
-    trad.count.df <- read.csv(file = trad.count.file,
-                              header = FALSE,
-                              skip = 1)
-    colnames(trad.count.df) <- c("sample",
-                                 colnames(pop.stats.count.trad))
-    trad.count.df[(sampleFCS.pos - 1),] <- c(sampleFCS,
-                                             pop.stats.count.trad[1,])
-    write.table(x = trad.count.df,
-                append = FALSE,
-                sep = ",",
-                file = trad.count.file,
-                row.names = FALSE, 
-                quote = TRUE,
-                col.names = TRUE)
-  }
-  if(!trad.percent.file %>%
-     file.exists()) {
-    write.table(x = c("sample",
-                      colnames(pop.stats.percent.trad)) %>%
-                  t,
-                append = FALSE,
-                sep = ",",
-                file = trad.percent.file,
-                row.names = FALSE, 
-                quote = TRUE,
-                col.names = FALSE)
-  } else if(
-    !((suppressMessages(
-      read.csv(file = trad.percent.file,
-               header = FALSE,
-               nrows = 1)) %>%
-      unlist(use.names = FALSE) %>%
-      as.character() ==
-      c("sample",
-        colnames(pop.stats.percent.trad))) %>%
-      all)
-  ) {
-    stop("Either the gates of \"",
-         popOfInt,
-         "\" changed since ezDAFi's last run\nor batch analysis was called on samples with different gating strategies.\nPlease delete stats before rerunning and make sure the same gating\nstrategy is applied to all samples.", 
-         call.=FALSE)
-  }
-  if(!(sampleFCS %in%
-       read.csv(file = trad.percent.file,
-                header = TRUE,
-                colClasses = c("character",
-                               rep("NULL",
-                                   length(DAFi_nodes))))[,1])) {
-    write.table(x = pop.stats.percent.trad,
-                append = TRUE,
-                sep = ",",
-                file = trad.percent.file,
-                row.names = TRUE, 
-                quote = TRUE,
-                col.names = FALSE)
-  } else {
-    sampleFCS.pos <- which(
-      read.csv(file = trad.percent.file,
-               header = FALSE,
-               colClasses = c("character",
-                              rep("NULL",
-                                  length(DAFi_nodes))))[,1] ==
-        sampleFCS
-    )
-    trad.percent.df <- read.csv(file = trad.percent.file,
+    ) {
+      stop("Either the gates of \"",
+           popOfInt,
+           "\" changed since ezDAFi's last run\nor batch analysis was called on samples with different gating strategies.\nPlease delete stats before rerunning and make sure the same gating\nstrategy is applied to all samples.", 
+           call.=FALSE)
+    }
+    if(!(sampleFCS %in%
+         read.csv(file = DAFi.percent.file,
+                  header = TRUE,
+                  colClasses = c("character",
+                                 rep("NULL",
+                                     length(DAFi_nodes))))[,1])) {
+      write.table(x = pop.stats.percent.DAFi,
+                  append = TRUE,
+                  sep = ",",
+                  file = DAFi.percent.file,
+                  row.names = TRUE, 
+                  quote = TRUE,
+                  col.names = FALSE)
+    } else {
+      sampleFCS.pos <- which(
+        read.csv(file = DAFi.percent.file,
+                 header = FALSE,
+                 colClasses = c("character",
+                                rep("NULL",
+                                    length(DAFi_nodes))))[,1] ==
+          sampleFCS
+      )
+      DAFi.percent.df <- read.csv(file = DAFi.percent.file,
+                                  header = FALSE,
+                                  skip = 1)
+      colnames(DAFi.percent.df) <- c("sample",
+                                     colnames(pop.stats.percent.DAFi))
+      DAFi.percent.df[(sampleFCS.pos - 1),] <- c(sampleFCS,
+                                                 pop.stats.percent.DAFi[1,])
+      write.table(x = DAFi.percent.df,
+                  append = FALSE,
+                  sep = ",",
+                  file = DAFi.percent.file,
+                  row.names = FALSE, 
+                  quote = TRUE,
+                  col.names = TRUE)
+    }
+    if(!trad.count.file %>%
+       file.exists()) {
+      write.table(x = c("sample",
+                        colnames(pop.stats.count.trad)) %>%
+                    t,
+                  append = FALSE,
+                  sep = ",",
+                  file = trad.count.file,
+                  row.names = FALSE, 
+                  quote = TRUE,
+                  col.names = FALSE)
+    } else if(
+      !((suppressMessages(
+        read.csv(file = trad.count.file,
+                 header = FALSE,
+                 nrows = 1)) %>%
+        unlist(use.names = FALSE) %>%
+        as.character() ==
+        c("sample",
+          colnames(pop.stats.count.trad))) %>%
+        all)
+    ) {
+      stop("Either the gates of \"",
+           popOfInt,
+           "\" changed since ezDAFi's last run\nor batch analysis was called on samples with different gating strategies.\nPlease delete stats before rerunning and make sure the same gating\nstrategy is applied to all samples.", 
+           call.=FALSE)
+    }
+    if(!(sampleFCS %in%
+         read.csv(file = trad.count.file,
+                  header = TRUE,
+                  colClasses = c("character",
+                                 rep("NULL",
+                                     length(DAFi_nodes))))[,1])) {
+      write.table(x = pop.stats.count.trad,
+                  append = TRUE,
+                  sep = ",",
+                  file = trad.count.file,
+                  row.names = TRUE, 
+                  quote = TRUE,
+                  col.names = FALSE)
+    } else {
+      sampleFCS.pos <- which(
+        read.csv(file = trad.count.file,
+                 header = FALSE,
+                 colClasses = c("character",
+                                rep("NULL",
+                                    length(DAFi_nodes))))[,1] ==
+          sampleFCS
+      )
+      trad.count.df <- read.csv(file = trad.count.file,
                                 header = FALSE,
                                 skip = 1)
-    colnames(trad.percent.df) <- c("sample",
-                                   colnames(pop.stats.percent.trad))
-    trad.percent.df[(sampleFCS.pos - 1),] <- c(sampleFCS,
-                                               pop.stats.percent.trad[1,])
-    write.table(x = trad.percent.df,
-                append = FALSE,
-                sep = ",",
-                file = trad.percent.file,
-                row.names = FALSE, 
-                quote = TRUE,
-                col.names = TRUE)
-  }
-  
-  # create heatmaps with median expression of all selected paramaters on DAFi vs traditional gates
-  # as well as pseudocolor for the bidimensional gate
-  if(!dir.exists(plotDir)){
-    dir.create(plotDir)
-  }
-  for(DAFi_node in DAFi_nodes) {
-    nonDAFi_node <- gsub(pattern = "DAFi_", 
-                         replacement = "",
-                         x = DAFi_node,
-                         fixed = TRUE)
-    gate_par <- flowWorkspace::gh_pop_get_gate(
-      gs[[1]],
-      nonDAFi_node)@parameters %>% 
-      names
-    filtLs <- filterList(gs_pop_get_gate(gs[[1]],
-                                         nonDAFi_node))
-    n.events.DAFi <- (gh_pop_get_indices(gs[[1]],
-                                         DAFi_node) %>%
-                        sum)
-    n.events.trad <- (gh_pop_get_indices(gs[[1]],
-                                         nonDAFi_node) %>%
-                        sum)
-    tryCatch({
-      if(length(gate_par) == 2) {
-        pop.exprs <- rbind(flowWorkspace::gh_pop_get_data(gs[[1]],
-                                                          DAFi_node) %>%
-                             exprs() %>%
-                             .[,gate_par],
-                           flowWorkspace::gh_pop_get_data(gs[[1]],
-                                                          nonDAFi_node) %>%
-                             exprs() %>%
-                             .[,gate_par]) %>%
-          as.data.frame()
-        pop.exprs$gate.type <- c(rep(paste0("DAFi :: ",
-                                            n.events.DAFi,
-                                            " events"),
-                                     n.events.DAFi),
-                                 rep(paste0("manual :: ",
-                                            n.events.trad,
-                                            " events"),
-                                     n.events.trad))
-        xlim.outliers <- (abs(flowWorkspace::gh_pop_get_data(gs[[1]],
-                                                             nonDAFi_node %>%
-                                                               dirname()) %>%
-                                exprs() %>%
-                                .[,gate_par[1]] - median(
-                                  flowWorkspace::gh_pop_get_data(gs[[1]],
-                                                                 nonDAFi_node %>%
-                                                                   dirname()) %>%
-                                    exprs() %>%
-                                    .[,gate_par[1]]
-                                )) / mad(
-                                  flowWorkspace::gh_pop_get_data(gs[[1]],
-                                                                 nonDAFi_node %>%
-                                                                   dirname()) %>%
-                                    exprs() %>%
-                                    .[,gate_par[1]]
-                                ))
-        xlim.outliers <- xlim.outliers > quantile(xlim.outliers, prob = 0.999)
-        ylim.outliers <- (abs(flowWorkspace::gh_pop_get_data(gs[[1]],
-                                                             nonDAFi_node %>%
-                                                               dirname()) %>%
-                                exprs() %>%
-                                .[,gate_par[2]] - median(
-                                  flowWorkspace::gh_pop_get_data(gs[[1]],
-                                                                 nonDAFi_node %>%
-                                                                   dirname()) %>%
-                                    exprs() %>%
-                                    .[,gate_par[2]]
-                                )) / mad(
-                                  flowWorkspace::gh_pop_get_data(gs[[1]],
-                                                                 nonDAFi_node %>%
-                                                                   dirname()) %>%
-                                    exprs() %>%
-                                    .[,gate_par[2]]
-                                ))
-        ylim.outliers <- ylim.outliers > quantile(ylim.outliers, prob = 0.999)
-        xlim.exprs <- flowWorkspace::gh_pop_get_data(gs[[1]],
-                                                     nonDAFi_node %>%
-                                                       dirname()) %>%
-          exprs() %>%
-          .[!xlim.outliers,gate_par[1]] %>%
-          range()
-        ylim.exprs <- flowWorkspace::gh_pop_get_data(gs[[1]],
-                                                     nonDAFi_node %>%
-                                                       dirname()) %>%
-          exprs() %>%
-          .[!ylim.outliers,gate_par[2]] %>%
-          range()
-        plot.cells <- suppressMessages(
-          ggplot(pop.exprs, 
-                 aes(x = !!sym(gate_par[1]),
-                     y = !!sym(gate_par[2]))) + 
-            theme_bw() +
-            theme(legend.position = "none",
-                  plot.title = element_text(hjust = 0.5)) +
-            coord_cartesian(xlim = xlim.exprs,
-                            ylim = ylim.exprs) +
-            geom_polygon(data = filtLs, 
-                         fill = NA, 
-                         col = "black") +
-            xlab(ifelse(is.na(pData.asDF[pData.asDF$name %in% 
-                                           gate_par[1],]$desc),
-                        yes = pData.asDF[pData.asDF$name %in% 
-                                           gate_par[1],]$name,
-                        no = pData.asDF[pData.asDF$name %in% 
-                                          gate_par[1],]$desc)) +
-            ylab(ifelse(is.na(pData.asDF[pData.asDF$name %in% 
-                                           gate_par[2],]$desc),
-                        yes = pData.asDF[pData.asDF$name %in% 
-                                           gate_par[2],]$name,
-                        no = pData.asDF[pData.asDF$name %in% 
-                                          gate_par[2],]$desc)) +
-            facet_wrap("gate.type") +
-            ggtitle(paste0(nonDAFi_node %>%
-                             basename(),
-                           "\n",
-                           sampleFCS))
-        )
-        if(!dim(pop.exprs)[1] < 100) {
-          plot.cells <- plot.cells +
-            geom_hex(
-              binwidth = c((xlim.exprs[2] - xlim.exprs[1])/256,
-                           (ylim.exprs[2] - ylim.exprs[1])/256),
-              mapping = aes(fill = stat(log(count)))
-            ) +
-            scale_fill_viridis_c(option = "inferno")
-        } else {
-          plot.cells <- plot.cells +
-            geom_point()
-        }
-        ggsave(plot = plot.cells,
-               filename = paste0(plotDir,
-                                 "/PSEUDOCOLOR.",
-                                 gsub(pattern = "/",
-                                      replacement = "_", 
-                                      x = DAFi_node,
-                                      fixed = TRUE),
-                                 "_",
-                                 sampleFCS,
-                                 ".pdf"),
-               width = 5,
-               height = 3)
-      }
-      if(length(gate_par) == 1) {
-        filtLs <- fortify(filtLs)
-        filtLs <- unlist(filtLs[,1], use.names = F)
-        filtLs <- data.frame(x1 = filtLs[1],
-                             xend = filtLs[2],
-                             y1 = 0.5,
-                             yend = 0.5)
-        #        filtLs.v1 <- data.frame(xintercept = filtLs$x1)
-        pop.exprs <- c(flowWorkspace::gh_pop_get_data(gs[[1]],
-                                                      DAFi_node) %>%
-                         exprs() %>%
-                         .[,gate_par[1]],
-                       flowWorkspace::gh_pop_get_data(gs[[1]],
-                                                      nonDAFi_node) %>%
-                         exprs() %>%
-                         .[,gate_par[1]]) %>%
-          data.frame()
-        colnames(pop.exprs) <- gate_par[1]
-        xlim.outliers <- (abs(flowWorkspace::gh_pop_get_data(gs[[1]],
-                                                             nonDAFi_node %>%
-                                                               dirname()) %>%
-                                exprs() %>%
-                                .[,gate_par[1]] - median(
-                                  flowWorkspace::gh_pop_get_data(gs[[1]],
-                                                                 nonDAFi_node %>%
-                                                                   dirname()) %>%
-                                    exprs() %>%
-                                    .[,gate_par[1]]
-                                )) / mad(
-                                  flowWorkspace::gh_pop_get_data(gs[[1]],
-                                                                 nonDAFi_node %>%
-                                                                   dirname()) %>%
-                                    exprs() %>%
-                                    .[,gate_par[1]]
-                                ))
-        xlim.outliers <- xlim.outliers > quantile(xlim.outliers, prob = 0.999)
-        xlim.exprs <- flowWorkspace::gh_pop_get_data(gs[[1]],
-                                                     nonDAFi_node %>%
-                                                       dirname()) %>%
-          exprs() %>%
-          .[-xlim.outliers,gate_par[1]] %>%
-          range()
-        pop.exprs$gate.type <- c(rep(paste0("DAFi :: ",
-                                            n.events.DAFi,
-                                            " events"),
-                                     n.events.DAFi),
-                                 rep(paste0("manual :: ",
-                                            n.events.trad,
-                                            " events"),
-                                     n.events.trad))
-        plot.cells <- suppressMessages(
-          ggplot(pop.exprs, 
-                 aes(x = !!sym(gate_par[1]))) + 
-            theme_bw() +
-            theme(legend.position = "none",
-                  plot.title = element_text(hjust = 0.5)) +
-            coord_cartesian(xlim = xlim.exprs) +
-            geom_density(fill = "black",
-                         aes(y = ..scaled..)) +
-            xlab(ifelse(is.na(pData.asDF[pData.asDF$name %in% 
-                                           gate_par[1],]$desc),
-                        yes = pData.asDF[pData.asDF$name %in% 
-                                           gate_par[1],]$name,
-                        no = pData.asDF[pData.asDF$name %in% 
-                                          gate_par[1],]$desc)) +
-            facet_wrap("gate.type") +
-            ggtitle(paste0(nonDAFi_node %>%
-                             basename(),
-                           "\n",
-                           sampleFCS))
-        )
-        if(!filtLs$x1 < -1e100) {
-          plot.cells <- plot.cells +
-            geom_vline(xintercept = filtLs$x1,
-                       color = "red")
-        }
-        if(!filtLs$xend > 1e100) {
-          plot.cells <- plot.cells +
-            geom_vline(xintercept = filtLs$xend,
-                       color = "red")
-        }
-        ggsave(plot = plot.cells,
-               filename = paste0(plotDir,
-                                 "/HISTOGRAM.",
-                                 gsub(pattern = "/",
-                                      replacement = "_", 
-                                      x = DAFi_node,
-                                      fixed = TRUE),
-                                 "_",
-                                 sampleFCS,
-                                 ".pdf"),
-               width = 5,
-               height = 3)
-      }
-    },
-    error = function(e)
-      print(paste0("Single cell plot failed for: ",
-                   DAFi_node)))
-    # get median
-    mark.exprs <- cbind(
-      flowWorkspace::gh_pop_get_data(gs[[1]],
-                                     DAFi_node) %>% 
-        flowCore::exprs() %>%
-        apply(2,
-              median)
-      , 
-      flowWorkspace::gh_pop_get_data(gs[[1]],
-                                     nonDAFi_node) %>%
-        flowCore::exprs() %>%
-        apply(2,
-              median))
-    mark.exprs <- mark.exprs[!grepl(pattern = "time", 
-                                    x = rownames(mark.exprs), 
-                                    ignore.case = TRUE, 
-                                    fixed = FALSE),]
-    mark.exprs <- mark.exprs[!grepl(pattern = "FSC|SSC", 
-                                    x = rownames(mark.exprs), 
-                                    ignore.case = FALSE, 
-                                    fixed = FALSE),]
-    rownames(mark.exprs) <- pData.asDF$desc[pData.asDF$name %in%
-                                              rownames(mark.exprs)]
-    tryCatch({
-      mark.exprs %>%
-        .[order(abs(.[,1] - .[,2]),
-                decreasing = TRUE),] %>%
-        pheatmap(mat = .,
-                 cluster_cols = FALSE,
-                 cluster_rows = FALSE, 
-                 scale = "none",
-                 #               color = hcl.colors(256, 
-                 #                                  palette = "RdYlBu",
-                 #                                 alpha = NULL, 
-                 #                                 rev = FALSE, 
-                 #                                 fixup = TRUE),
-                 labels_col = c("DAFi", "traditional"),
-                 main = nonDAFi_node %>%
-                   basename(),
+      colnames(trad.count.df) <- c("sample",
+                                   colnames(pop.stats.count.trad))
+      trad.count.df[(sampleFCS.pos - 1),] <- c(sampleFCS,
+                                               pop.stats.count.trad[1,])
+      write.table(x = trad.count.df,
+                  append = FALSE,
+                  sep = ",",
+                  file = trad.count.file,
+                  row.names = FALSE, 
+                  quote = TRUE,
+                  col.names = TRUE)
+    }
+    if(!trad.percent.file %>%
+       file.exists()) {
+      write.table(x = c("sample",
+                        colnames(pop.stats.percent.trad)) %>%
+                    t,
+                  append = FALSE,
+                  sep = ",",
+                  file = trad.percent.file,
+                  row.names = FALSE, 
+                  quote = TRUE,
+                  col.names = FALSE)
+    } else if(
+      !((suppressMessages(
+        read.csv(file = trad.percent.file,
+                 header = FALSE,
+                 nrows = 1)) %>%
+        unlist(use.names = FALSE) %>%
+        as.character() ==
+        c("sample",
+          colnames(pop.stats.percent.trad))) %>%
+        all)
+    ) {
+      stop("Either the gates of \"",
+           popOfInt,
+           "\" changed since ezDAFi's last run\nor batch analysis was called on samples with different gating strategies.\nPlease delete stats before rerunning and make sure the same gating\nstrategy is applied to all samples.", 
+           call.=FALSE)
+    }
+    if(!(sampleFCS %in%
+         read.csv(file = trad.percent.file,
+                  header = TRUE,
+                  colClasses = c("character",
+                                 rep("NULL",
+                                     length(DAFi_nodes))))[,1])) {
+      write.table(x = pop.stats.percent.trad,
+                  append = TRUE,
+                  sep = ",",
+                  file = trad.percent.file,
+                  row.names = TRUE, 
+                  quote = TRUE,
+                  col.names = FALSE)
+    } else {
+      sampleFCS.pos <- which(
+        read.csv(file = trad.percent.file,
+                 header = FALSE,
+                 colClasses = c("character",
+                                rep("NULL",
+                                    length(DAFi_nodes))))[,1] ==
+          sampleFCS
+      )
+      trad.percent.df <- read.csv(file = trad.percent.file,
+                                  header = FALSE,
+                                  skip = 1)
+      colnames(trad.percent.df) <- c("sample",
+                                     colnames(pop.stats.percent.trad))
+      trad.percent.df[(sampleFCS.pos - 1),] <- c(sampleFCS,
+                                                 pop.stats.percent.trad[1,])
+      write.table(x = trad.percent.df,
+                  append = FALSE,
+                  sep = ",",
+                  file = trad.percent.file,
+                  row.names = FALSE, 
+                  quote = TRUE,
+                  col.names = TRUE)
+    }
+    
+    # create heatmaps with median expression of all selected paramaters on DAFi vs traditional gates
+    # as well as pseudocolor for the bidimensional gate
+    if(!dir.exists(plotDir)){
+      dir.create(plotDir)
+    }
+    for(DAFi_node in DAFi_nodes) {
+      nonDAFi_node <- gsub(pattern = "DAFi_", 
+                           replacement = "",
+                           x = DAFi_node,
+                           fixed = TRUE)
+      gate_par <- flowWorkspace::gh_pop_get_gate(
+        gs[[1]],
+        nonDAFi_node)@parameters %>% 
+        names
+      filtLs <- filterList(gs_pop_get_gate(gs[[1]],
+                                           nonDAFi_node))
+      n.events.DAFi <- (gh_pop_get_indices(gs[[1]],
+                                           DAFi_node) %>%
+                          sum)
+      n.events.trad <- (gh_pop_get_indices(gs[[1]],
+                                           nonDAFi_node) %>%
+                          sum)
+      tryCatch({
+        if(length(gate_par) == 2) {
+          pop.exprs <- rbind(flowWorkspace::gh_pop_get_data(gs[[1]],
+                                                            DAFi_node) %>%
+                               exprs() %>%
+                               .[,gate_par],
+                             flowWorkspace::gh_pop_get_data(gs[[1]],
+                                                            nonDAFi_node) %>%
+                               exprs() %>%
+                               .[,gate_par]) %>%
+            as.data.frame()
+          pop.exprs$gate.type <- c(rep(paste0("DAFi :: ",
+                                              n.events.DAFi,
+                                              " events"),
+                                       n.events.DAFi),
+                                   rep(paste0("manual :: ",
+                                              n.events.trad,
+                                              " events"),
+                                       n.events.trad))
+          xlim.outliers <- (abs(flowWorkspace::gh_pop_get_data(gs[[1]],
+                                                               nonDAFi_node %>%
+                                                                 dirname()) %>%
+                                  exprs() %>%
+                                  .[,gate_par[1]] - median(
+                                    flowWorkspace::gh_pop_get_data(gs[[1]],
+                                                                   nonDAFi_node %>%
+                                                                     dirname()) %>%
+                                      exprs() %>%
+                                      .[,gate_par[1]]
+                                  )) / mad(
+                                    flowWorkspace::gh_pop_get_data(gs[[1]],
+                                                                   nonDAFi_node %>%
+                                                                     dirname()) %>%
+                                      exprs() %>%
+                                      .[,gate_par[1]]
+                                  ))
+          xlim.outliers <- xlim.outliers > quantile(xlim.outliers, prob = 0.999)
+          ylim.outliers <- (abs(flowWorkspace::gh_pop_get_data(gs[[1]],
+                                                               nonDAFi_node %>%
+                                                                 dirname()) %>%
+                                  exprs() %>%
+                                  .[,gate_par[2]] - median(
+                                    flowWorkspace::gh_pop_get_data(gs[[1]],
+                                                                   nonDAFi_node %>%
+                                                                     dirname()) %>%
+                                      exprs() %>%
+                                      .[,gate_par[2]]
+                                  )) / mad(
+                                    flowWorkspace::gh_pop_get_data(gs[[1]],
+                                                                   nonDAFi_node %>%
+                                                                     dirname()) %>%
+                                      exprs() %>%
+                                      .[,gate_par[2]]
+                                  ))
+          ylim.outliers <- ylim.outliers > quantile(ylim.outliers, prob = 0.999)
+          xlim.exprs <- flowWorkspace::gh_pop_get_data(gs[[1]],
+                                                       nonDAFi_node %>%
+                                                         dirname()) %>%
+            exprs() %>%
+            .[!xlim.outliers,gate_par[1]] %>%
+            range()
+          ylim.exprs <- flowWorkspace::gh_pop_get_data(gs[[1]],
+                                                       nonDAFi_node %>%
+                                                         dirname()) %>%
+            exprs() %>%
+            .[!ylim.outliers,gate_par[2]] %>%
+            range()
+          plot.cells <- suppressMessages(
+            ggplot(pop.exprs, 
+                   aes(x = !!sym(gate_par[1]),
+                       y = !!sym(gate_par[2]))) + 
+              theme_bw() +
+              theme(legend.position = "none",
+                    plot.title = element_text(hjust = 0.5)) +
+              coord_cartesian(xlim = xlim.exprs,
+                              ylim = ylim.exprs) +
+              geom_polygon(data = filtLs, 
+                           fill = NA, 
+                           col = "black") +
+              xlab(ifelse(is.na(pData.asDF[pData.asDF$name %in% 
+                                             gate_par[1],]$desc),
+                          yes = pData.asDF[pData.asDF$name %in% 
+                                             gate_par[1],]$name,
+                          no = pData.asDF[pData.asDF$name %in% 
+                                            gate_par[1],]$desc)) +
+              ylab(ifelse(is.na(pData.asDF[pData.asDF$name %in% 
+                                             gate_par[2],]$desc),
+                          yes = pData.asDF[pData.asDF$name %in% 
+                                             gate_par[2],]$name,
+                          no = pData.asDF[pData.asDF$name %in% 
+                                            gate_par[2],]$desc)) +
+              facet_wrap("gate.type") +
+              ggtitle(paste0(nonDAFi_node %>%
+                               basename(),
+                             "\n",
+                             sampleFCS))
+          )
+          if(!dim(pop.exprs)[1] < 100) {
+            plot.cells <- plot.cells +
+              geom_hex(
+                binwidth = c((xlim.exprs[2] - xlim.exprs[1])/256,
+                             (ylim.exprs[2] - ylim.exprs[1])/256),
+                mapping = aes(fill = stat(log(count)))
+              ) +
+              scale_fill_viridis_c(option = "inferno")
+          } else {
+            plot.cells <- plot.cells +
+              geom_point()
+          }
+          ggsave(plot = plot.cells,
                  filename = paste0(plotDir,
-                                   "/HEATMAP.",
+                                   "/PSEUDOCOLOR.",
                                    gsub(pattern = "/",
                                         replacement = "_", 
                                         x = DAFi_node,
@@ -2173,13 +2028,163 @@ if(batch_mode){
                                    "_",
                                    sampleFCS,
                                    ".pdf"),
-                 width = 3,
-                 height = ifelse(0.25 * dim(.)[1] < 4,
-                                 yes = 4,
-                                 no = 0.25 * dim(.)[1]))},
+                 width = 5,
+                 height = 3)
+        }
+        if(length(gate_par) == 1) {
+          filtLs <- fortify(filtLs)
+          filtLs <- unlist(filtLs[,1], use.names = F)
+          filtLs <- data.frame(x1 = filtLs[1],
+                               xend = filtLs[2],
+                               y1 = 0.5,
+                               yend = 0.5)
+          #        filtLs.v1 <- data.frame(xintercept = filtLs$x1)
+          pop.exprs <- c(flowWorkspace::gh_pop_get_data(gs[[1]],
+                                                        DAFi_node) %>%
+                           exprs() %>%
+                           .[,gate_par[1]],
+                         flowWorkspace::gh_pop_get_data(gs[[1]],
+                                                        nonDAFi_node) %>%
+                           exprs() %>%
+                           .[,gate_par[1]]) %>%
+            data.frame()
+          colnames(pop.exprs) <- gate_par[1]
+          xlim.outliers <- (abs(flowWorkspace::gh_pop_get_data(gs[[1]],
+                                                               nonDAFi_node %>%
+                                                                 dirname()) %>%
+                                  exprs() %>%
+                                  .[,gate_par[1]] - median(
+                                    flowWorkspace::gh_pop_get_data(gs[[1]],
+                                                                   nonDAFi_node %>%
+                                                                     dirname()) %>%
+                                      exprs() %>%
+                                      .[,gate_par[1]]
+                                  )) / mad(
+                                    flowWorkspace::gh_pop_get_data(gs[[1]],
+                                                                   nonDAFi_node %>%
+                                                                     dirname()) %>%
+                                      exprs() %>%
+                                      .[,gate_par[1]]
+                                  ))
+          xlim.outliers <- xlim.outliers > quantile(xlim.outliers, prob = 0.999)
+          xlim.exprs <- flowWorkspace::gh_pop_get_data(gs[[1]],
+                                                       nonDAFi_node %>%
+                                                         dirname()) %>%
+            exprs() %>%
+            .[-xlim.outliers,gate_par[1]] %>%
+            range()
+          pop.exprs$gate.type <- c(rep(paste0("DAFi :: ",
+                                              n.events.DAFi,
+                                              " events"),
+                                       n.events.DAFi),
+                                   rep(paste0("manual :: ",
+                                              n.events.trad,
+                                              " events"),
+                                       n.events.trad))
+          plot.cells <- suppressMessages(
+            ggplot(pop.exprs, 
+                   aes(x = !!sym(gate_par[1]))) + 
+              theme_bw() +
+              theme(legend.position = "none",
+                    plot.title = element_text(hjust = 0.5)) +
+              coord_cartesian(xlim = xlim.exprs) +
+              geom_density(fill = "black",
+                           aes(y = ..scaled..)) +
+              xlab(ifelse(is.na(pData.asDF[pData.asDF$name %in% 
+                                             gate_par[1],]$desc),
+                          yes = pData.asDF[pData.asDF$name %in% 
+                                             gate_par[1],]$name,
+                          no = pData.asDF[pData.asDF$name %in% 
+                                            gate_par[1],]$desc)) +
+              facet_wrap("gate.type") +
+              ggtitle(paste0(nonDAFi_node %>%
+                               basename(),
+                             "\n",
+                             sampleFCS))
+          )
+          if(!filtLs$x1 < -1e100) {
+            plot.cells <- plot.cells +
+              geom_vline(xintercept = filtLs$x1,
+                         color = "red")
+          }
+          if(!filtLs$xend > 1e100) {
+            plot.cells <- plot.cells +
+              geom_vline(xintercept = filtLs$xend,
+                         color = "red")
+          }
+          ggsave(plot = plot.cells,
+                 filename = paste0(plotDir,
+                                   "/HISTOGRAM.",
+                                   gsub(pattern = "/",
+                                        replacement = "_", 
+                                        x = DAFi_node,
+                                        fixed = TRUE),
+                                   "_",
+                                   sampleFCS,
+                                   ".pdf"),
+                 width = 5,
+                 height = 3)
+        }
+      },
       error = function(e)
-        print(paste0("Heatmap failed for: ",
+        print(paste0("Single cell plot failed for: ",
                      DAFi_node)))
+      # get median
+      mark.exprs <- cbind(
+        flowWorkspace::gh_pop_get_data(gs[[1]],
+                                       DAFi_node) %>% 
+          flowCore::exprs() %>%
+          apply(2,
+                median)
+        , 
+        flowWorkspace::gh_pop_get_data(gs[[1]],
+                                       nonDAFi_node) %>%
+          flowCore::exprs() %>%
+          apply(2,
+                median))
+      mark.exprs <- mark.exprs[!grepl(pattern = "time", 
+                                      x = rownames(mark.exprs), 
+                                      ignore.case = TRUE, 
+                                      fixed = FALSE),]
+      mark.exprs <- mark.exprs[!grepl(pattern = "FSC|SSC", 
+                                      x = rownames(mark.exprs), 
+                                      ignore.case = FALSE, 
+                                      fixed = FALSE),]
+      rownames(mark.exprs) <- pData.asDF$desc[pData.asDF$name %in%
+                                                rownames(mark.exprs)]
+      tryCatch({
+        mark.exprs %>%
+          .[order(abs(.[,1] - .[,2]),
+                  decreasing = TRUE),] %>%
+          pheatmap(mat = .,
+                   cluster_cols = FALSE,
+                   cluster_rows = FALSE, 
+                   scale = "none",
+                   #               color = hcl.colors(256, 
+                   #                                  palette = "RdYlBu",
+                   #                                 alpha = NULL, 
+                   #                                 rev = FALSE, 
+                   #                                 fixup = TRUE),
+                   labels_col = c("DAFi", "traditional"),
+                   main = nonDAFi_node %>%
+                     basename(),
+                   filename = paste0(plotDir,
+                                     "/HEATMAP.",
+                                     gsub(pattern = "/",
+                                          replacement = "_", 
+                                          x = DAFi_node,
+                                          fixed = TRUE),
+                                     "_",
+                                     sampleFCS,
+                                     ".pdf"),
+                   width = 3,
+                   height = ifelse(0.25 * dim(.)[1] < 4,
+                                   yes = 4,
+                                   no = 0.25 * dim(.)[1]))},
+        error = function(e)
+          print(paste0("Heatmap failed for: ",
+                       DAFi_node)))
+    }
   }
   
   all.labels.ls <- foreach::foreach(DAFi_node = DAFi_nodes) %do% {

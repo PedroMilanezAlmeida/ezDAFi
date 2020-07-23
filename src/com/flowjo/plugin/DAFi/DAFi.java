@@ -92,6 +92,7 @@ public class DAFi extends R_Algorithm {
     private RangedIntegerTextField fMaxDimField = null;
     private FJComboBox fApplyOnPrevCombo = null;
     //private FJCheckBox fScaleOptionCheckbox = null;
+    private FJCheckBox fPlotStatsOptionCheckbox = null;
     private FJCheckBox fTransOptionCheckbox = null;
     private FJCheckBox fBatchOptionCheckbox = null;
     private FJCheckBox fShowRScriptCheckbox = null;
@@ -124,6 +125,8 @@ public class DAFi extends R_Algorithm {
     private static final String orPerformDAFiLabel = "or perform new DAFi.";
     //private static final String scaleLabel = "Scale parameters to mean = 0 and sd = 1 (use with care)";
     //private static final String scaleTooltip = "Should the data be scaled prior to clustering?";
+    private static final String plotStatsLabel = "Save plots and stats (runs slow).";
+    private static final String plotStatsTooltip = "Should side-by-side plots of manual and ezDAFi gates be automatically saved as well as frequency of parents and counts?";
     private static final String transLabel = "Apply FJ data transformation.";
     private static final String transTooltip = "If not working with raw FCS files but pre-processed CSV files from other applications such as CITE-seq or histo-cytometry, the data may already have been transformed and this box should be unchecked.";
     private static final String batchLabel = "Advanced (results not re-imported to FlowJo; batch mode).";
@@ -137,6 +140,7 @@ public class DAFi extends R_Algorithm {
     private static final String applyOnChildrenTooltip = "If checked, DAFi will refine only the children of the selected population. If unchecked, all children of children will be refined recursively (i.e., all sub-populations downstream of the selected one).";
 
     //public static final String scaleOptionName = "scale";
+    public static final String plotStatsOptionName = "plotStats";
     public static final String transOptionName = "trans";
     public static final String batchOptionName = "batch";
     public static final String showRScriptOptionName = "RScript";
@@ -164,6 +168,7 @@ public class DAFi extends R_Algorithm {
     public static final int defaultMaxDim = 8;
     public static final String defaultApplyOnPrev = "None";
     //public static final boolean defaultScale = false;
+    public static final boolean defaultPlotStats = false;
     public static final boolean defaultTrans = true;
     public static final boolean defaultBatch = false;
     public static final boolean defaultShowRScript = true;
@@ -171,6 +176,7 @@ public class DAFi extends R_Algorithm {
     public static final boolean defaultApplyOnChildren = false;
 
     //private boolean fScale = defaultScale;
+    private boolean fPlotStats = defaultPlotStats;
     private boolean fTrans = defaultTrans;
     private boolean fBatch = defaultBatch;
     private boolean fShowRScript = defaultShowRScript;
@@ -819,6 +825,7 @@ public class DAFi extends R_Algorithm {
         fndimx = defaultXDim;
         fndimy = defaultYDim;
         //fScale = defaultScale;
+        fPlotStats = defaultPlotStats;
         fTrans = defaultTrans;
         fBatch = defaultBatch;
         fShowRScript = defaultShowRScript;
@@ -863,6 +870,10 @@ public class DAFi extends R_Algorithm {
             //String savedScale = option.getAttributeValue(scaleOptionName);
             //if (savedScale != null && !savedScale.isEmpty())
 //                fScale = One.equals(savedScale) || True.equals(savedScale);
+
+            String savedPlotStats = option.getAttributeValue(plotStatsOptionName);
+            if (savedPlotStats != null && !savedPlotStats.isEmpty())
+                fPlotStats = One.equals(savedPlotStats) || True.equals(savedPlotStats);
 
             String savedTrans = option.getAttributeValue(transOptionName);
             if (savedTrans != null && !savedTrans.isEmpty())
@@ -964,6 +975,11 @@ public class DAFi extends R_Algorithm {
         //fScaleOptionCheckbox.setSelected(fScale);
         //componentList.add(new HBox(new Component[]{fScaleOptionCheckbox}));
 
+        fPlotStatsOptionCheckbox = new FJCheckBox(plotStatsLabel);
+        fPlotStatsOptionCheckbox.setToolTipText("<html><p width=\"" + fixedToolTipWidth + "\">" + plotStatsTooltip + "</p></html>");
+        fPlotStatsOptionCheckbox.setSelected(fPlotStats);
+        componentList.add(new HBox(new Component[]{fPlotStatsOptionCheckbox}));
+
         fShowRScriptCheckbox = new FJCheckBox(showRScriptLabel);
         fShowRScriptCheckbox.setToolTipText("<html><p width=\"" + fixedToolTipWidth + "\">" + showRScriptTooltip + "</p></html>");
         fShowRScriptCheckbox.setSelected(fShowRScript);
@@ -1025,6 +1041,7 @@ public class DAFi extends R_Algorithm {
               if (fDimXField != null) fDimXField.setEnabled(false);
               if (fDimYField != null) fDimYField.setEnabled(false);
               //if (fScaleOptionCheckbox != null) fScaleOptionCheckbox.setEnabled(false);
+              if (fPlotStatsOptionCheckbox != null) fPlotStatsOptionCheckbox.setEnabled(false);
               if (fTransOptionCheckbox != null) fTransOptionCheckbox.setEnabled(false);
               if (fBatchOptionCheckbox != null) fBatchOptionCheckbox.setEnabled(false);
               if (fShowRScriptCheckbox != null) fShowRScriptCheckbox.setEnabled(false);
@@ -1082,6 +1099,7 @@ public class DAFi extends R_Algorithm {
                 if (fDimXField != null) fDimXField.setEnabled(true);
                 if (fDimYField != null) fDimYField.setEnabled(true);
               //if (fScaleOptionCheckbox != null) fScaleOptionCheckbox.setEnabled(true);
+                if (fPlotStatsOptionCheckbox != null) fPlotStatsOptionCheckbox.setEnabled(true);
                 if (fTransOptionCheckbox != null) fTransOptionCheckbox.setEnabled(true);
                 if (fBatchOptionCheckbox != null) fBatchOptionCheckbox.setEnabled(true);
                 if (fShowRScriptCheckbox != null) fShowRScriptCheckbox.setEnabled(true);
@@ -1126,6 +1144,7 @@ public class DAFi extends R_Algorithm {
         fOptions.put(xDimOptionName, Integer.toString(fDimXField.getInt()));
         fOptions.put(yDimOptionName, Integer.toString(fDimYField.getInt()));
         //fOptions.put(scaleOptionName, fScaleOptionCheckbox.isSelected() ? One : Zero);
+        fOptions.put(plotStatsOptionName, fPlotStatsOptionCheckbox.isSelected() ? One : Zero);
         fOptions.put(transOptionName, fTransOptionCheckbox.isSelected() ? One : Zero);
         fOptions.put(batchOptionName, fBatchOptionCheckbox.isSelected() ? One : Zero);
         fOptions.put(showRScriptOptionName, fShowRScriptCheckbox.isSelected() ? One : Zero);
