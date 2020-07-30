@@ -72,11 +72,11 @@ public class FileUtilities {
     }
 
     public static File getRandomCSV(File outputFolder) {
-        return new File(outputFolder, com.flowjo.plugin.DAFi.utilities.StringUtils.getSaltString() + FJSML.FORMATS.FILE.CSV.EXTENSION);
+        return new File(outputFolder, com.flowjo.plugin.ezDAFi.utilities.StringUtils.getSaltString() + FJSML.FORMATS.FILE.CSV.EXTENSION);
     }
 
     public static File getRandomCSV(File outputFolder, String prefix) {
-        return new File(outputFolder, prefix + com.flowjo.plugin.DAFi.utilities.StringUtils.getSaltString() + FJSML.FORMATS.IMAGE.PNG.EXTENSION);
+        return new File(outputFolder, prefix + com.flowjo.plugin.ezDAFi.utilities.StringUtils.getSaltString() + FJSML.FORMATS.IMAGE.PNG.EXTENSION);
     }
 
     public static File writeCSV(List<String[]> data, File outputFolder, String prefix) {
@@ -190,19 +190,19 @@ public class FileUtilities {
     }
 
     public static File getRandomFile(File outputFolder) {
-        return new File(outputFolder, com.flowjo.plugin.DAFi.utilities.StringUtils.getSaltString(6));
+        return new File(outputFolder, com.flowjo.plugin.ezDAFi.utilities.StringUtils.getSaltString(6));
     }
 
     public static File getRandomFile(File outputFolder, String prefix) {
-        return new File(outputFolder, prefix + com.flowjo.plugin.DAFi.utilities.StringUtils.getSaltString(8));
+        return new File(outputFolder, prefix + com.flowjo.plugin.ezDAFi.utilities.StringUtils.getSaltString(8));
     }
 
     public static File getRandomPNG() {
-        return getRandomPNG(getDesktopFile(), com.flowjo.plugin.DAFi.utilities.StringUtils.getSaltString(6));
+        return getRandomPNG(getDesktopFile(), com.flowjo.plugin.ezDAFi.utilities.StringUtils.getSaltString(6));
     }
 
     public static File getRandomPNG(File outputFolder) {
-        return getRandomPNG(outputFolder, com.flowjo.plugin.DAFi.utilities.StringUtils.getSaltString(6));
+        return getRandomPNG(outputFolder, com.flowjo.plugin.ezDAFi.utilities.StringUtils.getSaltString(6));
     }
 
     public static File getRandomPNG(File outputFolder, String prefix) {

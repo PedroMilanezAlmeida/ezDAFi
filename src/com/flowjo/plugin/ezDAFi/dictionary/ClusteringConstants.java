@@ -1,4 +1,4 @@
-package com.flowjo.plugin.DAFi.dictionary;
+package com.flowjo.plugin.ezDAFi.dictionary;
 
 public class ClusteringConstants {
     public static final int MAX_CLUSTER_COUNT = 30;

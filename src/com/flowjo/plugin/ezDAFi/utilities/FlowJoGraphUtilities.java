@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package com.flowjo.plugin.DAFi.utilities;
+package com.flowjo.plugin.ezDAFi.utilities;
 
 import com.treestar.flowjo.application.graphwindow.image.BufferedImageMaker;
 import com.treestar.flowjo.core.GParameter;

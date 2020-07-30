@@ -1,4 +1,4 @@
-package com.flowjo.plugin.DAFi.utilities;
+package com.flowjo.plugin.ezDAFi.utilities;
 
 import java.io.File;
 import java.util.HashMap;

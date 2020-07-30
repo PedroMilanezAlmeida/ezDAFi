@@ -1,4 +1,4 @@
-package com.flowjo.plugin.DAFi.utilities;
+package com.flowjo.plugin.ezDAFi.utilities;
 
 import com.treestar.flowjo.application.workspace.Workspace;
 import com.treestar.flowjo.core.nodes.PopNode;
