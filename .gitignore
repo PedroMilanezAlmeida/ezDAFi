@@ -1,7 +1,7 @@
 #
 FCS
 *.xml
-plot_with_ggcyto.R
+*.R
 *.wsp
 14-Jan-2020
 out/
