@@ -134,6 +134,12 @@ tryCatch(suppressMessages(library("XML")),
                             repos = 'http://cran.us.r-project.org')
            suppressMessages(library("XML"))
          })
+#tryCatch(suppressMessages(library("pls")),
+#         error = function(e){
+#          install.packages(pkgs =  "pls",
+#                           repos = 'http://cran.us.r-project.org')
+#          suppressMessages(library("pls"))
+#        })
 tryCatch(suppressMessages(library("FlowSOM")),
          error = function(e){
            if (!requireNamespace("BiocManager",
@@ -936,30 +942,80 @@ for(pop_to_SOM in seq_along(pops_to_SOM)){
         #                          transform = FALSE,
         #                          scale = FALSE,
         #                          silent = TRUE)
+        
+        #### PLS ####
+        # Y (in.gate) needs to be updated according to results of DAFi-ing the parent population;
+        # this will be done here by simply applying the manual gate to the DAFi-ed parent as an approximation
+        #DAFi.in.gate <- flowWorkspace::gh_pop_get_indices(
+        #  gs[[fSample]],
+        # paste0(pops_to_SOM[[pop_to_SOM]],
+        #        "/",
+        #        gate))[
+        #          flowWorkspace::gh_pop_get_indices(
+        #            gs[[fSample]],
+        #            pops_to_SOM[pop_to_SOM] %>%
+        #              names(.))
+        #          ]
+        #if(sum(DAFi.in.gate) > 10)
+        #X.df <- data.frame(X = scale(flowWorkspace::gh_pop_get_data(gs[[fSample]],
+        #                                                           pops_to_SOM[pop_to_SOM] %>%
+        #                                                             names(.)) %>%
+        #                              .[,keep.marker] %>%
+        #                              flowCore::exprs(),
+        #                            center = TRUE,
+        #                            scale = TRUE) %>%
+        #                    I(),
+        #                  Y = ((DAFi.in.gate) * 1 ) %>%
+        #                    I())
+        #PLS <- pls::cppls(Y ~ X,
+        #                 ncomp = 2,
+        #                 data = X.df,
+        #                 center = TRUE)
+        #
+        #### number of centroids ####
+        # if the number of cells is larger than 1k, 100 centroids are used;
+        # if the number of cells is between 1000 and 50, the number of centroids is 10x the log of the number of cells
+        if(sum(
+          flowWorkspace::gh_pop_get_indices(gs[[fSample]],
+                                            pops_to_SOM[pop_to_SOM] %>%
+                                            names(.))) > 1000
+        ) { 
+          fj_par_xdim <- 10 # 100 centroids showed consistent results at high speed
+        } else { # for low number of cells, around 1 centroid for 10 cells. minPopSize is 50
+          fj_par_xdim <- sum(
+            flowWorkspace::gh_pop_get_indices(gs[[fSample]],
+                                              pops_to_SOM[pop_to_SOM] %>%
+                                                names(.))
+          ) %>% 
+            "/"(10) %>%
+            sqrt %>% # number of centroids = (fj_par_xdim) ^ 2
+            floor() # avoid decimals
+        }
         #### SOM/kmeans ####
         fSOM <- FlowSOM::ReadInput(
           flowWorkspace::gh_pop_get_data(gs[[fSample]],
                                          pops_to_SOM[pop_to_SOM] %>%
                                            names(.)) %>%
-            #.[,parNames] %>%
             .[,keep.marker],
           compensate = FALSE,
           transform = FALSE,
           scale = fj_par_scale,
           silent = TRUE)
-        if(dim(fSOM$data)[1] > 1000) { 
-          fj_par_xdim <- 10 # 100 centroids showed consistent results at high speed
-        } else if(dim(fSOM$data)[1] > 50) { 
-          fj_par_xdim <- dim(fSOM$data)[1] %>% # if the number of cells is small,
-            log() %>% # the number of centroids scales with the number of cells
-            "*"(10) %>%
-            sqrt() %>% # number of centroids = (fj_par_xdim) ^ 2
-            floor()
-        } else {
-          fj_par_xdim <- dim(fSOM$data)[1] %>% # for very small number of cells, the sqrt is more appropiate
-            "^"(1/4) %>% # smallest number of cells possible (hard cut in plugin): 36
-            floor() # as above, number of centroids = (fj_par_xdim) ^ 2
-        }
+        #ls_pop.PLS <- PLS$scores %>%
+        #  matrix(ncol = 2, dimnames = list(rownames(PLS$scores),
+        #                                  colnames(PLS$scores))) %>%
+        # list()
+        #names(ls_pop.PLS) <- rownames(flowCore::pData(gs[[fSample]]))
+        #create FlowSet with FlowSOM centroids
+        #fS_pop.PLS <- lapply(ls_pop.PLS,
+        #                    function(sample)
+        #                      flowCore::flowFrame(sample)) %>%
+        # flowCore::flowSet()
+        #fSOM <- FlowSOM::ReadInput(fS_pop.PLS,
+        # compensate = FALSE,
+        # transform = FALSE,
+        # scale = FALSE,
+        # silent = TRUE)
         if(fj_par_som){ #if user decides to use self-organizing maps but pop is smaller than 1%, use kmeans
           #if(mean(in.gate) > 0.025) { #use SOM only if pop is more than 1% if cells, otherwise kmeans
           # Code to generate SOM centroids
@@ -973,14 +1029,14 @@ for(pop_to_SOM in seq_along(pops_to_SOM)){
           # retrieve codes
           if(fj_par_scale) {
             codes <- t(apply(fSOM$map$codes,
-                             1,
-                             function(centroid)
-                               centroid *
-                               fSOM$scaled.scale +
-                               fSOM$scaled.center))
+                            1,
+                            function(centroid)
+                              centroid *
+                              fSOM$scaled.scale +
+                              fSOM$scaled.center))
           } else {
             codes <- fSOM$map$codes
-          }
+            }
         } else { # if the user decides to use kmeans
           # Code to generate kmeans centroids
           set.seed(2020)
@@ -995,17 +1051,31 @@ for(pop_to_SOM in seq_along(pops_to_SOM)){
           # Code to gate kmeans results
           # retrieve codes
           if(fj_par_scale) {
-            codes <- t(apply(fkMeans$centers,
-                             1,
-                             function(centroid)
-                               centroid *
-                               fSOM$scaled.scale +
-                               fSOM$scaled.center))
+           codes <- t(apply(fkMeans$centers,
+                            1,
+                            function(centroid)
+                              centroid *
+                              fSOM$scaled.scale +
+                              fSOM$scaled.center))
           } else {
             #codes.pca <- fkMeans$centers
             codes <- fkMeans$centers
-          }
+            }
         }
+        # old PLS code
+        #codes <- codes %*%
+        # t(PLS$loadings) %>%
+        # apply(.,
+        #       1,
+        #       function(parameter)
+        #         parameter *
+        #         attr(X.df$X, "scaled:scale") +
+        #         attr(X.df$X, "scaled:center")
+        # ) %>%
+        # t
+        #colnames(codes) <- pData.asDF$name[keep.marker]
+        
+        # old PCA code
         #codes <- t(t(codes.pca %*% 
         #              t(pop.pca$rotation)) * 
         #            pop.pca$scale + 
@@ -1021,6 +1091,7 @@ for(pop_to_SOM in seq_along(pops_to_SOM)){
         #    attr(pop.exprs.scale, "scaled:scale") +
         #   attr(pop.exprs.scale, "scaled:center")) %>%
         #t
+        
         #### graph-based clustering ####
         # most of this section is from
         #http://jef.works/blog/2017/09/13/graph-based-community-detection-for-clustering-analysis/
@@ -1071,6 +1142,7 @@ for(pop_to_SOM in seq_along(pops_to_SOM)){
         #                 sapply(seq_len(length(kM.km)),
         #                        function(cluster)
         #                          mean(marker[kM.com == cluster])))
+        
         #### gate centroids ####
         ls_fSOM <- list(codes)
         names(ls_fSOM) <- rownames(flowCore::pData(gs[[fSample]]))
@@ -1139,11 +1211,13 @@ for(pop_to_SOM in seq_along(pops_to_SOM)){
                                       flowWorkspace::gh_pop_get_indices(
                                         gs[[fSample]],
                                         y = pops_to_SOM[pop_to_SOM] %>%
-                                          names(.))))
+                                          names(.)))
+                                    )
         all_cells_DAFi_label[
           flowWorkspace::gh_pop_get_indices(gs[[fSample]],
                                             y = pops_to_SOM[pop_to_SOM] %>%
-                                              names(.))] <- cell_DAFi_label
+                                              names(.))
+          ] <- cell_DAFi_label
         all_cells_DAFi_label <- list(all_cells_DAFi_label)
         names(all_cells_DAFi_label) <- sampleNames(gs[[fSample]])
         flowWorkspace::gs_pop_add(gs[[fSample]],
@@ -1913,11 +1987,11 @@ if(batch_mode){
         if(length(gate_par) == 2) {
           pop.exprs <- rbind(flowWorkspace::gh_pop_get_data(gs[[1]],
                                                             DAFi_node) %>%
-                               exprs() %>%
+                               flowCore::exprs() %>%
                                .[,gate_par],
                              flowWorkspace::gh_pop_get_data(gs[[1]],
                                                             nonDAFi_node) %>%
-                               exprs() %>%
+                               flowCore::exprs() %>%
                                .[,gate_par]) %>%
             as.data.frame()
           pop.exprs$gate.type <- c(rep(paste0("DAFi :: ",
@@ -1931,49 +2005,49 @@ if(batch_mode){
           xlim.outliers <- (abs(flowWorkspace::gh_pop_get_data(gs[[1]],
                                                                nonDAFi_node %>%
                                                                  dirname()) %>%
-                                  exprs() %>%
+                                  flowCore::exprs() %>%
                                   .[,gate_par[1]] - median(
                                     flowWorkspace::gh_pop_get_data(gs[[1]],
                                                                    nonDAFi_node %>%
                                                                      dirname()) %>%
-                                      exprs() %>%
+                                      flowCore::exprs() %>%
                                       .[,gate_par[1]]
                                   )) / mad(
                                     flowWorkspace::gh_pop_get_data(gs[[1]],
                                                                    nonDAFi_node %>%
                                                                      dirname()) %>%
-                                      exprs() %>%
+                                      flowCore::exprs() %>%
                                       .[,gate_par[1]]
                                   ))
           xlim.outliers <- xlim.outliers > quantile(xlim.outliers, prob = 0.999)
           ylim.outliers <- (abs(flowWorkspace::gh_pop_get_data(gs[[1]],
                                                                nonDAFi_node %>%
                                                                  dirname()) %>%
-                                  exprs() %>%
+                                  flowCore::exprs() %>%
                                   .[,gate_par[2]] - median(
                                     flowWorkspace::gh_pop_get_data(gs[[1]],
                                                                    nonDAFi_node %>%
                                                                      dirname()) %>%
-                                      exprs() %>%
+                                      flowCore::exprs() %>%
                                       .[,gate_par[2]]
                                   )) / mad(
                                     flowWorkspace::gh_pop_get_data(gs[[1]],
                                                                    nonDAFi_node %>%
                                                                      dirname()) %>%
-                                      exprs() %>%
+                                      flowCore::exprs() %>%
                                       .[,gate_par[2]]
                                   ))
           ylim.outliers <- ylim.outliers > quantile(ylim.outliers, prob = 0.999)
           xlim.exprs <- flowWorkspace::gh_pop_get_data(gs[[1]],
                                                        nonDAFi_node %>%
                                                          dirname()) %>%
-            exprs() %>%
+            flowCore::exprs() %>%
             .[!xlim.outliers,gate_par[1]] %>%
             range()
           ylim.exprs <- flowWorkspace::gh_pop_get_data(gs[[1]],
                                                        nonDAFi_node %>%
                                                          dirname()) %>%
-            exprs() %>%
+            flowCore::exprs() %>%
             .[!ylim.outliers,gate_par[2]] %>%
             range()
           plot.cells <- suppressMessages(
@@ -2041,36 +2115,36 @@ if(batch_mode){
           #        filtLs.v1 <- data.frame(xintercept = filtLs$x1)
           pop.exprs <- c(flowWorkspace::gh_pop_get_data(gs[[1]],
                                                         DAFi_node) %>%
-                           exprs() %>%
+                           flowCore::exprs() %>%
                            .[,gate_par[1]],
                          flowWorkspace::gh_pop_get_data(gs[[1]],
                                                         nonDAFi_node) %>%
-                           exprs() %>%
+                           flowCore::exprs() %>%
                            .[,gate_par[1]]) %>%
             data.frame()
           colnames(pop.exprs) <- gate_par[1]
           xlim.outliers <- (abs(flowWorkspace::gh_pop_get_data(gs[[1]],
                                                                nonDAFi_node %>%
                                                                  dirname()) %>%
-                                  exprs() %>%
+                                  flowCore::exprs() %>%
                                   .[,gate_par[1]] - median(
                                     flowWorkspace::gh_pop_get_data(gs[[1]],
                                                                    nonDAFi_node %>%
                                                                      dirname()) %>%
-                                      exprs() %>%
+                                      flowCore::exprs() %>%
                                       .[,gate_par[1]]
                                   )) / mad(
                                     flowWorkspace::gh_pop_get_data(gs[[1]],
                                                                    nonDAFi_node %>%
                                                                      dirname()) %>%
-                                      exprs() %>%
+                                      flowCore::exprs() %>%
                                       .[,gate_par[1]]
                                   ))
           xlim.outliers <- xlim.outliers > quantile(xlim.outliers, prob = 0.999)
           xlim.exprs <- flowWorkspace::gh_pop_get_data(gs[[1]],
                                                        nonDAFi_node %>%
                                                          dirname()) %>%
-            exprs() %>%
+            flowCore::exprs() %>%
             .[-xlim.outliers,gate_par[1]] %>%
             range()
           pop.exprs$gate.type <- c(rep(paste0("DAFi :: ",
