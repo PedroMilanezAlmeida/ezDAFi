@@ -43,7 +43,7 @@ easy-to-follow instructions
 “*Installing the R statistical computing environment*”.
 
 Now, download the file
-[**DAFi.jar**](https://github.com/PedroMilanezAlmeida/DAFi/raw/master/DAFi.jar)
+[**ezDAFi.jar**](https://github.com/PedroMilanezAlmeida/ezDAFi/raw/master/ezDAFi.jar)
 and copy it to FlowJo’s plugin folder as described
 [here](http://docs.flowjo.com/d2/plugins/installing-plugins/).
 
@@ -52,7 +52,6 @@ first time the plugin runs, it takes several minutes to install
 additional packages.
 
 <!---  (Give it try! Just download the __DAFi.jar__ file above (soon you will also find it on [FlowJo's Plugin page](https://www.flowjo.com/exchange/#/)) and copy the file to your FlowJo plugins folder! Don't forget to restart FlowJo before using a new plugin.) --->
-
 Short Intro
 ===========
 
