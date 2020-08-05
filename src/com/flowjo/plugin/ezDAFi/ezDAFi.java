@@ -93,7 +93,7 @@ public class ezDAFi extends R_Algorithm {
     private FJComboBox fApplyOnPrevCombo = null;
     //private FJCheckBox fScaleOptionCheckbox = null;
     private FJCheckBox fPlotStatsOptionCheckbox = null;
-    private FJCheckBox fTransOptionCheckbox = null;
+    //private FJCheckBox fTransOptionCheckbox = null;
     private FJCheckBox fBatchOptionCheckbox = null;
     private FJCheckBox fShowRScriptCheckbox = null;
     private FJCheckBox fKMeansSomOptionCheckbox = null;
@@ -121,15 +121,15 @@ public class ezDAFi extends R_Algorithm {
     private static final String maxDimLabel = "hidden dimensions:";
     //private static final String mustBeMinDimLabel = "(use min AND max = 1 for auto-selection)";
     private static final String minDimTooltip = "Min and max number of dimensions to apply ezDAFi on. High number of dimensions lead to high dimensional noise, low number of dimensions lead to no improvement over manual gate.";
-    private static final String maxDimTooltip = "Number of extra, hidden dimensions that will be added to the gating dimensions for clustering. ezDAFi learns the most informative extra dimensions from the data.";
+    private static final String maxDimTooltip = "Number of hidden dimensions to be added to the gating dimensions for clustering. ezDAFi learns the most informative hidden dimensions from the data.";
 
     private static final String orPerformezDAFiLabel = "or perform new ezDAFi.";
     //private static final String scaleLabel = "Scale parameters to mean = 0 and sd = 1 (use with care)";
     //private static final String scaleTooltip = "Should the data be scaled prior to clustering?";
     private static final String plotStatsLabel = "Save plots and stats (runs slow).";
     private static final String plotStatsTooltip = "Should side-by-side plots of manual and ezDAFi gates be automatically saved as well as frequency of parents and counts?";
-    private static final String transLabel = "Apply FJ data transformation.";
-    private static final String transTooltip = "If not working with raw FCS files but pre-processed CSV files from other applications such as CITE-seq or histo-cytometry, the data may already have been transformed and this box should be unchecked.";
+    //private static final String transLabel = "Apply FJ data transformation.";
+    //private static final String transTooltip = "If not working with raw FCS files but pre-processed CSV files from other applications such as CITE-seq or histo-cytometry, the data may already have been transformed and this box should be unchecked.";
     private static final String batchLabel = "Advanced (results not re-imported to FlowJo; batch mode).";
     private static final String batchTooltip = "ezDAFi all samples, plot back-gating results and continue analysis in R. Gates will not be re-imported to FlowJo.";
     private static final String showRScriptLabel = "Show RScript (.txt format) upon completion.";
@@ -142,7 +142,7 @@ public class ezDAFi extends R_Algorithm {
 
     //public static final String scaleOptionName = "scale";
     public static final String plotStatsOptionName = "plotStats";
-    public static final String transOptionName = "trans";
+    //public static final String transOptionName = "trans";
     public static final String batchOptionName = "batch";
     public static final String showRScriptOptionName = "RScript";
     public static final String kMeansSomOptionName = "kMeansSom";
@@ -170,7 +170,7 @@ public class ezDAFi extends R_Algorithm {
     public static final String defaultApplyOnPrev = "None";
     //public static final boolean defaultScale = false;
     public static final boolean defaultPlotStats = false;
-    public static final boolean defaultTrans = true;
+    //public static final boolean defaultTrans = true;
     public static final boolean defaultBatch = false;
     public static final boolean defaultShowRScript = true;
     public static final boolean defaultKMeansSom = true;
@@ -178,7 +178,7 @@ public class ezDAFi extends R_Algorithm {
 
     //private boolean fScale = defaultScale;
     private boolean fPlotStats = defaultPlotStats;
-    private boolean fTrans = defaultTrans;
+    //private boolean fTrans = defaultTrans;
     private boolean fBatch = defaultBatch;
     private boolean fShowRScript = defaultShowRScript;
     private boolean fKMeansSom = defaultKMeansSom;
@@ -346,7 +346,7 @@ public class ezDAFi extends R_Algorithm {
 
             ezDAFiRFlowCalc calculator = new ezDAFiRFlowCalc();
             // Added the population node
-            File ezDAFiResult = calculator.runezDAFi(wsName, wsDir, sampleFile, sampleName, popNode.getName(), sampleNode.getName(), parameterNames, fOptions, outputFolder.getAbsolutePath(), useExistingFiles(), millisTime);
+            File ezDAFiResult = calculator.runezDAFi(thisSampleURI, wsName, wsDir, sampleFile, sampleName, popNode.getName(), sampleNode.getName(), parameterNames, fOptions, outputFolder.getAbsolutePath(), useExistingFiles(), millisTime);
             calculator.deleteScriptFile();
             checkROutFile(calculator);
 
@@ -827,7 +827,7 @@ public class ezDAFi extends R_Algorithm {
         fndimy = defaultYDim;
         //fScale = defaultScale;
         fPlotStats = defaultPlotStats;
-        fTrans = defaultTrans;
+        //fTrans = defaultTrans;
         fBatch = defaultBatch;
         fShowRScript = defaultShowRScript;
         fKMeansSom = defaultKMeansSom;
@@ -876,9 +876,9 @@ public class ezDAFi extends R_Algorithm {
             if (savedPlotStats != null && !savedPlotStats.isEmpty())
                 fPlotStats = One.equals(savedPlotStats) || True.equals(savedPlotStats);
 
-            String savedTrans = option.getAttributeValue(transOptionName);
-            if (savedTrans != null && !savedTrans.isEmpty())
-                fTrans = One.equals(savedTrans) || True.equals(savedTrans);
+            //String savedTrans = option.getAttributeValue(transOptionName);
+            //if (savedTrans != null && !savedTrans.isEmpty())
+            //  fTrans = One.equals(savedTrans) || True.equals(savedTrans);
 
             String savedBatch = option.getAttributeValue(batchOptionName);
             if (savedBatch != null && !savedBatch.isEmpty())
@@ -1001,10 +1001,10 @@ public class ezDAFi extends R_Algorithm {
         // UNDO COMMENT OUT BELOW TO MAKE IT POSSIBLE FOR THE USER TO FINISH UP ANALYSIS IN R
         //componentList.add(new HBox(new Component[]{fBatchOptionCheckbox}));
 
-        fTransOptionCheckbox = new FJCheckBox(transLabel);
-        fTransOptionCheckbox.setToolTipText("<html><p width=\"" + fixedToolTipWidth + "\">" + transTooltip + "</p></html>");
-        fTransOptionCheckbox.setSelected(fTrans);
-        componentList.add(new HBox(new Component[]{fTransOptionCheckbox}));
+        //fTransOptionCheckbox = new FJCheckBox(transLabel);
+        //fTransOptionCheckbox.setToolTipText("<html><p width=\"" + fixedToolTipWidth + "\">" + transTooltip + "</p></html>");
+        //fTransOptionCheckbox.setSelected(fTrans);
+        //componentList.add(new HBox(new Component[]{fTransOptionCheckbox}));
 
         FJLabel hSpaceLabelCiting = new FJLabel("");
         GuiFactory.setSizes(hSpaceLabelCiting, new Dimension(fixedLabelWidth, hSpaceHeigth));
@@ -1052,7 +1052,7 @@ public class ezDAFi extends R_Algorithm {
               if (fDimYField != null) fDimYField.setEnabled(false);
               //if (fScaleOptionCheckbox != null) fScaleOptionCheckbox.setEnabled(false);
               if (fPlotStatsOptionCheckbox != null) fPlotStatsOptionCheckbox.setEnabled(false);
-              if (fTransOptionCheckbox != null) fTransOptionCheckbox.setEnabled(false);
+              //if (fTransOptionCheckbox != null) fTransOptionCheckbox.setEnabled(false);
               if (fBatchOptionCheckbox != null) fBatchOptionCheckbox.setEnabled(false);
               if (fShowRScriptCheckbox != null) fShowRScriptCheckbox.setEnabled(false);
               if (fKMeansSomOptionCheckbox != null) fKMeansSomOptionCheckbox.setEnabled(false);
@@ -1110,7 +1110,7 @@ public class ezDAFi extends R_Algorithm {
                 if (fDimYField != null) fDimYField.setEnabled(true);
               //if (fScaleOptionCheckbox != null) fScaleOptionCheckbox.setEnabled(true);
                 if (fPlotStatsOptionCheckbox != null) fPlotStatsOptionCheckbox.setEnabled(true);
-                if (fTransOptionCheckbox != null) fTransOptionCheckbox.setEnabled(true);
+              //if (fTransOptionCheckbox != null) fTransOptionCheckbox.setEnabled(true);
                 if (fBatchOptionCheckbox != null) fBatchOptionCheckbox.setEnabled(true);
                 if (fShowRScriptCheckbox != null) fShowRScriptCheckbox.setEnabled(true);
                 if (fKMeansSomOptionCheckbox != null) fKMeansSomOptionCheckbox.setEnabled(true);
@@ -1155,7 +1155,7 @@ public class ezDAFi extends R_Algorithm {
         fOptions.put(yDimOptionName, Integer.toString(fDimYField.getInt()));
         //fOptions.put(scaleOptionName, fScaleOptionCheckbox.isSelected() ? One : Zero);
         fOptions.put(plotStatsOptionName, fPlotStatsOptionCheckbox.isSelected() ? One : Zero);
-        fOptions.put(transOptionName, fTransOptionCheckbox.isSelected() ? One : Zero);
+        //fOptions.put(transOptionName, fTransOptionCheckbox.isSelected() ? One : Zero);
         fOptions.put(batchOptionName, fBatchOptionCheckbox.isSelected() ? One : Zero);
         fOptions.put(showRScriptOptionName, fShowRScriptCheckbox.isSelected() ? One : Zero);
         fOptions.put(kMeansSomOptionName, fKMeansSomOptionCheckbox.isSelected() ? One : Zero);

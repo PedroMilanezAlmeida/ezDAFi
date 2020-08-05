@@ -21,13 +21,13 @@ public class ezDAFiRFlowCalc extends RFlowCalculator {
     public static final String FALSE = "FALSE";
 
 
-    public File runezDAFi(String wsName, String wsDir, File sampleFile, String sampleName, String populationName, String sampleNodeName, List<String> parameterNames, Map<String, String> options, String outputFolderPath, boolean useExistingFiles, long millisTime)
+    public File runezDAFi(String thisSampleURI, String wsName, String wsDir, File sampleFile, String sampleName, String populationName, String sampleNodeName, List<String> parameterNames, Map<String, String> options, String outputFolderPath, boolean useExistingFiles, long millisTime)
     {
         sampleName = sampleName.replaceAll(".ExtNode", "").replaceAll(".fcs", "").replaceAll(".LMD", "").trim();
         File outputFolder = new File(outputFolderPath);
 
         StringWriter scriptWriter = new StringWriter();
-        File ezDAFiScript = createezDAFiscript(wsName, wsDir, sampleFile, sampleName, populationName, sampleNodeName, parameterNames, options, outputFolder, scriptWriter, millisTime);
+        File ezDAFiScript = createezDAFiscript(thisSampleURI, wsName, wsDir, sampleFile, sampleName, populationName, sampleNodeName, parameterNames, options, outputFolder, scriptWriter, millisTime);
         if(ezDAFiScript == null) return null;
         if(useExistingFiles && ezDAFiScript.exists()) return ezDAFiScript;
 
@@ -47,7 +47,7 @@ public class ezDAFiRFlowCalc extends RFlowCalculator {
         return ezDAFiScript;
     }
 
-    protected File createezDAFiscript(String wsName, String wsDir, File sampleFile, String sampleName, String populationName, String sampleNodeName, List<String> parameterNames, Map<String, String> options, File outputFolder, StringWriter scriptWriter, long millisTime)
+    protected File createezDAFiscript(String thisSampleURI, String wsName, String wsDir, File sampleFile, String sampleName, String populationName, String sampleNodeName, List<String> parameterNames, Map<String, String> options, File outputFolder, StringWriter scriptWriter, long millisTime)
     {
         InputStream scriptStream = ezDAFiRFlowCalc.class.getResourceAsStream(ezDAFiTemplatePath);
 
@@ -74,7 +74,7 @@ public class ezDAFiRFlowCalc extends RFlowCalculator {
 
         //String sParScale = options.get(com.flowjo.plugin.ezDAFi.ezDAFi.scaleOptionName);
         String sParPlotStats = options.get(com.flowjo.plugin.ezDAFi.ezDAFi.plotStatsOptionName);
-        String sParTrans = options.get(com.flowjo.plugin.ezDAFi.ezDAFi.transOptionName);
+        //String sParTrans = options.get(com.flowjo.plugin.ezDAFi.ezDAFi.transOptionName);
         String sParBatch = options.get(com.flowjo.plugin.ezDAFi.ezDAFi.batchOptionName);
         String sParkMeansSom = options.get(com.flowjo.plugin.ezDAFi.ezDAFi.kMeansSomOptionName);
         String sParApplyOnChildren = options.get(com.flowjo.plugin.ezDAFi.ezDAFi.applyOnChildrenOptionName);
@@ -98,10 +98,10 @@ public class ezDAFiRFlowCalc extends RFlowCalculator {
               else
         sParPlotStats = FALSE;
 
-        if (sParTrans == null || sParTrans.isEmpty() || com.flowjo.plugin.ezDAFi.ezDAFi.One.equals(sParTrans) || com.flowjo.plugin.ezDAFi.ezDAFi.True.equals(sParTrans))
-            sParTrans = TRUE; // TRUE is the default
-        else
-            sParTrans = FALSE;
+        //if (sParTrans == null || sParTrans.isEmpty() || com.flowjo.plugin.ezDAFi.ezDAFi.One.equals(sParTrans) || com.flowjo.plugin.ezDAFi.ezDAFi.True.equals(sParTrans))
+        //  sParTrans = TRUE; // TRUE is the default
+        //else
+        //  sParTrans = FALSE;
 
         if (sParBatch == null || sParBatch.isEmpty() || com.flowjo.plugin.ezDAFi.ezDAFi.One.equals(sParBatch) || com.flowjo.plugin.ezDAFi.ezDAFi.True.equals(sParBatch))
             sParBatch = TRUE; // TRUE is the default
@@ -126,6 +126,7 @@ public class ezDAFiRFlowCalc extends RFlowCalculator {
 
         if(EngineManager.isWindows()) wsDir = wsDir.replaceAll("\\\\", "/");
         if(EngineManager.isWindows()) wsName = wsName.replaceAll("\\\\", "/");
+        if(EngineManager.isWindows()) thisSampleURI = thisSampleURI.replaceAll("\\\\", "/");
 
         try {
             if ((Integer.parseInt(sParMinPopSize) < 100) || (Integer.parseInt(sParMinPopSize) > 1000000))
@@ -192,13 +193,14 @@ public class ezDAFiRFlowCalc extends RFlowCalculator {
                 scriptLine = scriptLine.replace("FJ_PARM_SAMPLENAME", sampleName);
                 scriptLine = scriptLine.replace("FJ_PARM_WSPDIR", wsDir);
                 scriptLine = scriptLine.replace("FJ_PARM_WSPNAME", wsName);
+                scriptLine = scriptLine.replace("FJ_PARM_SAMPLE_URI", thisSampleURI);
                 scriptLine = scriptLine.replace("FJ_PARM_NAME", parameterName);
                 scriptLine = scriptLine.replace("FJ_DATA_FILE_PATH", dataFilePath);
                 scriptLine = scriptLine.replace("FJ_CSV_OUPUT_FILE", outFileName);
                 scriptLine = scriptLine.replace("FJ_GATING_ML_OUTPUT_FILE", gatingMLOutFile.getAbsolutePath());
                 //scriptLine = scriptLine.replace("FJ_PAR_SCALE", sParScale);
                 scriptLine = scriptLine.replace("FJ_PLOT_STATS", sParPlotStats);
-                scriptLine = scriptLine.replace("FJ_TRANSFORM", sParTrans);
+                //scriptLine = scriptLine.replace("FJ_TRANSFORM", sParTrans);
                 scriptLine = scriptLine.replace("FJ_BATCH_MODE", sParBatch);
                 scriptLine = scriptLine.replace("FJ_PAR_SOM", sParkMeansSom);
                 scriptLine = scriptLine.replace("FJ_PAR_CHILDREN", sParApplyOnChildren);
