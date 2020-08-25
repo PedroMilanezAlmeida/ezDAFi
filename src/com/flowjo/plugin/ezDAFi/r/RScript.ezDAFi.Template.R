@@ -134,12 +134,12 @@ tryCatch(suppressMessages(library("XML")),
                             repos = 'http://cran.us.r-project.org')
            suppressMessages(library("XML"))
          })
-#tryCatch(suppressMessages(library("pls")),
-#         error = function(e){
-#          install.packages(pkgs =  "pls",
-#                           repos = 'http://cran.us.r-project.org')
-#          suppressMessages(library("pls"))
-#        })
+tryCatch(suppressMessages(library("pls")),
+         error = function(e){
+           install.packages(pkgs =  "pls",
+                            repos = 'http://cran.us.r-project.org')
+           suppressMessages(library("pls"))
+         })
 tryCatch(suppressMessages(library("FlowSOM")),
          error = function(e){
            if (!requireNamespace("BiocManager",
@@ -268,7 +268,8 @@ batch_mode
 #fj_par_apply_on_prev
 popOfInt <- "FJ_POPULATION_NAME"
 popOfInt
-minPopSize <- FJ_PAR_MINPOPSIZE
+#minPopSize <- FJ_PAR_MINPOPSIZE
+minPopSize <- 50
 minPopSize
 wspDir <- "FJ_PARM_WSPDIR"
 wspDir
@@ -282,7 +283,10 @@ sampleURI
 fj_par_scale <- TRUE
 fj_par_scale
 fj_par_som <- FJ_PAR_SOM
+#fj_par_som <- FALSE
 fj_par_som
+fj_par_plsda <- FJ_PAR_PLSDA
+fj_par_plsda
 #fj_par_xdim <- FJ_PAR_XDIM ### fj_par_xdim AND fj_par_ydim are defined as a function of pop size
 #fj_par_xdim
 #fj_par_ydim <- FJ_PAR_YDIM
@@ -338,20 +342,21 @@ ws <- CytoML::open_flowjo_xml(wspName,
 
 ##find raw .fcs files
 #find path of all fcs files in workspace
-#sampleFCS_paths <- XML::xmlParse(wspName) %>%
-# XML::xpathApply(.,
-#                 file.path("/Workspace/SampleList/Sample",
-#                           "DataSet"),
-#                 function(x)
-#                   XML::xmlGetAttr(x,"uri") %>%
-#                   gsub(pattern = "%20", 
-#                        replacement = " ", 
-#                        x = .) %>%
-#                   gsub(pattern = "file:",
-#                        replacement = "",
-#                        x = .)) %>%
-# unlist
-#sampleFCS_paths
+sampleFCS_paths <- XML::xmlParse(wspName) %>%
+  XML::xpathApply(.,
+                  file.path("/Workspace/SampleList/Sample",
+                            "DataSet"),
+                  function(x)
+                    XML::xmlGetAttr(x,
+                                    "uri") %>%
+                    gsub(pattern = "%20", 
+                         replacement = " ", 
+                         x = .) %>%
+                    gsub(pattern = "file:",
+                         replacement = "",
+                         x = .)) %>%
+  unlist
+sampleFCS_paths
 
 #sampleFCS_names <- sampleFCS_paths %>%
 # basename(.) %>%
@@ -379,7 +384,7 @@ ws <- CytoML::open_flowjo_xml(wspName,
 #sampleFCS_path <- sampleFCS_paths[basename(sampleFCS_paths) == sampleFCS]
 #sampleFCS_path
 
-#sampleID_doc <- which(sampleFCS_paths == sampleFCS_path)
+#sampleID_doc <- which(sampleFCS_paths == sampleURI)
 #sampleID_doc
 
 # the following is meant to add support for acs files on windows
@@ -437,16 +442,50 @@ ws <- CytoML::open_flowjo_xml(wspName,
 #pathFCS$sampleID <- as.numeric(pathFCS$sampleID)
 #pathFCS
 
+cs <- load_cytoset_from_fcs(
+  files = normalizePath(sampleURI),
+  #path = normalizePath(dirname(sampleURI)),
+  pattern = NULL,
+  phenoData = NULL,
+  #descriptions,
+  #name.keyword,
+  transformation = "linearize",
+  which.lines = NULL,
+  alter.names = FALSE,
+  column.pattern = NULL,
+  invert.pattern = FALSE,
+  decades = 0,
+  is_h5 = TRUE,
+  min.limit = NULL,
+  truncate_max_range = TRUE,
+  dataset = NULL,
+  emptyValue = TRUE,
+  num_threads = 1,
+  ignore.text.offset = FALSE,
+  sep = "\t",
+  as.is = TRUE,
+  #name,
+  h5_dir = tempdir(),
+  file_col_name = NULL#,
+  #  ...
+)
+
+
 #if(!batch_mode) {
-gs <- #tryCatch({
-  CytoML::flowjo_to_gatingset(ws,
-                              name = 1,
-                              path = dirname(sampleURI),
-                              #transform = fj_transform,
-                              subset = basename(sampleURI),
-                              #sampNloc = "sampleNode", 
-                              #isNcdf = FALSE,
-                              extend_val = -Inf)
+gs <- CytoML::flowjo_to_gatingset(ws,
+                                  name = 1,
+                                  #path = dirname(sampleURI),
+                                  subset = fj_sample_node_name,
+                                  extend_val = -Inf,
+                                  cytoset = cs,
+                                  additional.sampleID = TRUE
+)
+
+# make sure only the intended FCS file is in the GatingSet
+gs <- gs[flowWorkspace::keyword(gs,
+                                "FILENAME")$FILENAME ==
+           sampleURI]
+
 #},
 #error = function(e){
 # CytoML::flowjo_to_gatingset(ws,
@@ -486,17 +525,17 @@ gs <- #tryCatch({
 # XML::xmlGetAttr(x, "importFile") %>%
 # gsub(pattern = "%20", replacement = " ", x = .) %>%
 # gsub(pattern = "file:", replacement = "", x = .)) %>%
-  #   unlist %>%
-  # unique %>%
-  # grep(pattern = paste0(gsub(x = basename(as.character(pathFCS$file)),
-  #                            pattern = ".fcs$",
-  #                            replacement = "",
-  #                            fixed = FALSE),
-  #                       ".EPA.2.csv.EPA.csv"),
-  #      fixed = TRUE,
-  #      value = TRUE,
-  #      x = .)
-  #der.par.paths
+#   unlist %>%
+# unique %>%
+# grep(pattern = paste0(gsub(x = basename(as.character(pathFCS$file)),
+#                            pattern = ".fcs$",
+#                            replacement = "",
+#                            fixed = FALSE),
+#                       ".EPA.2.csv.EPA.csv"),
+#      fixed = TRUE,
+#      value = TRUE,
+#      x = .)
+#der.par.paths
 
 # read ezDAFi derived parameter csv file and get ezDAFi gate names
 #der.par.gate.names <- sapply(seq_along(der.par.paths),
@@ -686,7 +725,7 @@ if(length(names_gates_SOM) == 1 &
 
 # TODO: CHANGE CODE TO BE ABLE TO HANDLE WHEN PLUGIN IS CALLED ON ROOT
 if(substr(popOfInt, nchar(popOfInt) - 4 + 1, nchar(popOfInt)) == ".fcs"){
-  stop("It looks like the plugin was either called on a gate with a name that ends in '.fcs' (which is not supported, pls change the gate name if that is the case) or the plugin was called on the sample directly, not on a gate thereof (the plugin cannot handle the that yet, please select a gate and rerun ezDAFi).",
+  stop("It looks like the plugin was either called on a gate with a name that ends in '.fcs' (which is not supported, please change the gate name if that is the case) or the plugin was called on the sample directly, not on a gate thereof (the plugin cannot handle the that yet, please select a gate and rerun ezDAFi).",
        call. = FALSE)
 }
 
@@ -717,7 +756,7 @@ names_gates_non_term <- unlist(names_gates_of_int,
                                                 fixed = TRUE) %>%
                                           any) %>%
                                    unlist
-                                 ]
+                               ]
 #change names of non-terminal gates to reflect the fact they will be ezDAFi-refined
 names_gates_non_term_to_SOM <- as.list(names_gates_non_term)
 
@@ -810,7 +849,15 @@ for(pop_to_SOM in seq_along(pops_to_SOM)){
                            ignore.case = FALSE, 
                            fixed = FALSE)
         irrel.par.expr <- pop.exprs[,irrel.par]
+        if(class(irrel.par.expr)[1] != "matrix"){
+          irrel.par.expr <- as.matrix(irrel.par.expr)
+          colnames(irrel.par.expr) <- colnames(pop.exprs)[irrel.par]
+        }
         pop.exprs <- pop.exprs[,!irrel.par]
+        #if(class(pop.exprs)[1] != "matrix"){
+        #  pop.exprs <- as.matrix(pop.exprs)
+        # colnames(pop.exprs) <- colnames(pop.exprs)[irrel.par]
+        #}
         #if(min.nPar >
         #   dim(pop.exprs)[2]) {
         # min.nPar <-
@@ -857,7 +904,7 @@ for(pop_to_SOM in seq_along(pops_to_SOM)){
                    flowWorkspace::gh_pop_get_indices(
                      gs[[fSample]],
                      pops_to_SOM[[pop_to_SOM]])
-                   ]
+                 ]
         if(sum(in.gate) > 4 &
            sum(!in.gate) > 4) {
           # rank markers by t-stat absolute value
@@ -937,10 +984,10 @@ for(pop_to_SOM in seq_along(pops_to_SOM)){
             parent = pops_to_SOM[pop_to_SOM] %>% 
               names(.),
             name = paste0("ezDAFi_",
-                          gate) ) %>%
-            gsub(pattern = "^/",
-                 replacement = "",
-                 x = .)
+                          gate) %>%
+              gsub(pattern = "^/",
+                   replacement = "",
+                   x = .)) 
           suppressMessages(flowWorkspace::recompute(gs[[fSample]]))
           next
         }
@@ -949,6 +996,27 @@ for(pop_to_SOM in seq_along(pops_to_SOM)){
         keep.marker <- ifelse(pData.asDF$desc %in% colnames(pop.exprs)[keep.marker],
                               yes = pData.asDF$desc %in% colnames(pop.exprs)[keep.marker],
                               no = pData.asDF$name %in% colnames(pop.exprs)[keep.marker])
+        #fj_par_xdim <- 100#min(sum(keep.marker) * 10, 100)
+        #### number of centroids ####
+        # if the number of cells is larger than 1k, 100 centroids are used;
+        # if the number of cells is between 1000 and 50, the number of centroids is 10x the log of the number of cells
+        if(sum(flowWorkspace::gh_pop_get_indices(gs[[fSample]],
+                                                 pops_to_SOM[pop_to_SOM] %>%
+                                                 names(.))) > 1000
+        ) { 
+          fj_par_xdim <- 10 # 100 centroids showed consistent results at high speed
+        } else { # for low number of cells, around 1 centroid for 10 cells. minPopSize is 50
+          fj_par_xdim <- sum(
+            flowWorkspace::gh_pop_get_indices(gs[[fSample]],
+                                              pops_to_SOM[pop_to_SOM] %>%
+                                                names(.))
+          ) %>% 
+            "/"(10) %>%
+            sqrt %>% # number of centroids = (fj_par_xdim) ^ 2
+            floor() # avoid decimals
+        }
+        print("number of centroids:")
+        print(fj_par_xdim ^ 2)
         #pca with markers only
         #rm(pop.exprs)
         #pop.exprs.scale <- flowWorkspace::gh_pop_get_data(
@@ -986,90 +1054,81 @@ for(pop_to_SOM in seq_along(pops_to_SOM)){
         #                          silent = TRUE)
         
         #### PLS ####
-        # Y (in.gate) needs to be updated according to results of ezDAFi-ing the parent population;
-        # this will be done here by simply applying the manual gate to the ezDAFi-ed parent as an approximation
-        #ezDAFi.in.gate <- flowWorkspace::gh_pop_get_indices(
-        #  gs[[fSample]],
-        # paste0(pops_to_SOM[[pop_to_SOM]],
-        #        "/",
-        #        gate))[
-        #          flowWorkspace::gh_pop_get_indices(
-        #            gs[[fSample]],
-        #            pops_to_SOM[pop_to_SOM] %>%
-        #              names(.))
-        #          ]
-        #if(sum(ezDAFi.in.gate) > 10)
-        #X.df <- data.frame(X = scale(flowWorkspace::gh_pop_get_data(gs[[fSample]],
-        #                                                           pops_to_SOM[pop_to_SOM] %>%
-        #                                                             names(.)) %>%
-        #                              .[,keep.marker] %>%
-        #                              flowCore::exprs(),
-        #                            center = TRUE,
-        #                            scale = TRUE) %>%
-        #                    I(),
-        #                  Y = ((ezDAFi.in.gate) * 1 ) %>%
-        #                    I())
-        #PLS <- pls::cppls(Y ~ X,
-        #                 ncomp = 2,
-        #                 data = X.df,
-        #                 center = TRUE)
-        #
-        #### number of centroids ####
-        # if the number of cells is larger than 1k, 100 centroids are used;
-        # if the number of cells is between 1000 and 50, the number of centroids is 10x the log of the number of cells
-        if(sum(
-          flowWorkspace::gh_pop_get_indices(gs[[fSample]],
-                                            pops_to_SOM[pop_to_SOM] %>%
-                                            names(.))) > 1000
-        ) { 
-          fj_par_xdim <- 10 # 100 centroids showed consistent results at high speed
-        } else { # for low number of cells, around 1 centroid for 10 cells. minPopSize is 50
-          fj_par_xdim <- sum(
-            flowWorkspace::gh_pop_get_indices(gs[[fSample]],
-                                              pops_to_SOM[pop_to_SOM] %>%
-                                                names(.))
-          ) %>% 
-            "/"(10) %>%
-            sqrt %>% # number of centroids = (fj_par_xdim) ^ 2
-            floor() # avoid decimals
+        # Only run PLS-DA if target pop (Y == TRUE) is larger than 10!
+        # Y (in.gate) needs to be updated according to results of ezDAFi-ing
+        # the parent population;
+        # this will be done here by simply applying the manual gate to
+        # the ezDAFi-ed parent as an approximation
+        ezDAFi.in.gate <- flowWorkspace::gh_pop_get_indices(
+          gs[[fSample]],
+          paste0(pops_to_SOM[[pop_to_SOM]],
+                 "/",
+                 gate))[
+                   flowWorkspace::gh_pop_get_indices(
+                     gs[[fSample]],
+                     pops_to_SOM[pop_to_SOM] %>%
+                       names(.))
+                 ]
+        if(fj_par_plsda &
+           sum(ezDAFi.in.gate) > 10) {
+          X.df <- data.frame(X = scale(flowWorkspace::gh_pop_get_data(gs[[fSample]],
+                                                                      pops_to_SOM[pop_to_SOM] %>%
+                                                                        names(.)) %>%
+                                         .[,keep.marker] %>%
+                                         flowCore::exprs(),
+                                       center = TRUE,
+                                       scale = TRUE) %>%
+                               I(),
+                             Y = ((ezDAFi.in.gate) * 1 ) %>%
+                               I())
+          PLS <- pls::cppls(Y ~ X,
+                            ncomp = sum(keep.marker),
+                            data = X.df,
+                            center = TRUE)
+          ls_pop.PLS <- PLS$scores %>%
+            matrix(ncol = sum(keep.marker), dimnames = list(rownames(PLS$scores),
+                                                            colnames(PLS$scores))) %>%
+            list()
+          names(ls_pop.PLS) <- rownames(flowCore::pData(gs[[fSample]]))
+          fS_pop.PLS <- lapply(ls_pop.PLS,
+                               function(sample)
+                                 flowCore::flowFrame(sample)) %>%
+            flowCore::flowSet()
+          fSOM <- FlowSOM::ReadInput(fS_pop.PLS,
+                                     compensate = FALSE,
+                                     transform = FALSE,
+                                     scale = FALSE,
+                                     silent = TRUE)
+        } else {
+          if(fj_par_plsda) {
+            print("Too few cells in target population to run PLS-DA. Clustering will be run on original space instead of on PLS latent variables.")
+          }
+          fSOM <- FlowSOM::ReadInput(
+            flowWorkspace::gh_pop_get_data(gs[[fSample]],
+                                           pops_to_SOM[pop_to_SOM] %>%
+                                             names(.)) %>%
+              .[,keep.marker],
+            compensate = FALSE,
+            transform = FALSE,
+            scale = TRUE,
+            silent = TRUE)
         }
-        #### SOM/kmeans ####
-        fSOM <- FlowSOM::ReadInput(
-          flowWorkspace::gh_pop_get_data(gs[[fSample]],
-                                         pops_to_SOM[pop_to_SOM] %>%
-                                           names(.)) %>%
-            .[,keep.marker],
-          compensate = FALSE,
-          transform = FALSE,
-          scale = fj_par_scale,
-          silent = TRUE)
-        #ls_pop.PLS <- PLS$scores %>%
-        #  matrix(ncol = 2, dimnames = list(rownames(PLS$scores),
-        #                                  colnames(PLS$scores))) %>%
-        # list()
-        #names(ls_pop.PLS) <- rownames(flowCore::pData(gs[[fSample]]))
-        #create FlowSet with FlowSOM centroids
-        #fS_pop.PLS <- lapply(ls_pop.PLS,
-        #                    function(sample)
-        #                      flowCore::flowFrame(sample)) %>%
-        # flowCore::flowSet()
-        #fSOM <- FlowSOM::ReadInput(fS_pop.PLS,
-        # compensate = FALSE,
-        # transform = FALSE,
-        # scale = FALSE,
-        # silent = TRUE)
-        if(fj_par_som){ #if user decides to use self-organizing maps but pop is smaller than 1%, use kmeans
-          #if(mean(in.gate) > 0.025) { #use SOM only if pop is more than 1% if cells, otherwise kmeans
+        if(fj_par_som){
+          #### SOM/kmeans clustering ####
           # Code to generate SOM centroids
           set.seed(2020)
           fSOM <- FlowSOM::BuildSOM(fSOM,
                                     colsToUse = NULL,
                                     silent = TRUE,
                                     xdim = fj_par_xdim,
-                                    ydim = fj_par_xdim)
+                                    #sqrt(fj_par_xdim) %>%
+                                      #ceiling(),
+                                    ydim = fj_par_xdim #sqrt(fj_par_xdim) %>%
+                                      #ceiling()
+                                      )
           # Code to gate flowSOM results
           # retrieve codes
-          if(fj_par_scale) {
+          if(!fj_par_plsda) {
             codes <- t(apply(fSOM$map$codes,
                              1,
                              function(centroid)
@@ -1083,16 +1142,17 @@ for(pop_to_SOM in seq_along(pops_to_SOM)){
           # Code to generate kmeans centroids
           set.seed(2020)
           fkMeans <- stats::kmeans(x = fSOM$data,#[,parNames],
-                                   centers = fj_par_xdim*fj_par_xdim,
+                                   centers = fj_par_xdim * fj_par_xdim,
                                    iter.max = 100)
-          if(fkMeans$ifault == 4){ # https://stackoverflow.com/a/30055776
+          if(fkMeans$ifault == 4) { # https://stackoverflow.com/a/30055776
             fkMeans <- stats::kmeans(x = fSOM$data,
                                      centers = fkMeans$centers,
                                      iter.max = 100,
-                                     algorithm = "MacQueen")}
+                                     algorithm = "MacQueen")
+          }
           # Code to gate kmeans results
           # retrieve codes
-          if(fj_par_scale) {
+          if(!fj_par_plsda) {
             codes <- t(apply(fkMeans$centers,
                              1,
                              function(centroid)
@@ -1102,88 +1162,24 @@ for(pop_to_SOM in seq_along(pops_to_SOM)){
           } else {
             #codes.pca <- fkMeans$centers
             codes <- fkMeans$centers
+            #}
           }
         }
-        # old PLS code
-        #codes <- codes %*%
-        # t(PLS$loadings) %>%
-        # apply(.,
-        #       1,
-        #       function(parameter)
-        #         parameter *
-        #         attr(X.df$X, "scaled:scale") +
-        #         attr(X.df$X, "scaled:center")
-        # ) %>%
-        # t
-        #colnames(codes) <- pData.asDF$name[keep.marker]
-        
-        # old PCA code
-        #codes <- t(t(codes.pca %*% 
-        #              t(pop.pca$rotation)) * 
-        #            pop.pca$scale + 
-        #            pop.pca$center)
-        #print(dim(codes))
-        #codes <- codes.pca %*%
-        #diag(pop.pca$d) %*%
-        #t(pop.pca$v) %>%
-        #apply(.,
-        #  1,
-        #  function(parameter)
-        #    parameter *
-        #    attr(pop.exprs.scale, "scaled:scale") +
-        #   attr(pop.exprs.scale, "scaled:center")) %>%
-        #t
-        
-        #### graph-based clustering ####
-        # most of this section is from
-        #http://jef.works/blog/2017/09/13/graph-based-community-detection-for-clustering-analysis/
-        # find nearest neighbors
-        #k <- 10
-        #nn.idx <- RANN::nn2(codes,
-        #                  k = k)$nn.idx
-        # following code is from
-        #https://rdrr.io/github/CamaraLab/STvEA/src/R/seurat_anchor_correction.R
-        # build adjacency matrix
-        #j <- as.numeric(x = t(x = nn.idx))
-        #i <- ((1:length(x = j)) - 1) %/% k + 1
-        #nn.mat <- Matrix::sparseMatrix(i = i,
-        #                             j = j, 
-        #                             x = 1,
-        #                             dims = c(nrow(codes),
-        #                                      nrow(codes)))
-        #rownames(nn.mat) <- colnames(nn.mat) <- seq_len(nrow(codes))
-        #source: https://rpubs.com/nurakawa/spectral-clustering
-        #dg <- Matrix::colSums(nn.mat) # degrees of vertices
-        #graph_laplacian <- diag(dg) - nn.mat
-        #ei <- eigen(graph_laplacian,
-        #           symmetric = TRUE)
-        #ei.vec <- ei$vectors[,(dim(nn.mat)[1] - min.nPar):(dim(nn.mat)[1] - 1)]
-        #spec.clust <- kmeans(x = ei.vec,
-        #                    centers = 20,
-        #                    iter.max = 100)
-        #spec.codes <- apply(codes,
-        #                   2,
-        #                   function(marker)
-        #                     sapply(seq_len(20),
-        #                            function(cluster)
-        #                              mean(marker[spec.clust$cluster == cluster])))
-        #codes <- spec.codes
-        # build and simplify graphs (remove self-loops).
-        #kM.g <- igraph::graph.adjacency(nn.mat, 
-        #                              mode = "undirected")
-        #kM.g <- igraph::simplify(kM.g)
-        #Finally, build communities with short random walks in the graph and update the identity of each single cell based on nearest meta-cell and the results of meta-clustering.
-        #kM.km <- igraph::cluster_walktrap(kM.g)
-        #kM.com <- kM.km$membership
-        #names(kM.com) <- kM.km$names
-        #print(table(kM.com))
-        #V(kM.g)$color <- heat.colors(length(kM.km))[kM.com[names(V(kM.g))]]
-        #codes <- apply(codes,
-        #               2,
-        #               function(marker)
-        #                 sapply(seq_len(length(kM.km)),
-        #                        function(cluster)
-        #                          mean(marker[kM.com == cluster])))
+        if(fj_par_plsda) {
+          codes <- codes %*%
+            t(PLS$loadings) %>%
+            apply(.,
+                  1,
+                  function(parameter)
+                    parameter *
+                    attr(X.df$X,
+                         "scaled:scale") +
+                    attr(X.df$X,
+                         "scaled:center")
+            ) %>%
+            t
+          colnames(codes) <- pData.asDF$name[keep.marker]
+        }
         
         #### gate centroids ####
         ls_fSOM <- list(codes)
@@ -1224,25 +1220,12 @@ for(pop_to_SOM in seq_along(pops_to_SOM)){
                       "\" has not been selected when the plugin was called although it was used down the gating hiearchy. \nPlease, make sure all flow channels used in the gating tree are selected when calling the plugin."), 
                call. = FALSE)
         })
-        #### gate cells based on centroid gating ####
-        ## Code to update assignment of cell identity according to ezDAFi results
-        #graph_labels <- rep(FALSE,
-        #                   length(kM.km))
-        #graph_labels[flowWorkspace::gh_pop_get_indices(gs_SOM[[1]],
-        #                                              gate)] <- TRUE
-        #
-        #SOM_labels <- graph_labels[kM.com]
         SOM_labels <- rep(FALSE,
                           dim(codes)[1])
         SOM_labels[
           flowWorkspace::gh_pop_get_indices(gs_SOM[[1]],
                                             gate)
-          ] <- TRUE
-        #spec_labels <- rep(FALSE,
-        #                  dim(spec.clust$centers)[1])
-        #spec_labels[flowWorkspace::gh_pop_get_indices(gs_SOM[[1]],
-        #                                             gate)] <- TRUE
-        #SOM_labels <- spec_labels[spec.clust$cluster]
+        ] <- TRUE
         if(fj_par_som){
           cell_ezDAFi_label <- SOM_labels[fSOM$map$mapping[,1]]
         } else {
@@ -1259,17 +1242,17 @@ for(pop_to_SOM in seq_along(pops_to_SOM)){
           flowWorkspace::gh_pop_get_indices(gs[[fSample]],
                                             y = pops_to_SOM[pop_to_SOM] %>%
                                               names(.))
-          ] <- cell_ezDAFi_label
+        ] <- cell_ezDAFi_label
         all_cells_ezDAFi_label <- list(all_cells_ezDAFi_label)
         names(all_cells_ezDAFi_label) <- sampleNames(gs[[fSample]])
         flowWorkspace::gs_pop_add(gs[[fSample]],
                                   all_cells_ezDAFi_label,
                                   parent = pops_to_SOM[pop_to_SOM] %>%
                                     names(.),
-                                  name = paste0("ezDAFi_", gate) ) %>%
-          gsub(pattern = "^/",
-               replacement = "",
-               x = .)
+                                  name = paste0("ezDAFi_", gate) %>%
+                                    gsub(pattern = "^/",
+                                         replacement = "",
+                                         x = .))
         suppressMessages(flowWorkspace::recompute(gs[[fSample]]))
       }
     } else {
@@ -1288,31 +1271,23 @@ for(pop_to_SOM in seq_along(pops_to_SOM)){
           parent = pops_to_SOM[pop_to_SOM] %>% 
             names(.),
           name = paste0("ezDAFi_",
-                        gate) ) %>%
-          gsub(pattern = "^/",
-               replacement = "",
-               x = .)
+                        gate) %>%
+            gsub(pattern = "^/",
+                 replacement = "",
+                 x = .))
       }
       suppressMessages(flowWorkspace::recompute(gs[[fSample]]))
     }
   }
 }
 
-#if(batch_mode){
-# post_ezDAFi_gates <- flowWorkspace::gh_get_pop_paths(
-#   gs[[CytoML::fj_ws_get_samples(ws)$sampleID[sampleID_doc]]])
-#} else {
 post_ezDAFi_gates <- flowWorkspace::gh_get_pop_paths(gs[[1]])
-#}
-
-# Close the flowjo workspace connection
-#CytoML::flowjo_ws_close(ws)
 
 ezDAFi_nodes <- post_ezDAFi_gates[
   grep(pattern = "ezDAFi_",
        x = basename(post_ezDAFi_gates),
        fixed = TRUE)
-  ]
+]
 ezDAFi_nodes <- ezDAFi_nodes[grep(pattern = paste0("/",
                                                    popOfInt,
                                                    "/"),
@@ -1331,216 +1306,6 @@ nonezDAFi_nodes <- gsub(pattern = "ezDAFi_",
                         x = ezDAFi_nodes,
                         fixed = TRUE)
 
-ezDAFi_leaf_nodes <- post_ezDAFi_gates[
-  grep(pattern = "ezDAFi_",
-       x = post_ezDAFi_gates,
-       fixed = TRUE)
-  ]
-ezDAFi_leaf_nodes <- ezDAFi_leaf_nodes[grep(pattern = popOfInt,
-                                            x = ezDAFi_leaf_nodes,
-                                            fixed = TRUE)]
-
-#if(batch_mode){
-# modified.autoplot.GatingSet <- function(object, gate, x = NULL,  y = "SSC-A", bins = 30, axis_inverse_trans = TRUE, stats = "percent", ...){
-#   if(missing(gate))
-#     stop("Must specifiy 'gate'!")
-#   if(is.null(x)){
-#     #determine dimensions from gate
-#     g <- gh_pop_get_gate(object[[1]], gate[1])
-#     params <- parameters(g)
-#     nDims <- length(params)
-#     if(nDims == 1){
-#       x <- params
-#       y <- flowWorkspace:::fix_y_axis(gs = object, x = x, y = y)
-#     }else{
-#       x <- params[1]
-#       y <- params[2]
-#     }
-#   }
-#   
-#   mapping <- aes_q(x = as.symbol(x), y = as.symbol(y))
-#   
-#   p <- ggcyto(object, mapping, ...) + geom_hex(bins = bins) + geom_gate(gate)
-#   if(stats != "none") {
-#     p <- p + geom_stats(type = stats)
-#   }
-#   p <- p + ggcyto_par_set(limits = "instrument")
-#   if(axis_inverse_trans)
-#     p <- p + axis_x_inverse_trans() + axis_y_inverse_trans()
-#   p
-#   
-# }
-#  
-# modified.autoplot.GatingHierarchy <- function(object, gate, y = "SSC-A", bool=FALSE
-#                                               , arrange.main = sampleNames(object), arrange=TRUE, merge=TRUE
-#                                               , projections = list()
-#                                               , strip.text = c("parent", "gate")
-#                                               , path = "auto"
-#                                               , ...){
-#   strip.text <- match.arg(strip.text)
-#   if(missing(gate)){
-#     gate <- gs_get_pop_paths(object, path = path)
-#     gate <- setdiff(gate,"root")
-#   }else if (is.numeric(gate)){
-#     gate <- gs_get_pop_paths(object, path = path)[gate]
-#   }
-#   
-#   #match given axis to channel names
-#   fr <- gh_pop_get_data(object, use.exprs = FALSE)
-#   projections <- lapply(projections, function(thisPrj){
-#     sapply(thisPrj, function(thisAxis)getChannelMarker(fr, thisAxis)[["name"]])
-#   })
-#   
-#   
-#   plotList <- flowWorkspace:::.mergeGates(object, gate, bool, merge, projections = projections)
-#   Objs <- lapply(plotList,function(plotObjs){
-#     
-#     if(is.list(plotObjs)){
-#       gate <- plotObjs[["popIds"]]
-#       parent <- plotObjs[["parentId"]]
-#       myPrj <- projections[[as.character(gate[1])]]
-#       
-#     }else{
-#       gate <- plotObjs
-#       parent <- gs_pop_get_parent(object, gate, path = path)
-#       myPrj <- projections[[as.character(gate)]]
-#     }
-#     
-#     
-#     if(is.null(myPrj)){
-#       p <- modified.autoplot.GatingSet(object, gate, y = y, ...)
-#     }else{
-#       p <- modified.autoplot.GatingSet(object, gate, x = myPrj[["x"]], y = myPrj[["y"]], ...)
-#     }
-#     
-#     p <- p + guides(fill=FALSE) + labs(title = NULL)
-#     myTheme <- theme(axis.title = element_text(color = gray(0.3), size = 8)
-#                      , axis.text = element_text(color = gray(0.3), size = 6)
-#                      , strip.text = element_text(size = 10)
-#                      , plot.margin = unit(c(0,0,0,0), "cm")
-#                      , panel.spacing = unit(0, "cm")
-#     )
-#     p <- p + myTheme
-#     
-#     #rename sample name with parent or current pop name in order to display it in strip
-#     
-#     if(strip.text == "parent"){
-#       popName <- parent
-#     }else{
-#       popName <- paste(gate, collapse = "|")
-#     }
-#     attr(p$data, "strip.text") <- popName
-#     
-#     p
-#     
-#   })
-#   
-#   if(arrange){
-#     #convert it to a special class to dispatch the dedicated print method
-#     Objs <- as(Objs, "ggcyto_GatingLayout")
-#     Objs@arrange.main <- arrange.main
-#   }
-#   
-#   Objs
-#   
-# }
-
-# # create subfolder to plot results
-# if(!dir.exists(plotDir)) {
-#   dir.create(plotDir)
-# }
-# # create and save plots
-# for(fSample in seq_along(gs)) { # for each sample
-#   for(ezDAFi_leaf_node in ezDAFi_leaf_nodes){ # for each terminal ezDAFi node
-#     n.up.gates <- (nchar(as.character(ezDAFi_leaf_node))) - # get the number of gates up the tree for each terminal ezDAFi node (important later to determine size of PNG file)
-#       (nchar(gsub(pattern = "/",
-#                   replacement = "",
-#                   x =  ezDAFi_leaf_node,
-#                   fixed = TRUE)))
-#     png(paste0(plotDir,
-#                "/backgating_",
-#                basename(ezDAFi_leaf_node),
-#                "_for_",
-#                sampleNames(gs[[fSample]]),
-#                ".png"),
-#         width = 4 * n.up.gates %>%
-#           sqrt(.) %>% 
-#           floor(.) * 300,
-#         height = 3 * n.up.gates %>%
-#           sqrt(.) %>% 
-#           ceiling(.) * 300,
-#         res = 300)
-#     print(
-#       modified.autoplot.GatingHierarchy(gs[[fSample]],
-#                                         bins = 256,
-#                                         stats = "none",
-#                                         strip.text = "parent",
-#                                         arrange.main = paste0("Sample: ", 
-#                                                               sampleNames(gs[[fSample]]),
-#                                                               " - Gate: ",
-#                                                               basename(ezDAFi_leaf_node))) +
-#         theme_light() +
-#         geom_overlay(ezDAFi_leaf_node, 
-#                      size = 0.1, 
-#                      alpha = 1)
-#     )
-#     dev.off()
-#   }
-# }
-# 
-# save_gs(gs,
-#         path = paste0(wspName,
-#                       ".R.gs"),
-#         cdf = "move")
-# fileConn <- file(paste0(wspName,
-#                         ".R"))
-# writeLines(c("library(foreach)",
-#              "library(gridExtra)",
-#              "library(magrittr)",
-#              "library(XML)",
-#              "library(FlowSOM)",
-#              "library(flowWorkspace)",
-#              "library(CytoML)",
-#              "library(flowUtils)",
-#              "library(flowCore)",
-#              "library(ggcyto)",
-#              "",
-#              '"============================="',
-#              '"Open folder with plots:"',
-#              paste0("system2(command =",
-#                     '"open"',
-#                     ", ",
-#                     "args = ",
-#                     "\"",
-#                     paste0(plotDir),
-#                     "\"",
-#                     "%>% normalizePath() %>% shQuote()",
-#                     ")"),
-#              '"============================="',
-#              "",
-#              '"============================="',
-#              '"Load GatingSet with all gates, FCS files and ezDAFi results:"',
-#              paste0("gs <- load_gs(",
-#                     "\"",
-#                     paste0(wspName,
-#                            ".R.gs"),
-#                     "\"",
-#                     ")"),
-#              '"============================="',
-#              "",
-#              '"============================="',
-#              '"Use the loaded packages to explore your data!"',
-#              '"For example:"',
-#              "ggcyto::autoplot(gs[[1]], bins = 128)",
-#              '"============================="'),
-#            fileConn)
-# close(fileConn)
-# system2(command = "open",
-#         args = paste0(wspName,
-#                       ".R") %>%
-#           normalizePath(.) %>%
-#           shQuote(.))
-#} else {
 # get logical gate for each ezDAFi node
 all_cell_ezDAFi_label <- foreach::foreach(ezDAFi_node = ezDAFi_nodes) %do% {
   flowWorkspace::gh_pop_get_indices(gs[[1]],
@@ -1698,14 +1463,14 @@ if(fj_plot_stats){
                x = ezDAFi_nodes,
                fixed = TRUE),
           pop.stats.count$pop),
-    ]$count
+  ]$count
   names(pop.stats.count.trad) <- pop.stats.count[
     match(gsub(pattern = "ezDAFi_", 
                replacement = "",
                x = ezDAFi_nodes,
                fixed = TRUE),
           pop.stats.count$pop),
-    ]$pop
+  ]$pop
   pop.stats.count.trad <- data.frame(pop.stats.count.trad) %>%
     t
   rownames(pop.stats.count.trad) <- basename(sampleURI)
@@ -2160,7 +1925,6 @@ if(fj_plot_stats){
                              xend = filtLs[2],
                              y1 = 0.5,
                              yend = 0.5)
-        #        filtLs.v1 <- data.frame(xintercept = filtLs$x1)
         pop.exprs <- c(flowWorkspace::gh_pop_get_data(gs[[1]],
                                                       ezDAFi_node) %>%
                          flowCore::exprs() %>%

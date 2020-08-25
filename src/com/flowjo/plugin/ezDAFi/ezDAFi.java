@@ -97,6 +97,7 @@ public class ezDAFi extends R_Algorithm {
     private FJCheckBox fBatchOptionCheckbox = null;
     private FJCheckBox fShowRScriptCheckbox = null;
     private FJCheckBox fKMeansSomOptionCheckbox = null;
+    private FJCheckBox fPLSOptionCheckbox = null;
     private FJCheckBox fApplyOnChildrenCheckbox = null;
 
     private static final int fixedLabelWidth = 130;
@@ -121,7 +122,7 @@ public class ezDAFi extends R_Algorithm {
     private static final String maxDimLabel = "hidden dimensions:";
     //private static final String mustBeMinDimLabel = "(use min AND max = 1 for auto-selection)";
     private static final String minDimTooltip = "Min and max number of dimensions to apply ezDAFi on. High number of dimensions lead to high dimensional noise, low number of dimensions lead to no improvement over manual gate.";
-    private static final String maxDimTooltip = "Number of hidden dimensions to be added to the gating dimensions for clustering. ezDAFi learns the most informative hidden dimensions from the data.";
+    private static final String maxDimTooltip = "Expand your bi-dimensional gates with hidden dimensions. ezDAFi learns the most informative hidden dimensions from the data for every downstream gate. This number determines how many hidden dimensions to include in the dim-expanded gates.";
 
     private static final String orPerformezDAFiLabel = "or perform new ezDAFi.";
     //private static final String scaleLabel = "Scale parameters to mean = 0 and sd = 1 (use with care)";
@@ -136,6 +137,8 @@ public class ezDAFi extends R_Algorithm {
     private static final String showRScriptTooltip = "Show the resulting RScript file (in .txt format), created doing the ezDAFi process.";
     private static final String kMeansSomLabel = "Cluster with self organizing maps (uncheck for k-means).";
     private static final String kMeansSomTooltip = "Which algorithm should be used for clustering? If having speed issues, uncheck to use k-means (max iterations = 100).";
+    private static final String PLSLabel = "Cluster on PLS-DA latent variables.";
+    private static final String PLSTooltip = "Should the data be pre-processed with PLS-DA prior to clustering?";
     private static final String applyOnChildrenLabel = "<html>Apply on children only."
         + "<br>(otherwise, recursive).";
     private static final String applyOnChildrenTooltip = "If checked, ezDAFi will refine only the children of the selected population. If unchecked, all children of children will be refined recursively (i.e., all sub-populations downstream of the selected one).";
@@ -146,6 +149,7 @@ public class ezDAFi extends R_Algorithm {
     public static final String batchOptionName = "batch";
     public static final String showRScriptOptionName = "RScript";
     public static final String kMeansSomOptionName = "kMeansSom";
+    public static final String PLSOptionName = "PLS";
     public static final String applyOnChildrenOptionName = "childrenOnly";
     public static final String xDimOptionName = "xdim";
     public static final String yDimOptionName = "ydim";
@@ -174,6 +178,7 @@ public class ezDAFi extends R_Algorithm {
     public static final boolean defaultBatch = false;
     public static final boolean defaultShowRScript = true;
     public static final boolean defaultKMeansSom = true;
+    public static final boolean defaultPLS = true;
     public static final boolean defaultApplyOnChildren = false;
 
     //private boolean fScale = defaultScale;
@@ -182,6 +187,7 @@ public class ezDAFi extends R_Algorithm {
     private boolean fBatch = defaultBatch;
     private boolean fShowRScript = defaultShowRScript;
     private boolean fKMeansSom = defaultKMeansSom;
+    private boolean fPLS = defaultPLS;
     private boolean fApplyOnChildren = defaultApplyOnChildren;
     private int fndimx = defaultXDim, fndimy = defaultYDim;
     private int fnMinPopSize = defaultMinPopSize;
@@ -831,6 +837,7 @@ public class ezDAFi extends R_Algorithm {
         fBatch = defaultBatch;
         fShowRScript = defaultShowRScript;
         fKMeansSom = defaultKMeansSom;
+        fPLS = defaultPLS;
         fApplyOnChildren = defaultApplyOnChildren;
         fnMinPopSize = defaultMinPopSize;
         fnMinDim = defaultMinDim;
@@ -867,6 +874,10 @@ public class ezDAFi extends R_Algorithm {
             String savedKMeansSom = option.getAttributeValue(kMeansSomOptionName);
             if (savedKMeansSom != null && !savedKMeansSom.isEmpty())
                 fKMeansSom = One.equals(savedKMeansSom) || True.equals(savedKMeansSom);
+
+            String savedPLS = option.getAttributeValue(PLSOptionName);
+            if (savedPLS != null && !savedPLS.isEmpty())
+                fPLS = One.equals(savedPLS) || True.equals(savedPLS);
 
             //String savedScale = option.getAttributeValue(scaleOptionName);
             //if (savedScale != null && !savedScale.isEmpty())
@@ -975,6 +986,11 @@ public class ezDAFi extends R_Algorithm {
         // UNDO COMMENT OUT BELOW TO MAKE IT POSSIBLE FOR THE USER TO APPLY ezDAFi TO CHILDREN BUT NOT TO GRANDCHILDREN
         //componentList.add(new HBox(new Component[]{fApplyOnChildrenCheckbox}));
 
+        fPLSOptionCheckbox = new FJCheckBox(PLSLabel);
+        fPLSOptionCheckbox.setToolTipText("<html><p width=\"" + fixedToolTipWidth + "\">" + PLSTooltip + "</p></html>");
+        fPLSOptionCheckbox.setSelected(fPLS);
+        componentList.add(new HBox(new Component[]{fPLSOptionCheckbox}));
+
         fKMeansSomOptionCheckbox = new FJCheckBox(kMeansSomLabel);
         fKMeansSomOptionCheckbox.setToolTipText("<html><p width=\"" + fixedToolTipWidth + "\">" + kMeansSomTooltip + "</p></html>");
         fKMeansSomOptionCheckbox.setSelected(fKMeansSom);
@@ -1056,6 +1072,7 @@ public class ezDAFi extends R_Algorithm {
               if (fBatchOptionCheckbox != null) fBatchOptionCheckbox.setEnabled(false);
               if (fShowRScriptCheckbox != null) fShowRScriptCheckbox.setEnabled(false);
               if (fKMeansSomOptionCheckbox != null) fKMeansSomOptionCheckbox.setEnabled(false);
+              if (fPLSOptionCheckbox != null) fPLSOptionCheckbox.setEnabled(false);
                 if (fApplyOnChildrenCheckbox != null) fApplyOnChildrenCheckbox.setEnabled(false);
 
                 // If we are selecting the application on existing map then let's select the same parameters
@@ -1113,7 +1130,8 @@ public class ezDAFi extends R_Algorithm {
               //if (fTransOptionCheckbox != null) fTransOptionCheckbox.setEnabled(true);
                 if (fBatchOptionCheckbox != null) fBatchOptionCheckbox.setEnabled(true);
                 if (fShowRScriptCheckbox != null) fShowRScriptCheckbox.setEnabled(true);
-                if (fKMeansSomOptionCheckbox != null) fKMeansSomOptionCheckbox.setEnabled(true);
+              if (fKMeansSomOptionCheckbox != null) fKMeansSomOptionCheckbox.setEnabled(true);
+              if (fPLSOptionCheckbox != null) fPLSOptionCheckbox.setEnabled(true);
                 if (fApplyOnChildrenCheckbox != null) fApplyOnChildrenCheckbox.setEnabled(true);
                 if (fParameterNameList != null) fParameterNameList.setEnabled(true);
             }
@@ -1159,6 +1177,7 @@ public class ezDAFi extends R_Algorithm {
         fOptions.put(batchOptionName, fBatchOptionCheckbox.isSelected() ? One : Zero);
         fOptions.put(showRScriptOptionName, fShowRScriptCheckbox.isSelected() ? One : Zero);
         fOptions.put(kMeansSomOptionName, fKMeansSomOptionCheckbox.isSelected() ? One : Zero);
+        fOptions.put(PLSOptionName, fPLSOptionCheckbox.isSelected() ? One : Zero);
         fOptions.put(applyOnChildrenOptionName, fApplyOnChildrenCheckbox.isSelected() ? One : Zero);
         if (fApplyOnPrevCombo.getSelectedIndex() <= 0) {
             fOptions.put(applyOnPrevOptionName, fApplyOnPrevCombo.getSelectedItem().toString());
