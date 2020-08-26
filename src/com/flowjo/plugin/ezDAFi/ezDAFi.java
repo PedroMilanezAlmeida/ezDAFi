@@ -135,8 +135,8 @@ public class ezDAFi extends R_Algorithm {
     private static final String batchTooltip = "ezDAFi all samples, plot back-gating results and continue analysis in R. Gates will not be re-imported to FlowJo.";
     private static final String showRScriptLabel = "Show RScript (.txt format) upon completion.";
     private static final String showRScriptTooltip = "Show the resulting RScript file (in .txt format), created doing the ezDAFi process.";
-    private static final String kMeansSomLabel = "Cluster with self organizing maps (uncheck for k-means).";
-    private static final String kMeansSomTooltip = "Which algorithm should be used for clustering? If having speed issues, uncheck to use k-means (max iterations = 100).";
+    private static final String kMeansSomLabel = "Cluster with k-means (uncheck for self organizing maps).";
+    private static final String kMeansSomTooltip = "Which algorithm should be used for clustering?";
     private static final String PLSLabel = "Cluster on PLS-DA latent variables.";
     private static final String PLSTooltip = "Should the data be pre-processed with PLS-DA prior to clustering?";
     private static final String applyOnChildrenLabel = "<html>Apply on children only."
