@@ -772,19 +772,6 @@ for(pop_to_SOM in seq_along(pops_to_SOM)){
           codes <- scale(codes[,gate_par_asName],
                          center = TRUE,
                          scale = TRUE)
-          #speccHook <- function(this_dist,
-          #                      k) {
-          # tmp <- kernlab::specc(x = this_dist,
-          #                       centers = k, # min and max number of centers = 3 and 10
-          #                       kernel = "rbfdot",
-          #                       kpar = "automatic", 
-          #                       nystrom.red = FALSE, 
-          #                       iterations = 200, 
-          #                       mod.sample = 0.75, 
-          #                       na.action = na.omit)@.Data
-          # names(tmp) <- seq(dim(x)[1])
-          # return(tmp)  
-          #}
           ##############################
           #####
           ##### The next several lines are adapted from https://github.com/SofieVG/FlowSOM/blob/master/R/4_metaClustering.R.
@@ -818,26 +805,7 @@ for(pop_to_SOM in seq_along(pops_to_SOM)){
                                    codes[meta == metacl,]
                                  }) %>%
             t()
-          #set.seed(2020); meta_kmeans <- stats::kmeans(x = codes,
-          #                                            centers = (dim(codes)[1] / 10) %>%
-          #                                              ceiling(),
-          #                                            iter.max = 100)
-          #if(meta_kmeans$ifault == 4) { # https://stackoverflow.com/a/30055776
-          # meta_kmeans <- stats::kmeans(x = codes,
-          #                              centers = meta_kmeans$centers,
-          #                              iter.max = 100,
-          #                              algorithm = "MacQueen")
-          #}
-          #set.seed(2020); cl <- kernlab::specc(x = codes,
-          #                                     centers = (dim(codes)[1] / 10) %>%
-          #                                      ceiling(), # min and max number of centers = 3 and 10
-          #                                    kernel = "rbfdot",
-          #                                    kpar = "automatic", 
-          #                                    nystrom.red = FALSE, 
-          #                                    iterations = 200, 
-          #                                    mod.sample = 0.75, 
-          #                                    na.action = na.omit)
-          codes <- apply(meta.codes,#meta_kmeans$centers,#kernlab::centers(cl),
+          codes <- apply(meta.codes,
                          1,
                          function(metacl)
                            metacl *
