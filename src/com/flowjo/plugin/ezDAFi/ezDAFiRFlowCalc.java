@@ -78,6 +78,7 @@ public class ezDAFiRFlowCalc extends RFlowCalculator {
         String sParBatch = options.get(com.flowjo.plugin.ezDAFi.ezDAFi.batchOptionName);
         String sParkMeansSom = options.get(com.flowjo.plugin.ezDAFi.ezDAFi.kMeansSomOptionName);
         String sParPLS = options.get(com.flowjo.plugin.ezDAFi.ezDAFi.PLSOptionName);
+        String sParMeta = options.get(com.flowjo.plugin.ezDAFi.ezDAFi.metaOptionName);
         String sParApplyOnChildren = options.get(com.flowjo.plugin.ezDAFi.ezDAFi.applyOnChildrenOptionName);
         String sParMinPopSize = options.get(com.flowjo.plugin.ezDAFi.ezDAFi.minPopSizeOptionName);
         String sParMinDim = options.get(com.flowjo.plugin.ezDAFi.ezDAFi.minDimOptionName);
@@ -118,6 +119,11 @@ public class ezDAFiRFlowCalc extends RFlowCalculator {
             sParPLS = TRUE; // TRUE is the default
         else
             sParPLS = FALSE;
+
+        if (sParMeta == null || sParMeta.isEmpty() || com.flowjo.plugin.ezDAFi.ezDAFi.One.equals(sParMeta) || com.flowjo.plugin.ezDAFi.ezDAFi.True.equals(sParMeta))
+            sParMeta = TRUE; // TRUE is the default
+        else
+            sParMeta = FALSE;
 
         if (sParApplyOnChildren == null || sParApplyOnChildren.isEmpty() || com.flowjo.plugin.ezDAFi.ezDAFi.One.equals(sParApplyOnChildren) || com.flowjo.plugin.ezDAFi.ezDAFi.True.equals(sParApplyOnChildren))
             sParApplyOnChildren = TRUE; // TRUE is the default
@@ -210,6 +216,7 @@ public class ezDAFiRFlowCalc extends RFlowCalculator {
                 scriptLine = scriptLine.replace("FJ_BATCH_MODE", sParBatch);
                 scriptLine = scriptLine.replace("FJ_PAR_SOM", sParkMeansSom);
                 scriptLine = scriptLine.replace("FJ_PAR_PLSDA", sParPLS);
+                scriptLine = scriptLine.replace("FJ_PAR_META", sParMeta);
                 scriptLine = scriptLine.replace("FJ_PAR_CHILDREN", sParApplyOnChildren);
                 scriptLine = scriptLine.replace("FJ_PAR_MINPOPSIZE", sParMinPopSize);
                 scriptLine = scriptLine.replace("FJ_MIN_N_PAR", sParMinDim);

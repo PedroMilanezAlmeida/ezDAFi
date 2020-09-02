@@ -140,6 +140,12 @@ tryCatch(suppressMessages(library("pls")),
                             repos = 'http://cran.us.r-project.org')
            suppressMessages(library("pls"))
          })
+tryCatch(suppressMessages(library("kernlab")),
+         error = function(e){
+           install.packages(pkgs =  "kernlab",
+                            repos = 'http://cran.us.r-project.org')
+           suppressMessages(library("kernlab"))
+         })
 tryCatch(suppressMessages(library("FlowSOM")),
          error = function(e){
            if (!requireNamespace("BiocManager",
@@ -253,7 +259,7 @@ sampleURI
 fj_par_scale <- TRUE
 fj_par_scale
 fj_par_som <- FJ_PAR_SOM
-fj_par_som <- !fj_par_som
+#fj_par_som <- !fj_par_som
 fj_par_som
 fj_par_plsda <- FJ_PAR_PLSDA
 fj_par_plsda
@@ -270,6 +276,8 @@ fj_population_name <- "FJ_POPULATION_NAME"
 fj_population_name
 fj_millis_time <- "FJ_MILLIS_TIME"
 fj_millis_time
+fj_par_meta <- FJ_PAR_META
+fj_par_meta
 plotDir <- paste0(wspDir,
                   "/",
                   wspName,
@@ -355,6 +363,12 @@ gates_of_sel_sample <- flowWorkspace::gh_get_pop_paths(gs[[1]])
 popOfInt_full_path <- gates_of_sel_sample[
   basename(gates_of_sel_sample) %in%
     popOfInt]
+
+if(length(popOfInt_full_path) > 1){
+  stop("It looks like there is another population with the same name in this FlowJo workspace. Please change one of the names and try again.", 
+       call. = FALSE)
+}
+
 
 #get info about gating hierarchy for each pop of interest
 names_gates_SOM <- foreach::foreach(pop = seq_along(basename(popOfInt_full_path))) %do% {
@@ -523,6 +537,7 @@ for(pop_to_SOM in seq_along(pops_to_SOM)){
         } else {
           ezDAFi.nPar <- max.nPar
         }
+        gate_par_asName <- gate_par
         gate_par <- ifelse(is.na(pData.asDF$desc[pData.asDF$name %in% gate_par]),
                            yes = pData.asDF$name[pData.asDF$name %in% gate_par],
                            no = pData.asDF$desc[pData.asDF$name %in% gate_par])
@@ -652,10 +667,17 @@ for(pop_to_SOM in seq_along(pops_to_SOM)){
                                I(),
                              Y = ((ezDAFi.in.gate) * 1 ) %>%
                                I())
-          PLS <- pls::cppls(Y ~ X,
-                            ncomp = sum(keep.marker),
-                            data = X.df,
-                            center = TRUE)
+          PLS <- tryCatch({
+            pls::cppls(Y ~ X,
+                       ncomp = sum(keep.marker),
+                       data = X.df,
+                       center = TRUE)
+          },
+          error = function(e) {
+            stop("PLS-DA cannot easily handle highly correlated features. Please reduce the number of hidden dimensions to about 3 or turn PLS-DA off.",
+                 call. = FALSE)
+          }
+          )
           ls_pop.PLS <- PLS$scores %>%
             matrix(ncol = sum(keep.marker), dimnames = list(rownames(PLS$scores),
                                                             colnames(PLS$scores))) %>%
@@ -740,10 +762,90 @@ for(pop_to_SOM in seq_along(pops_to_SOM)){
                     attr(X.df$X,
                          "scaled:scale") +
                     attr(X.df$X,
-                         "scaled:center")
-            ) %>%
-            t
+                         "scaled:center")) %>%
+            t()
           colnames(codes) <- pData.asDF$name[keep.marker]
+        }
+        #### meta cluster centroids ####
+        if(fj_par_meta &
+           dim(codes)[1] > 10) { # minPopSize that can trigger spectral meta-clustering = 160 cells
+          codes <- scale(codes[,gate_par_asName],
+                         center = TRUE,
+                         scale = TRUE)
+          #speccHook <- function(this_dist,
+          #                      k) {
+          # tmp <- kernlab::specc(x = this_dist,
+          #                       centers = k, # min and max number of centers = 3 and 10
+          #                       kernel = "rbfdot",
+          #                       kpar = "automatic", 
+          #                       nystrom.red = FALSE, 
+          #                       iterations = 200, 
+          #                       mod.sample = 0.75, 
+          #                       na.action = na.omit)@.Data
+          # names(tmp) <- seq(dim(x)[1])
+          # return(tmp)  
+          #}
+          ##############################
+          #####
+          ##### The next several lines are adapted from https://github.com/SofieVG/FlowSOM/blob/master/R/4_metaClustering.R.
+          ##### Credit to the author, SofieVG.
+          #####
+          ##############################
+          meta <- suppressMessages(
+            ConsensusClusterPlus::ConsensusClusterPlus(
+            d = t(codes),
+            maxK = (dim(codes)[1] / 10) %>%
+              ceiling(),
+            reps = 10, 
+            pItem = 0.9, 
+            pFeature = 1, 
+            title = tempdir(),
+            plot = "pdf",
+            verbose = FALSE,
+            clusterAlg = "hc",
+            distance = "euclidean",
+            seed = 2020)
+            )[[((dim(codes)[1] / 10) %>%
+                 ceiling())]]$consensusClass
+          # get centroids of metaclusters
+          meta.codes <- sapply((dim(codes)[1] / 10) %>%
+                                 ceiling() %>%
+                                 seq(),
+                               function(metacl)
+                                 if(sum(meta == metacl) > 1){
+                                   colMeans(codes[meta == metacl,])
+                                 } else {
+                                   codes[meta == metacl,]
+                                 }) %>%
+            t()
+          #set.seed(2020); meta_kmeans <- stats::kmeans(x = codes,
+          #                                            centers = (dim(codes)[1] / 10) %>%
+          #                                              ceiling(),
+          #                                            iter.max = 100)
+          #if(meta_kmeans$ifault == 4) { # https://stackoverflow.com/a/30055776
+          # meta_kmeans <- stats::kmeans(x = codes,
+          #                              centers = meta_kmeans$centers,
+          #                              iter.max = 100,
+          #                              algorithm = "MacQueen")
+          #}
+          #set.seed(2020); cl <- kernlab::specc(x = codes,
+          #                                     centers = (dim(codes)[1] / 10) %>%
+          #                                      ceiling(), # min and max number of centers = 3 and 10
+          #                                    kernel = "rbfdot",
+          #                                    kpar = "automatic", 
+          #                                    nystrom.red = FALSE, 
+          #                                    iterations = 200, 
+          #                                    mod.sample = 0.75, 
+          #                                    na.action = na.omit)
+          codes <- apply(meta.codes,#meta_kmeans$centers,#kernlab::centers(cl),
+                         1,
+                         function(metacl)
+                           metacl *
+                           attr(codes,
+                                "scaled:scale") +
+                           attr(codes,
+                                "scaled:center")) %>%
+            t()
         }
         
         #### gate centroids ####
@@ -754,10 +856,18 @@ for(pop_to_SOM in seq_along(pops_to_SOM)){
                          function(sample)
                            flowCore::flowFrame(sample)) %>%
           flowCore::flowSet()
-        flowCore::parameters(fS_SOM[[1]]) <- flowCore::parameters(
-          flowWorkspace::gh_pop_get_data(
-            gs[[fSample]],
-            y = "root")[,keep.marker])
+        if(fj_par_meta){
+          flowCore::parameters(fS_SOM[[1]]) <- flowCore::parameters(
+            flowWorkspace::gh_pop_get_data(
+              gs[[fSample]],
+              y = "root")[,gate_par_asName])
+        }
+        else {
+          flowCore::parameters(fS_SOM[[1]]) <- flowCore::parameters(
+            flowWorkspace::gh_pop_get_data(
+              gs[[fSample]],
+              y = "root")[,keep.marker])
+        }
         #create GatingSet with FlowSOM centroids
         suppressMessages(gs_SOM <- GatingSet(fS_SOM))
         flowCore::pData(gs_SOM) <- flowCore::pData(gs[[fSample]])
@@ -791,6 +901,9 @@ for(pop_to_SOM in seq_along(pops_to_SOM)){
           flowWorkspace::gh_pop_get_indices(gs_SOM[[1]],
                                             gate)
         ] <- TRUE
+        if(fj_par_meta){
+          SOM_labels <- SOM_labels[meta]
+        }
         if(fj_par_som){
           cell_ezDAFi_label <- SOM_labels[fSOM$map$mapping[,1]]
         } else {
@@ -2644,4 +2757,3 @@ write.csv(nonezDAFi_labels,
 #}
 
 # R seems to be saving the .RData when exiting, so let's clean up to at least make that tiny (i.e., empty environment)
-rm(list=ls())

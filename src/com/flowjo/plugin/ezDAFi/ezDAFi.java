@@ -98,6 +98,7 @@ public class ezDAFi extends R_Algorithm {
     private FJCheckBox fShowRScriptCheckbox = null;
     private FJCheckBox fKMeansSomOptionCheckbox = null;
     private FJCheckBox fPLSOptionCheckbox = null;
+    private FJCheckBox fMetaOptionCheckbox = null;
     private FJCheckBox fApplyOnChildrenCheckbox = null;
 
     private static final int fixedLabelWidth = 130;
@@ -127,7 +128,7 @@ public class ezDAFi extends R_Algorithm {
     private static final String orPerformezDAFiLabel = "or perform new ezDAFi.";
     //private static final String scaleLabel = "Scale parameters to mean = 0 and sd = 1 (use with care)";
     //private static final String scaleTooltip = "Should the data be scaled prior to clustering?";
-    private static final String plotStatsLabel = "Save plots and stats (runs slow).";
+    private static final String plotStatsLabel = "Save plots and stats (can be slow).";
     private static final String plotStatsTooltip = "Should side-by-side plots of manual and ezDAFi gates be automatically saved as well as frequency of parents and counts?";
     //private static final String transLabel = "Apply FJ data transformation.";
     //private static final String transTooltip = "If not working with raw FCS files but pre-processed CSV files from other applications such as CITE-seq or histo-cytometry, the data may already have been transformed and this box should be unchecked.";
@@ -135,10 +136,12 @@ public class ezDAFi extends R_Algorithm {
     private static final String batchTooltip = "ezDAFi all samples, plot back-gating results and continue analysis in R. Gates will not be re-imported to FlowJo.";
     private static final String showRScriptLabel = "Show RScript (.txt format) upon completion.";
     private static final String showRScriptTooltip = "Show the resulting RScript file (in .txt format), created doing the ezDAFi process.";
-    private static final String kMeansSomLabel = "Cluster with k-means (uncheck for self organizing maps).";
+    private static final String kMeansSomLabel = "Cluster with self organizing maps (SOM; uncheck for k-means).";
     private static final String kMeansSomTooltip = "Which algorithm should be used for clustering?";
-    private static final String PLSLabel = "Cluster on PLS-DA latent variables.";
+    private static final String PLSLabel = "Experimental: cluster on PLS-DA latent variables.";
     private static final String PLSTooltip = "Should the data be pre-processed with PLS-DA prior to clustering?";
+    private static final String metaLabel = "Experimental: meta-cluster centroids (can be slow).";
+    private static final String metaTooltip = "Should the centroids be meta-clustered prior to gating? Intended to stabilize gating results in the presence of technical variation.";
     private static final String applyOnChildrenLabel = "<html>Apply on children only."
         + "<br>(otherwise, recursive).";
     private static final String applyOnChildrenTooltip = "If checked, ezDAFi will refine only the children of the selected population. If unchecked, all children of children will be refined recursively (i.e., all sub-populations downstream of the selected one).";
@@ -150,6 +153,7 @@ public class ezDAFi extends R_Algorithm {
     public static final String showRScriptOptionName = "RScript";
     public static final String kMeansSomOptionName = "kMeansSom";
     public static final String PLSOptionName = "PLS";
+    public static final String metaOptionName = "spec";
     public static final String applyOnChildrenOptionName = "childrenOnly";
     public static final String xDimOptionName = "xdim";
     public static final String yDimOptionName = "ydim";
@@ -178,7 +182,8 @@ public class ezDAFi extends R_Algorithm {
     public static final boolean defaultBatch = false;
     public static final boolean defaultShowRScript = true;
     public static final boolean defaultKMeansSom = true;
-    public static final boolean defaultPLS = true;
+    public static final boolean defaultPLS = false;
+    public static final boolean defaultMeta = false;
     public static final boolean defaultApplyOnChildren = false;
 
     //private boolean fScale = defaultScale;
@@ -188,6 +193,7 @@ public class ezDAFi extends R_Algorithm {
     private boolean fShowRScript = defaultShowRScript;
     private boolean fKMeansSom = defaultKMeansSom;
     private boolean fPLS = defaultPLS;
+    private boolean fMeta = defaultMeta;
     private boolean fApplyOnChildren = defaultApplyOnChildren;
     private int fndimx = defaultXDim, fndimy = defaultYDim;
     private int fnMinPopSize = defaultMinPopSize;
@@ -417,7 +423,7 @@ public class ezDAFi extends R_Algorithm {
             } catch (Exception error) {
                 try{
                     BufferedWriter writer = new BufferedWriter(new FileWriter(fOutFileLastLines));
-                    writer.write(tail2(fOutFile, 30));
+                    writer.write(tail2(fOutFile, 10));
                     writer.close();
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -838,6 +844,7 @@ public class ezDAFi extends R_Algorithm {
         fShowRScript = defaultShowRScript;
         fKMeansSom = defaultKMeansSom;
         fPLS = defaultPLS;
+        fMeta = defaultMeta;
         fApplyOnChildren = defaultApplyOnChildren;
         fnMinPopSize = defaultMinPopSize;
         fnMinDim = defaultMinDim;
@@ -878,6 +885,10 @@ public class ezDAFi extends R_Algorithm {
             String savedPLS = option.getAttributeValue(PLSOptionName);
             if (savedPLS != null && !savedPLS.isEmpty())
                 fPLS = One.equals(savedPLS) || True.equals(savedPLS);
+
+            String savedMeta = option.getAttributeValue(metaOptionName);
+            if (savedMeta != null && !savedMeta.isEmpty())
+                fMeta = One.equals(savedMeta) || True.equals(savedMeta);
 
             //String savedScale = option.getAttributeValue(scaleOptionName);
             //if (savedScale != null && !savedScale.isEmpty())
@@ -986,11 +997,6 @@ public class ezDAFi extends R_Algorithm {
         // UNDO COMMENT OUT BELOW TO MAKE IT POSSIBLE FOR THE USER TO APPLY ezDAFi TO CHILDREN BUT NOT TO GRANDCHILDREN
         //componentList.add(new HBox(new Component[]{fApplyOnChildrenCheckbox}));
 
-        fPLSOptionCheckbox = new FJCheckBox(PLSLabel);
-        fPLSOptionCheckbox.setToolTipText("<html><p width=\"" + fixedToolTipWidth + "\">" + PLSTooltip + "</p></html>");
-        fPLSOptionCheckbox.setSelected(fPLS);
-        componentList.add(new HBox(new Component[]{fPLSOptionCheckbox}));
-
         fKMeansSomOptionCheckbox = new FJCheckBox(kMeansSomLabel);
         fKMeansSomOptionCheckbox.setToolTipText("<html><p width=\"" + fixedToolTipWidth + "\">" + kMeansSomTooltip + "</p></html>");
         fKMeansSomOptionCheckbox.setSelected(fKMeansSom);
@@ -1010,6 +1016,16 @@ public class ezDAFi extends R_Algorithm {
         fShowRScriptCheckbox.setToolTipText("<html><p width=\"" + fixedToolTipWidth + "\">" + showRScriptTooltip + "</p></html>");
         fShowRScriptCheckbox.setSelected(fShowRScript);
         componentList.add(new HBox(new Component[]{fShowRScriptCheckbox}));
+
+        fPLSOptionCheckbox = new FJCheckBox(PLSLabel);
+        fPLSOptionCheckbox.setToolTipText("<html><p width=\"" + fixedToolTipWidth + "\">" + PLSTooltip + "</p></html>");
+        fPLSOptionCheckbox.setSelected(fPLS);
+        componentList.add(new HBox(new Component[]{fPLSOptionCheckbox}));
+
+        fMetaOptionCheckbox = new FJCheckBox(metaLabel);
+        fMetaOptionCheckbox.setToolTipText("<html><p width=\"" + fixedToolTipWidth + "\">" + metaTooltip + "</p></html>");
+        fMetaOptionCheckbox.setSelected(fMeta);
+        componentList.add(new HBox(new Component[]{fMetaOptionCheckbox}));
 
         fBatchOptionCheckbox = new FJCheckBox(batchLabel);
         fBatchOptionCheckbox.setToolTipText("<html><p width=\"" + fixedToolTipWidth + "\">" + batchTooltip + "</p></html>");
@@ -1073,7 +1089,8 @@ public class ezDAFi extends R_Algorithm {
               if (fShowRScriptCheckbox != null) fShowRScriptCheckbox.setEnabled(false);
               if (fKMeansSomOptionCheckbox != null) fKMeansSomOptionCheckbox.setEnabled(false);
               if (fPLSOptionCheckbox != null) fPLSOptionCheckbox.setEnabled(false);
-                if (fApplyOnChildrenCheckbox != null) fApplyOnChildrenCheckbox.setEnabled(false);
+              if (fMetaOptionCheckbox != null) fMetaOptionCheckbox.setEnabled(false);
+              if (fApplyOnChildrenCheckbox != null) fApplyOnChildrenCheckbox.setEnabled(false);
 
                 // If we are selecting the application on existing map then let's select the same parameters
                 // in the parameter selector, and let's do so based on the CSV file that has those.
@@ -1132,8 +1149,9 @@ public class ezDAFi extends R_Algorithm {
                 if (fShowRScriptCheckbox != null) fShowRScriptCheckbox.setEnabled(true);
               if (fKMeansSomOptionCheckbox != null) fKMeansSomOptionCheckbox.setEnabled(true);
               if (fPLSOptionCheckbox != null) fPLSOptionCheckbox.setEnabled(true);
-                if (fApplyOnChildrenCheckbox != null) fApplyOnChildrenCheckbox.setEnabled(true);
-                if (fParameterNameList != null) fParameterNameList.setEnabled(true);
+              if (fMetaOptionCheckbox != null) fMetaOptionCheckbox.setEnabled(true);
+              if (fApplyOnChildrenCheckbox != null) fApplyOnChildrenCheckbox.setEnabled(true);
+              if (fParameterNameList != null) fParameterNameList.setEnabled(true);
             }
         }
     }
@@ -1178,6 +1196,7 @@ public class ezDAFi extends R_Algorithm {
         fOptions.put(showRScriptOptionName, fShowRScriptCheckbox.isSelected() ? One : Zero);
         fOptions.put(kMeansSomOptionName, fKMeansSomOptionCheckbox.isSelected() ? One : Zero);
         fOptions.put(PLSOptionName, fPLSOptionCheckbox.isSelected() ? One : Zero);
+        fOptions.put(metaOptionName, fMetaOptionCheckbox.isSelected() ? One : Zero);
         fOptions.put(applyOnChildrenOptionName, fApplyOnChildrenCheckbox.isSelected() ? One : Zero);
         if (fApplyOnPrevCombo.getSelectedIndex() <= 0) {
             fOptions.put(applyOnPrevOptionName, fApplyOnPrevCombo.getSelectedItem().toString());
