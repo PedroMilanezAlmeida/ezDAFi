@@ -128,7 +128,7 @@ public class ezDAFi extends R_Algorithm {
     private static final String orPerformezDAFiLabel = "or perform new ezDAFi.";
     //private static final String scaleLabel = "Scale parameters to mean = 0 and sd = 1 (use with care)";
     //private static final String scaleTooltip = "Should the data be scaled prior to clustering?";
-    private static final String plotStatsLabel = "Save plots and stats (can be slow).";
+    private static final String plotStatsLabel = "Experimental: save plots and stats (can be slow).";
     private static final String plotStatsTooltip = "Should side-by-side plots of manual and ezDAFi gates be automatically saved as well as frequency of parents and counts?";
     //private static final String transLabel = "Apply FJ data transformation.";
     //private static final String transTooltip = "If not working with raw FCS files but pre-processed CSV files from other applications such as CITE-seq or histo-cytometry, the data may already have been transformed and this box should be unchecked.";
@@ -266,19 +266,28 @@ public class ezDAFi extends R_Algorithm {
         String savedSamplePopNode = fOptions.get(samplePopNodeSlot);
 
         System.out.println("savedSampleURI: " + savedSampleURI);
+        System.out.println("savedSamplePopNode: " + savedSamplePopNode);
 
         String thisSampleURI = FJPluginHelper.getSampleURI(fcmlQueryElement);
-        String thisSamplePopNode = FJPluginHelper.getParentPopNode(fcmlQueryElement).getName();
+        String thisSamplePopNode;
+        try{
+            thisSamplePopNode = FJPluginHelper.getParentPopNode(fcmlQueryElement).getName();
+        } catch (Exception e) {
+            thisSamplePopNode = "__pluginCalledOnRoot__";
+        }
+
+        //String thisSamplePopNode = FJPluginHelper.getParentPopNode(fcmlQueryElement).getName();
 
         System.out.println("thisSampleURI: " + thisSampleURI);
+        System.out.println("thisSamplePopNode: " + thisSamplePopNode);
 
-        boolean checkPrevRun = savedSampleURI.equals(thisSampleURI) && savedSamplePopNode.equals(thisSamplePopNode);
+        boolean checkPrevRun = savedSamplePopNode.equals(thisSamplePopNode) && !savedSampleURI.equals(thisSampleURI);
 
-        System.out.println("!checkPrevRun: " + !checkPrevRun);
+        System.out.println("checkPrevRun: " + checkPrevRun);
 
         System.out.println("runAgain: " + runAgain);
 
-        if(!checkPrevRun){
+        if(checkPrevRun){
             runAgain = true;
         }
 
@@ -338,11 +347,11 @@ public class ezDAFi extends R_Algorithm {
             String sampleName = sampleFile.getName();
 
             // Get gate name and the parent popnode
-            PopNode popNode = FJPluginHelper.getParentPopNode(fcmlQueryElement);
-            PopNode parentPopNode = popNode.getParentPop();
-            if (parentPopNode == null) { // This means the current parent node is the root sample, if it is just take the sample node.
-                parentPopNode = sample.getSampleNode();
-            }
+            //PopNode popNode = FJPluginHelper.getParentPopNode(fcmlQueryElement);
+            //PopNode parentPopNode = popNode.getParentPop();
+            //if (parentPopNode == null) { // This means the current parent node is the root sample, if it is just take the sample node.
+            //    parentPopNode = sample.getSampleNode();
+            //}
 
             // tried to add ability to run ezDAFi on parent of selected pop: FAILED (see line 283)
             //List params = new ArrayList();
@@ -358,7 +367,7 @@ public class ezDAFi extends R_Algorithm {
 
             ezDAFiRFlowCalc calculator = new ezDAFiRFlowCalc();
             // Added the population node
-            File ezDAFiResult = calculator.runezDAFi(thisSampleURI, wsName, wsDir, sampleFile, sampleName, popNode.getName(), sampleNode.getName(), parameterNames, fOptions, outputFolder.getAbsolutePath(), useExistingFiles(), millisTime);
+            File ezDAFiResult = calculator.runezDAFi(thisSampleURI, wsName, wsDir, sampleFile, sampleName, thisSamplePopNode, sampleNode.getName(), parameterNames, fOptions, outputFolder.getAbsolutePath(), useExistingFiles(), millisTime);
             calculator.deleteScriptFile();
             checkROutFile(calculator);
 
@@ -757,13 +766,25 @@ public class ezDAFi extends R_Algorithm {
             } catch (Exception e) {
             }
         }
-        String samplePopNode = FJPluginHelper.getParentPopNode(fcmlElem).getName();
+
+        System.out.println("sampleURI: " + sampleURI);
+
+        String samplePopNode;
+        try{
+            samplePopNode = FJPluginHelper.getParentPopNode(fcmlElem).getName();
+        } catch (Exception e) {
+            samplePopNode = "__pluginCalledOnRoot__";
+        }
+
+        //String samplePopNode = FJPluginHelper.getParentPopNode(fcmlElem).getName();
         if (samplePopNode != null) {
             try{
                 algorithmElement.setAttribute(samplePopNodeSlot, samplePopNode);
             } catch (Exception e) {
             }
         }
+
+        System.out.println("samplePopNode: " + samplePopNode);
 
         // We need the plugin output folder and we want to add that to the algorithmElement so that later on, we can scan that folder for any existing .RData files.
         // Unfortunately, FJPluginHelper.getPluginOutputFolder(fcmlElem, this) seems to be returning null sometimes,
@@ -1007,15 +1028,15 @@ public class ezDAFi extends R_Algorithm {
         //fScaleOptionCheckbox.setSelected(fScale);
         //componentList.add(new HBox(new Component[]{fScaleOptionCheckbox}));
 
-        fPlotStatsOptionCheckbox = new FJCheckBox(plotStatsLabel);
-        fPlotStatsOptionCheckbox.setToolTipText("<html><p width=\"" + fixedToolTipWidth + "\">" + plotStatsTooltip + "</p></html>");
-        fPlotStatsOptionCheckbox.setSelected(fPlotStats);
-        componentList.add(new HBox(new Component[]{fPlotStatsOptionCheckbox}));
-
         fShowRScriptCheckbox = new FJCheckBox(showRScriptLabel);
         fShowRScriptCheckbox.setToolTipText("<html><p width=\"" + fixedToolTipWidth + "\">" + showRScriptTooltip + "</p></html>");
         fShowRScriptCheckbox.setSelected(fShowRScript);
         componentList.add(new HBox(new Component[]{fShowRScriptCheckbox}));
+
+        fPlotStatsOptionCheckbox = new FJCheckBox(plotStatsLabel);
+        fPlotStatsOptionCheckbox.setToolTipText("<html><p width=\"" + fixedToolTipWidth + "\">" + plotStatsTooltip + "</p></html>");
+        fPlotStatsOptionCheckbox.setSelected(fPlotStats);
+        componentList.add(new HBox(new Component[]{fPlotStatsOptionCheckbox}));
 
         fPLSOptionCheckbox = new FJCheckBox(PLSLabel);
         fPLSOptionCheckbox.setToolTipText("<html><p width=\"" + fixedToolTipWidth + "\">" + PLSTooltip + "</p></html>");

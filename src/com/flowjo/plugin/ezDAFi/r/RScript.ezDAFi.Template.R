@@ -360,9 +360,13 @@ if (eventsCount == 0){
 
 #define gates of the selected samples that will be used here
 gates_of_sel_sample <- flowWorkspace::gh_get_pop_paths(gs[[1]])
-popOfInt_full_path <- gates_of_sel_sample[
-  basename(gates_of_sel_sample) %in%
-    popOfInt]
+if(popOfInt == "__pluginCalledOnRoot__") {
+  popOfInt_full_path <- gates_of_sel_sample[1]
+} else {
+  popOfInt_full_path <- gates_of_sel_sample[
+    basename(gates_of_sel_sample) %in%
+      popOfInt]
+}
 
 if(length(popOfInt_full_path) > 1){
   stop("It looks like there is another population with the same name in this FlowJo workspace. Please change one of the names and try again.", 
@@ -371,23 +375,32 @@ if(length(popOfInt_full_path) > 1){
 
 
 #get info about gating hierarchy for each pop of interest
-names_gates_SOM <- foreach::foreach(pop = seq_along(basename(popOfInt_full_path))) %do% {
-  strsplit(x = gates_of_sel_sample[
-    grepl(pattern = paste0("/",
-                           basename(popOfInt_full_path)[pop],
-                           "/"),
-          x = gates_of_sel_sample,
-          fixed = TRUE)],
-    split = paste0(gates_of_sel_sample[
+
+if(popOfInt == "__pluginCalledOnRoot__") {
+  names_gates_SOM <- sub(pattern = "/", 
+                         replacement = "", 
+                         x = gates_of_sel_sample[-1],
+                         fixed = TRUE) %>%
+    list(root = .)
+} else {
+  names_gates_SOM <- foreach::foreach(pop = seq_along(basename(popOfInt_full_path))) %do% {
+    strsplit(x = gates_of_sel_sample[
       grepl(pattern = paste0("/",
                              basename(popOfInt_full_path)[pop],
-                             "$"),
+                             "/"),
             x = gates_of_sel_sample,
-            fixed = FALSE)][1],
-      "/"),
-    fixed = TRUE) %>%
-    lapply(tail, 1) %>%
-    unlist
+            fixed = TRUE)],
+      split = paste0(gates_of_sel_sample[
+        grepl(pattern = paste0("/",
+                               basename(popOfInt_full_path)[pop],
+                               "$"),
+              x = gates_of_sel_sample,
+              fixed = FALSE)][1],
+        "/"),
+      fixed = TRUE) %>%
+      lapply(tail, 1) %>%
+      unlist(use.names = FALSE)
+  }
 }
 names(names_gates_SOM) <- basename(popOfInt_full_path)
 names_gates_SOM
@@ -400,23 +413,28 @@ if(length(names_gates_SOM) == 1 &
 }
 
 # TODO: CHANGE CODE TO BE ABLE TO HANDLE WHEN PLUGIN IS CALLED ON ROOT
-if(substr(popOfInt, nchar(popOfInt) - 4 + 1, nchar(popOfInt)) == ".fcs"){
-  stop("It looks like the plugin was either called on a gate with a name that ends in '.fcs' (which is not supported, please change the gate name if that is the case) or the plugin was called on the sample directly, not on a gate thereof (the plugin cannot handle the that yet, please select a gate and rerun ezDAFi).",
-       call. = FALSE)
-}
+#if(popOfInt == "root"){
+ # stop("It looks like the plugin was either called on a gate with a name that ends in '.fcs' (which is not supported, please change the gate name if that is the case) or the plugin was called on the sample directly, not on a gate thereof (the plugin cannot handle the that yet, please select a gate and rerun ezDAFi).",
+  #     call. = FALSE)
+#}
 
 # for recursive analysis, run whole ezDAFi process for each
 # non-terminal gate, adding the results to GatingSet as boolean filter
 
 # find all gates down the gating hierarchy starting from the selected pop
-names_gates_of_int <- foreach::foreach(pop = seq_along(basename(popOfInt_full_path)),
-                                       .final = unlist) %do% {
-                                         gates_of_sel_sample[grepl(pattern = paste0("/",
-                                                                                    basename(popOfInt_full_path)[pop],
-                                                                                    "/"),
-                                                                   x = gates_of_sel_sample,
-                                                                   fixed = TRUE)]
-                                       }
+if(popOfInt == "__pluginCalledOnRoot__") {
+  names_gates_of_int <- gates_of_sel_sample[-1]
+} else {
+  names_gates_of_int <- foreach::foreach(pop = seq_along(basename(popOfInt_full_path)),
+                                         .final = unlist) %do% {
+                                           gates_of_sel_sample[grepl(pattern = paste0("/",
+                                                                                      basename(popOfInt_full_path)[pop],
+                                                                                      "/"),
+                                                                     x = gates_of_sel_sample,
+                                                                     fixed = TRUE)]
+                                         }
+}
+
 
 #find non-terminal gates down the gating hierarchy, which will all be used in clustering
 names_gates_non_term <- unlist(names_gates_of_int,
@@ -434,29 +452,46 @@ names_gates_non_term <- unlist(names_gates_of_int,
                                ]
 #change names of non-terminal gates to reflect the fact they will be ezDAFi-refined
 names_gates_non_term_to_SOM <- as.list(names_gates_non_term)
-
-names(names_gates_non_term_to_SOM) <-  unlist(names_gates_non_term_to_SOM,
-                                              use.names = FALSE) %>%
-  sub(pattern = popOfInt_full_path,
-      replacement = "",
-      x = .,
-      fixed = TRUE) %>%
-  strsplit(.,
-           split = "/") %>%
-  lapply(.,
-         function(pop)
-           pop[-1]  %>%
-           gsub(pattern = "^/",
-                replacement = "",
-                x = .) %>%
-           paste0("ezDAFi_",
-                  .) %>%
-           paste0(.,
-                  collapse = "/") %>%
-           paste0(popOfInt_full_path,
-                  "/",
-                  .)) %>%
-  unlist(.)
+if(popOfInt == "__pluginCalledOnRoot__") {
+  names(names_gates_non_term_to_SOM) <-  unlist(names_gates_non_term_to_SOM,
+                                                use.names = FALSE) %>%
+    strsplit(.,
+             split = "/") %>%
+    lapply(.,
+           function(pop)
+             pop[-1]  %>%
+             gsub(pattern = "^/",
+                  replacement = "",
+                  x = .) %>%
+             paste0("ezDAFi_",
+                    .) %>%
+             paste0(.,
+                    collapse = "/")) %>%
+    unlist(.)
+} else {
+  names(names_gates_non_term_to_SOM) <-  unlist(names_gates_non_term_to_SOM,
+                                                use.names = FALSE) %>%
+    sub(pattern = popOfInt_full_path,
+        replacement = "",
+        x = .,
+        fixed = TRUE) %>%
+    strsplit(.,
+             split = "/") %>%
+    lapply(.,
+           function(pop)
+             pop[-1]  %>%
+             gsub(pattern = "^/",
+                  replacement = "",
+                  x = .) %>%
+             paste0("ezDAFi_",
+                    .) %>%
+             paste0(.,
+                    collapse = "/") %>%
+             paste0(popOfInt_full_path,
+                    "/",
+                    .)) %>%
+    unlist(.)
+}
 #gates that will be used in clustering and whose children will be refined
 names_gates_to_SOM <- c(popOfInt_full_path,
                         names_gates_non_term_to_SOM)
@@ -769,7 +804,7 @@ for(pop_to_SOM in seq_along(pops_to_SOM)){
         #### meta cluster centroids ####
         if(fj_par_meta &
            dim(codes)[1] > 10) { # minPopSize that can trigger spectral meta-clustering = 160 cells
-          codes <- scale(codes[,gate_par_asName],
+          codes <- scale(codes,#[,gate_par_asName],
                          center = TRUE,
                          scale = TRUE)
           ##############################
@@ -795,15 +830,20 @@ for(pop_to_SOM in seq_along(pops_to_SOM)){
             )[[((dim(codes)[1] / 10) %>%
                  ceiling())]]$consensusClass
           # get centroids of metaclusters
-          meta.codes <- sapply((dim(codes)[1] / 10) %>%
-                                 ceiling() %>%
-                                 seq(),
-                               function(metacl)
-                                 if(sum(meta == metacl) > 1){
-                                   colMeans(codes[meta == metacl,])
-                                 } else {
-                                   codes[meta == metacl,]
-                                 }) %>%
+          meta.codes <- sapply(
+            (dim(codes)[1] / 10) %>%
+              ceiling() %>%
+              seq(),
+            function(metacl)
+              if(sum(meta == metacl) > 1){
+                if(dim(codes)[2] != 1) {
+                  colMeans(codes[meta == metacl,])
+                } else {
+                  mean(codes[meta == metacl,])
+                }
+              } else {
+                codes[meta == metacl,]
+              }) %>%
             t()
           codes <- apply(meta.codes,
                          1,
@@ -814,8 +854,13 @@ for(pop_to_SOM in seq_along(pops_to_SOM)){
                            attr(codes,
                                 "scaled:center")) %>%
             t()
+          #if(dim(codes)[1] == 1) {
+          #  codes <- matrix(codes,
+          #                  ncol = 1,
+          #                  dimnames = list(NULL,
+          #                                  gate_par_asName))
+          #}
         }
-        
         #### gate centroids ####
         ls_fSOM <- list(codes)
         names(ls_fSOM) <- rownames(flowCore::pData(gs[[fSample]]))
@@ -824,18 +869,18 @@ for(pop_to_SOM in seq_along(pops_to_SOM)){
                          function(sample)
                            flowCore::flowFrame(sample)) %>%
           flowCore::flowSet()
-        if(fj_par_meta){
-          flowCore::parameters(fS_SOM[[1]]) <- flowCore::parameters(
-            flowWorkspace::gh_pop_get_data(
-              gs[[fSample]],
-              y = "root")[,gate_par_asName])
-        }
-        else {
+        #if(fj_par_meta){
+        #  flowCore::parameters(fS_SOM[[1]]) <- flowCore::parameters(
+        #    flowWorkspace::gh_pop_get_data(
+        #      gs[[fSample]],
+        #      y = "root")[,gate_par_asName])
+        #}
+        #else {
           flowCore::parameters(fS_SOM[[1]]) <- flowCore::parameters(
             flowWorkspace::gh_pop_get_data(
               gs[[fSample]],
               y = "root")[,keep.marker])
-        }
+          #}
         #create GatingSet with FlowSOM centroids
         suppressMessages(gs_SOM <- GatingSet(fS_SOM))
         flowCore::pData(gs_SOM) <- flowCore::pData(gs[[fSample]])
@@ -934,12 +979,13 @@ ezDAFi_nodes <- post_ezDAFi_gates[
        x = basename(post_ezDAFi_gates),
        fixed = TRUE)
 ]
-ezDAFi_nodes <- ezDAFi_nodes[grep(pattern = paste0("/",
-                                                   popOfInt,
-                                                   "/"),
-                                  x = ezDAFi_nodes,
-                                  fixed = TRUE)]
-
+if(popOfInt != "__pluginCalledOnRoot__") {
+  ezDAFi_nodes <- ezDAFi_nodes[grep(pattern = paste0("/",
+                                                     popOfInt,
+                                                     "/"),
+                                    x = ezDAFi_nodes,
+                                    fixed = TRUE)]
+}
 tree_pos_ezDAFi_gate_to_SOM <- strsplit(x = ezDAFi_nodes,
                                         split = "/",
                                         fixed = TRUE) %>%
@@ -1003,75 +1049,130 @@ ezDAFi_labels <- matrix(
          use.names = FALSE),
   ncol = length(ezDAFi_labels.ls),
   byrow = FALSE)
-colnames(ezDAFi_labels) <- foreach::foreach(ezDAFi_node = ezDAFi_nodes,
-                                            .final = unlist) %do% {
-                                              ezDAFi_node %>%
-                                                strsplit(x = .,
-                                                         split = paste0("/",
-                                                                        popOfInt,
-                                                                        "/"),
-                                                         fixed = TRUE) %>%
-                                                .[[1]] %>%
-                                                tail(.,1) %>%
-                                                gsub(pattern = "^/",
-                                                     replacement = "",
-                                                     x = .) %>%
-                                                gsub(pattern = "/",
-                                                     replacement = "_",
-                                                     x = .,
-                                                     fixed = TRUE) %>%
-                                                gsub(pattern = ",",
-                                                     replacement = ".",
-                                                     x = .,
-                                                     fixed = TRUE) %>%
-                                                trimws(.,
-                                                       which = "right") %>%
-                                                paste0(popOfInt,
-                                                       "_",
-                                                       .) %>%
-                                                gsub(pattern = ",",
-                                                     replacement = ".",
-                                                     x = .,
-                                                     fixed = TRUE)
-                                            }
+if(popOfInt == "__pluginCalledOnRoot__") {
+  colnames_ezDAFi_labels <- foreach::foreach(ezDAFi_node = ezDAFi_nodes,
+                                             .final = unlist) %do% {
+                                               ezDAFi_node %>%
+                                                 gsub(pattern = "^/",
+                                                      replacement = "",
+                                                      x = .) %>%
+                                                 gsub(pattern = "/",
+                                                      replacement = "_",
+                                                      x = .,
+                                                      fixed = TRUE) %>%
+                                                 gsub(pattern = ",",
+                                                      replacement = ".",
+                                                      x = .,
+                                                      fixed = TRUE) %>%
+                                                 trimws(.,
+                                                        which = "right") %>%
+                                                 paste0("root",
+                                                        "_",
+                                                        .) %>%
+                                                 gsub(pattern = ",",
+                                                      replacement = ".",
+                                                      x = .,
+                                                      fixed = TRUE)
+                                             }
+} else {
+  colnames_ezDAFi_labels <- foreach::foreach(ezDAFi_node = ezDAFi_nodes,
+                                             .final = unlist) %do% {
+                                               ezDAFi_node %>%
+                                                 strsplit(x = .,
+                                                          split = paste0("/",
+                                                                         popOfInt,
+                                                                         "/"),
+                                                          fixed = TRUE) %>%
+                                                 .[[1]] %>%
+                                                 tail(.,1) %>%
+                                                 gsub(pattern = "^/",
+                                                      replacement = "",
+                                                      x = .) %>%
+                                                 gsub(pattern = "/",
+                                                      replacement = "_",
+                                                      x = .,
+                                                      fixed = TRUE) %>%
+                                                 gsub(pattern = ",",
+                                                      replacement = ".",
+                                                      x = .,
+                                                      fixed = TRUE) %>%
+                                                 trimws(.,
+                                                        which = "right") %>%
+                                                 paste0(popOfInt,
+                                                        "_",
+                                                        .) %>%
+                                                 gsub(pattern = ",",
+                                                      replacement = ".",
+                                                      x = .,
+                                                      fixed = TRUE)
+                                             }
+}
+colnames(ezDAFi_labels) <- colnames_ezDAFi_labels
 # same for nonezDAFi nodes
 nonezDAFi_labels <- matrix(
   unlist(nonezDAFi_labels.ls,
          use.names = FALSE),
   ncol = length(nonezDAFi_labels.ls),
   byrow = FALSE)
-colnames(nonezDAFi_labels) <- foreach::foreach(nonezDAFi_node = nonezDAFi_nodes,
-                                               .final = unlist) %do% {
-                                                 nonezDAFi_node %>%
-                                                   strsplit(x = .,
-                                                            split = paste0("/",
-                                                                           popOfInt,
-                                                                           "/"),
-                                                            fixed = TRUE) %>%
-                                                   .[[1]] %>%
-                                                   tail(.,1) %>%
-                                                   gsub(pattern = "^/",
-                                                        replacement = "",
-                                                        x = .) %>%
-                                                   gsub(pattern = "/",
-                                                        replacement = "_",
-                                                        x = .,
-                                                        fixed = TRUE) %>%
-                                                   gsub(pattern = ",",
-                                                        replacement = ".",
-                                                        x = .,
-                                                        fixed = TRUE) %>%
-                                                   trimws(.,
-                                                          which = "right") %>%
-                                                   paste0(popOfInt,
-                                                          "_",
-                                                          .) %>%
-                                                   gsub(pattern = ",",
-                                                        replacement = ".",
-                                                        x = .,
-                                                        fixed = TRUE)
-                                               }
-
+if(popOfInt == "__pluginCalledOnRoot__") {
+  colnames_nonezDAFi_labels <- foreach::foreach(nonezDAFi_node = nonezDAFi_nodes,
+                                                .final = unlist) %do% {
+                                                  nonezDAFi_node %>%
+                                                    gsub(pattern = "^/",
+                                                         replacement = "",
+                                                         x = .) %>%
+                                                    gsub(pattern = "/",
+                                                         replacement = "_",
+                                                         x = .,
+                                                         fixed = TRUE) %>%
+                                                    gsub(pattern = ",",
+                                                         replacement = ".",
+                                                         x = .,
+                                                         fixed = TRUE) %>%
+                                                    trimws(.,
+                                                           which = "right") %>%
+                                                    paste0("root",
+                                                           "_",
+                                                           .) %>%
+                                                    gsub(pattern = ",",
+                                                         replacement = ".",
+                                                         x = .,
+                                                         fixed = TRUE)
+                                                }
+} else {
+  colnames_nonezDAFi_labels <- foreach::foreach(nonezDAFi_node = nonezDAFi_nodes,
+                                                .final = unlist) %do% {
+                                                  nonezDAFi_node %>%
+                                                    strsplit(x = .,
+                                                             split = paste0("/",
+                                                                            popOfInt,
+                                                                            "/"),
+                                                             fixed = TRUE) %>%
+                                                    .[[1]] %>%
+                                                    tail(.,1) %>%
+                                                    gsub(pattern = "^/",
+                                                         replacement = "",
+                                                         x = .) %>%
+                                                    gsub(pattern = "/",
+                                                         replacement = "_",
+                                                         x = .,
+                                                         fixed = TRUE) %>%
+                                                    gsub(pattern = ",",
+                                                         replacement = ".",
+                                                         x = .,
+                                                         fixed = TRUE) %>%
+                                                    trimws(.,
+                                                           which = "right") %>%
+                                                    paste0(popOfInt,
+                                                           "_",
+                                                           .) %>%
+                                                    gsub(pattern = ",",
+                                                         replacement = ".",
+                                                         x = .,
+                                                         fixed = TRUE)
+                                                }
+}
+colnames(nonezDAFi_labels) <- colnames_nonezDAFi_labels
 #sanity check
 print(
   apply(ezDAFi_labels,
@@ -1145,22 +1246,30 @@ if(fj_plot_stats){
   ezDAFi.count.file <- paste0(statsDir,
                               "/",
                               "ezDAFi_count_",
-                              popOfInt,
+                              ifelse(popOfInt == "__pluginCalledOnRoot__",
+                                     yes = "root",
+                                     no = popOfInt),
                               ".csv")
   ezDAFi.percent.file <- paste0(statsDir,
                                 "/",
                                 "ezDAFi_percent_",
-                                popOfInt,
+                                ifelse(popOfInt == "__pluginCalledOnRoot__",
+                                       yes = "root",
+                                       no = popOfInt),
                                 ".csv")
   trad.count.file <- paste0(statsDir,
                             "/",
                             "manual_count_",
-                            popOfInt,
+                            ifelse(popOfInt == "__pluginCalledOnRoot__",
+                                   yes = "root",
+                                   no = popOfInt),
                             ".csv")
   trad.percent.file <- paste0(statsDir,
                               "/",
                               "manual_percent_",
-                              popOfInt,
+                              ifelse(popOfInt == "__pluginCalledOnRoot__",
+                                     yes = "root",
+                                     no = popOfInt),
                               ".csv")
   if(!ezDAFi.count.file %>%
      file.exists()) {
@@ -1185,7 +1294,9 @@ if(fj_plot_stats){
       all)
   ) {
     stop("Either the gates of \"",
-         popOfInt,
+         ifelse(popOfInt == "__pluginCalledOnRoot__",
+                yes = "root",
+                no = popOfInt),
          "\" changed since ezDAFi's last run\nor batch analysis was called on samples with different gating strategies.\nPlease delete stats before rerunning and make sure the same gating\nstrategy is applied to all samples.", 
          call.=FALSE)
   }
@@ -1250,7 +1361,9 @@ if(fj_plot_stats){
     all)
   ) {
     stop("Either the gates of \"",
-         popOfInt,
+         ifelse(popOfInt == "__pluginCalledOnRoot__",
+                yes = "root",
+                no = popOfInt),
          "\" changed since ezDAFi's last run\nor batch analysis was called on samples with different gating strategies.\nPlease delete stats before rerunning and make sure the same gating\nstrategy is applied to all samples.", 
          call.=FALSE)
   }
@@ -1314,7 +1427,9 @@ if(fj_plot_stats){
       all)
   ) {
     stop("Either the gates of \"",
-         popOfInt,
+         ifelse(popOfInt == "__pluginCalledOnRoot__",
+                yes = "root",
+                no = popOfInt),
          "\" changed since ezDAFi's last run\nor batch analysis was called on samples with different gating strategies.\nPlease delete stats before rerunning and make sure the same gating\nstrategy is applied to all samples.", 
          call.=FALSE)
   }
@@ -1378,7 +1493,9 @@ if(fj_plot_stats){
       all)
   ) {
     stop("Either the gates of \"",
-         popOfInt,
+         ifelse(popOfInt == "__pluginCalledOnRoot__",
+                yes = "root",
+                no = popOfInt),
          "\" changed since ezDAFi's last run\nor batch analysis was called on samples with different gating strategies.\nPlease delete stats before rerunning and make sure the same gating\nstrategy is applied to all samples.", 
          call.=FALSE)
   }
