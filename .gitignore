@@ -4,6 +4,7 @@ FCS
 *.R
 *.wsp
 14-Jan-2020
+
 out/
 *.pptx
 *.DS_store
@@ -72,3 +73,6 @@ vignettes/*.pdf
 
 # R Environment Variables
 .Renviron
+/20-Apr-2020/
+/ezGate_20-Apr-2020.wsp_FCS/
+/ezGate_20-Apr-2020_FCS/

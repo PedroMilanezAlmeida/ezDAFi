@@ -2840,5 +2840,3 @@ write.csv(nonezDAFi_labels,
           row.names = FALSE, 
           quote = TRUE)
 #}
-
-# R seems to be saving the .RData when exiting, so let's clean up to at least make that tiny (i.e., empty environment)

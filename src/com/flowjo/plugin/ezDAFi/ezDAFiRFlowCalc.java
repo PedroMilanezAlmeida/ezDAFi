@@ -31,7 +31,7 @@ public class ezDAFiRFlowCalc extends RFlowCalculator {
         if(ezDAFiScript == null) return null;
         if(useExistingFiles && ezDAFiScript.exists()) return ezDAFiScript;
 
-        String scriptFileName = (new StringBuilder()).append("RScript.ezDAFi.").append(System.currentTimeMillis()).append(".R").toString().replaceAll(" ", "_");
+        String scriptFileName = (new StringBuilder()).append("RScript.ezDAFi.").append(millisTime).append(".R").toString().replaceAll(" ", "_");
         try
         {
             com.flowjo.plugin.ezDAFi.RScriptFlowCalculator calc = new com.flowjo.plugin.ezDAFi.RScriptFlowCalculator();
@@ -61,6 +61,9 @@ public class ezDAFiRFlowCalc extends RFlowCalculator {
 
         File outFile = new File(outputFolder, outFileName);
         outFileName = outFile.getAbsolutePath();
+
+        System.out.println("outFileName:" + outFileName);
+
         File gatingMLOutFile = new File(outFile, ".gating-ml2.xml");
 
         String dataFilePath = sampleFile.getAbsolutePath();
