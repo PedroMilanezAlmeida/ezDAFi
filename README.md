@@ -15,7 +15,7 @@ Obtaining the plugin
 ====================
 
 To be able to use this plugin, please install R (see
-[instructions](https://cran.r-project.org/)). Only R version 3.6.2 or
+[instructions](https://cran.r-project.org/)). Only R version 4.0.2 or
 newer can run the plugin.
 
 On a mac, please install
@@ -52,6 +52,7 @@ first time the plugin runs, it takes several minutes to install
 additional packages.
 
 <!---  (Give it try! Just download the __DAFi.jar__ file above (soon you will also find it on [FlowJo's Plugin page](https://www.flowjo.com/exchange/#/)) and copy the file to your FlowJo plugins folder! Don't forget to restart FlowJo before using a new plugin.) --->
+
 Short Intro
 ===========
 
@@ -156,18 +157,9 @@ Notes, Source and How To Use
 
 #### Processing time
 
--   Depends on the number of centroids to be used;
 -   First run can take a few minutes to install required R packages.
-
-#### Known Bugs
-
--   DAFi-ing children of DAFi gates does not work. The plugin creates
-    derived parameters (zeros and ones), which are used to DAFi-gate
-    cells in FlowJo. FlowJo-derived parameters are not imported into
-    flowWorkspace in R, such that DAFi gates are not recognized in R for
-    DAFi analysis of children of DAFi gates.
--   Every DAFi-gate generates one derived parameter, overpopulating the
-    view.
+-   Otherwise, lightning fast: just a few seconds per gate, even for
+    tens of thousand of cells.
 
 Visual Guide With an Example
 ============================
