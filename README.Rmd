@@ -12,7 +12,7 @@ Our new FlowJo plugin for DAFi bridges automated clustering techniques and human
 
 # Obtaining the plugin
 
-To be able to use this plugin, please install R (see [instructions](https://cran.r-project.org/)). Only R version 3.6.2 or newer can run the plugin.
+To be able to use this plugin, please install R (see [instructions](https://cran.r-project.org/)). Only R version 4.0.2 or newer can run the plugin.
 
 On a mac, please install [XCode](https://apps.apple.com/us/app/xcode/id497799835?mt=12) and [gfortran](https://github.com/fxcoudert/gfortran-for-macOS/releases). Open the Terminal and run the following command:
 
