@@ -37,25 +37,27 @@ Rver.min.2 <- strsplit(x = version$minor,
                        perl = FALSE, 
                        useBytes = FALSE)[[1]][2]
 
-if(Rver.maj < 4){
-  stop(paste0("The plugin cannot run with R versions older than 4.0.2. ",
-              "Your version is: ",
-              paste0(version$major, ".", version$minor),
-              ". Please, update R and try again."))
-} else if(Rver.maj == 4 &
-          Rver.min.1 < 0){
-  stop(paste0("The plugin cannot run with R versions older than 4.0.2. ",
-              "Your version is: ",
-              paste0(version$major, ".", version$minor),
-              ". Please, update R and try again."))
-} else if(Rver.maj == 4 &
-          Rver.min.1 == 0 &
-          Rver.min.2 < 2) {
+if(Rver.maj < 3){
   stop(paste0("The plugin cannot run with R versions older than 4.0.2. ",
               "Your version is: ",
               paste0(version$major, ".", version$minor),
               ". Please, update R and try again."))
 }
+# else if(Rver.maj == 4 &
+#           Rver.min.1 < 6){
+#   stop(paste0("The plugin cannot run with R versions older than 4.0.2. ",
+#               "Your version is: ",
+#               paste0(version$major, ".", version$minor),
+#               ". Please, update R and try again."))
+# }
+# else if(Rver.maj == 4 &
+#           Rver.min.1 == 0 &
+#           Rver.min.2 < 2) {
+#   stop(paste0("The plugin cannot run with R versions older than 4.0.2. ",
+#               "Your version is: ",
+#               paste0(version$major, ".", version$minor),
+#               ". Please, update R and try again."))
+# }
 
 tryCatch(suppressMessages(library("BiocManager")),
          error = function(e){
@@ -300,6 +302,8 @@ wspName
 ws <- CytoML::open_flowjo_xml(wspName,
                               sample_names_from = "sampleNode")
 
+# ws <- CytoML::open_flowjo_xml(wspName)
+
 cs <- load_cytoset_from_fcs(
   files = normalizePath(sampleURI),
   #path = normalizePath(dirname(sampleURI)),
@@ -339,9 +343,13 @@ gs <- CytoML::flowjo_to_gatingset(ws,
 )
 
 # make sure only the intended FCS file is in the GatingSet
+
+# make the file path normalized for Windows JIC:
+newSampleURI <- normalizePath(sampleURI)
+
 gs <- gs[flowWorkspace::keyword(gs,
                                 "FILENAME")$FILENAME ==
-           sampleURI]
+        newSampleURI]
 
 flowCore::fsApply(flowWorkspace::gs_pop_get_data(gs), 
                   print)

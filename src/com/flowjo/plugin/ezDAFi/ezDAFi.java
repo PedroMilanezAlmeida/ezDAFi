@@ -25,15 +25,12 @@
 
 package com.flowjo.plugin.ezDAFi;
 
-import com.flowjo.plugin.ezDAFi.utilities.ExportUtils;
-import com.flowjo.plugin.ezDAFi.utilities.FJSML;
-import com.flowjo.plugin.ezDAFi.utils.FilenameUtils;
 import com.treestar.flowjo.application.workspace.Workspace;
 import com.treestar.flowjo.application.workspace.manager.FJApplication;
 import com.treestar.flowjo.application.workspace.manager.WSDocument;
 import com.treestar.flowjo.core.Sample;
+import com.treestar.flowjo.core.nodes.AppNode;
 import com.treestar.flowjo.core.nodes.PopNode;
-import com.treestar.flowjo.core.nodes.SampleNode;
 import com.treestar.flowjo.engine.FEML;
 import com.treestar.flowjo.engine.utility.R_Algorithm;
 import com.treestar.lib.FJPluginHelper;
@@ -55,25 +52,28 @@ import com.treestar.lib.gui.swing.FJComboBox;
 import com.treestar.lib.parsing.interpreter.CSVReader;
 import com.treestar.lib.parsing.interpreter.ParseUtil;
 import com.treestar.lib.xml.SElement;
-import org.apache.tools.ant.taskdefs.MacroInstance;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.io.*;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.*;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import static com.flowjo.plugin.ezDAFi.RScriptFlowCalculator.fOutFile;
 import static com.flowjo.plugin.ezDAFi.RScriptFlowCalculator.fOutFileLastLines;
-import static java.awt.event.ItemEvent.DESELECTED;
+import static com.flowjo.plugin.ezDAFi.utils.PopTraverser.scaryTraversal;
 import static java.lang.System.currentTimeMillis;
+import static java.lang.Thread.sleep;
 
 public class ezDAFi extends R_Algorithm {
 
-    private static final String pluginVersion = "0.1";
+    private static final String pluginVersion = "0.1p01";
     public static String pluginName = "ezDAFi";
     public static boolean runAgain = false;
     public static boolean nameSet = false;
@@ -371,6 +371,8 @@ public class ezDAFi extends R_Algorithm {
             calculator.deleteScriptFile();
             checkROutFile(calculator);
 
+            boolean invFlag = false;
+
             //This is a workaround for the bug that FlowJo is not showing errors in R:
             //Try to read the results (import derived parameters and gatingML files), and, if requested, print the Rscript.
             //If this fails, print only the last 30 lines of the Rscript to make the error visible to the user.
@@ -412,10 +414,11 @@ public class ezDAFi extends R_Algorithm {
                 {
                     String gatingML = readGatingMLFile(xmlFile);
                     results.setGatingML(gatingML);
+                    invFlag = true;
                 }
 
                 String sParShowRScript = fOptions.get(showRScriptOptionName);
-                if (sParShowRScript == null || sParShowRScript.isEmpty() || com.flowjo.plugin.ezDAFi.ezDAFi.One.equals(sParShowRScript) || com.flowjo.plugin.ezDAFi.ezDAFi.True.equals(sParShowRScript)){
+                if (sParShowRScript == null || sParShowRScript.isEmpty() || ezDAFi.One.equals(sParShowRScript) || ezDAFi.True.equals(sParShowRScript)){
                     fShowRScript = true; // TRUE is the default
                 } else {
                     fShowRScript = false;
@@ -446,6 +449,36 @@ public class ezDAFi extends R_Algorithm {
 
             }
 
+            // Rename populations to clean up the full gating path there.
+            if (invFlag) {
+
+                ExecutorService threadPool = Executors.newFixedThreadPool(1);
+                Sample sample02 = FJPluginHelper.getSample(fcmlQueryElement);
+
+                PopNode theNode = FJPluginHelper.getParentPopNode(fcmlQueryElement) == null ? sample02.getSampleNode() : FJPluginHelper
+                        .getParentPopNode(fcmlQueryElement);
+
+                invFlag = false;
+                final HashMap<AppNode, SElement>[] popHash = new HashMap[]{new HashMap<>()};
+
+                try {
+                    threadPool.submit(new Runnable() {
+                        public void run() {
+
+                            // wish we didn't need to do this, but want to try and be sure the gatingML is in place.
+                            try {
+                                sleep(6000);
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
+
+                            scaryTraversal(theNode, popHash[0], fcmlQueryElement);
+                        }
+                    });
+                } catch (Exception e) {
+                    System.out.println(e);
+                }
+            }
             return results;
         }
     }
