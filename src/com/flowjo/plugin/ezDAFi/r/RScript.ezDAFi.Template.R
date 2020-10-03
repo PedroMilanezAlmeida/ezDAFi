@@ -37,27 +37,25 @@ Rver.min.2 <- strsplit(x = version$minor,
                        perl = FALSE, 
                        useBytes = FALSE)[[1]][2]
 
-if(Rver.maj < 3){
+if(Rver.maj < 4){
+  stop(paste0("The plugin cannot run with R versions older than 4.0.2. ",
+              "Your version is: ",
+              paste0(version$major, ".", version$minor),
+              ". Please, update R and try again."))
+} else if(Rver.maj == 4 &
+          Rver.min.1 < 0){
+  stop(paste0("The plugin cannot run with R versions older than 4.0.2. ",
+              "Your version is: ",
+              paste0(version$major, ".", version$minor),
+              ". Please, update R and try again."))
+} else if(Rver.maj == 4 &
+          Rver.min.1 == 0 &
+          Rver.min.2 < 2) {
   stop(paste0("The plugin cannot run with R versions older than 4.0.2. ",
               "Your version is: ",
               paste0(version$major, ".", version$minor),
               ". Please, update R and try again."))
 }
-# else if(Rver.maj == 4 &
-#           Rver.min.1 < 6){
-#   stop(paste0("The plugin cannot run with R versions older than 4.0.2. ",
-#               "Your version is: ",
-#               paste0(version$major, ".", version$minor),
-#               ". Please, update R and try again."))
-# }
-# else if(Rver.maj == 4 &
-#           Rver.min.1 == 0 &
-#           Rver.min.2 < 2) {
-#   stop(paste0("The plugin cannot run with R versions older than 4.0.2. ",
-#               "Your version is: ",
-#               paste0(version$major, ".", version$minor),
-#               ". Please, update R and try again."))
-# }
 
 tryCatch(suppressMessages(library("BiocManager")),
          error = function(e){
