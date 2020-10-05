@@ -34,7 +34,7 @@ public class PopTraverser {
                 // Check if this is an ezDAFi node
                 if(nodeName.contains("_ezDAFi_")){
                     // regEx out the part of the string we want to remove
-                    String newName = nodeName.replaceAll("(^.+)?(ezDAFi_)","DAFi_");
+                    String newName = nodeName.replaceAll("(^.+)?(ezDAFi_)","ezDAFi_");
                     p.setName(newName);
                 }
 
