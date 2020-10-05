@@ -300,6 +300,8 @@ wspName
 ws <- CytoML::open_flowjo_xml(wspName,
                               sample_names_from = "sampleNode")
 
+# ws <- CytoML::open_flowjo_xml(wspName)
+
 cs <- load_cytoset_from_fcs(
   files = normalizePath(sampleURI),
   #path = normalizePath(dirname(sampleURI)),
@@ -339,9 +341,13 @@ gs <- CytoML::flowjo_to_gatingset(ws,
 )
 
 # make sure only the intended FCS file is in the GatingSet
+
+# make the file path normalized for Windows JIC:
+newSampleURI <- normalizePath(sampleURI)
+
 gs <- gs[flowWorkspace::keyword(gs,
                                 "FILENAME")$FILENAME ==
-           sampleURI]
+        newSampleURI]
 
 flowCore::fsApply(flowWorkspace::gs_pop_get_data(gs), 
                   print)
