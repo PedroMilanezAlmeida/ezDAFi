@@ -1,21 +1,16 @@
-MIT License
+Open Source Software Distribution Agreement
+ezDAFi, v.0.2 (Release date: 10/07/2020)
 
-Copyright (c) 2020 PedroMilanezAlmeida
+DEFINITIONS:
+AUTHOR(S) Pedro Milanez-Almeida, John S Tsang
+PROVIDER: the National Institute of Allergy and Infectious Diseases (NIAID), a participating institute of the National Institutes of Health (NIH), and an agency of the United States Government.
+SOFTWARE: the human readable source code form, the machine readable, binary, object code form, and the related documentation for the modules of the ezDAFi, v.0.2 software package, which is a FlowJo plugin for effectively identifying subpopulations in high dimensional single cell data.
+RECIPIENT: the party that downloads the software.
+By downloading or otherwise receiving the SOFTWARE, RECIPIENT may use and/or redistribute the SOFTWARE, with or without modification, subject to RECIPIENT’s agreement to the following terms:
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+THE SOFTWARE SHALL NOT BE USED IN THE TREATMENT OR DIAGNOSIS OF HUMAN SUBJECTS. RECIPIENT is responsible for compliance with all laws and regulations applicable to the use of the SOFTWARE.
+The SOFTWARE that is distributed pursuant to this Agreement has been created by United States Government employees. In accordance with Title 17 of the United States Code, section 105, the SOFTWARE is not subject to copyright protection in the United States. Other than copyright, all rights, title and interest in the SOFTWARE shall remain with the PROVIDER.
+RECIPIENT agrees to acknowledge PROVIDER’s contribution and the name of the author of the SOFTWARE in all written publications containing any data or information regarding or resulting from use of the SOFTWARE.
+THE SOFTWARE IS PROVIDED “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT ARE DISCLAIMED. IN NO EVENT SHALL THE PROVIDER OR THE INDIVIDUAL DEVELOPERS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+RECIPIENT agrees not to use any trademarks, service marks, trade names, logos or product names of NIAID or NIH to endorse or promote products derived from the SOFTWARE without specific, prior and written permission.
+For sake of clarity, and not by way of limitation, RECIPIENT may add its own copyright statement to its modifications or derivative works of the SOFTWARE and may provide additional or different license terms and conditions in its sublicenses of modifications or derivative works of the SOFTWARE provided that RECIPIENT’s use, reproduction, and distribution of the SOFTWARE otherwise complies with the conditions stated in this Agreement. Whenever Recipient distributes or redistributes the SOFTWARE, a copy of this Agreement must be included with each copy of the SOFTWARE.
