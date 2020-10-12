@@ -25,6 +25,7 @@
 
 package com.flowjo.plugin.ezDAFi;
 
+
 import com.flowjo.plugin.ezDAFi.utils.MakeLink;
 import com.treestar.flowjo.application.workspace.Workspace;
 import com.treestar.flowjo.application.workspace.manager.FJApplication;
@@ -59,6 +60,7 @@ import java.awt.*;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.io.*;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.List;
 import java.util.*;
@@ -490,10 +492,13 @@ public class ezDAFi extends R_Algorithm {
 
                             // wish we didn't need to do this, but want to try and be sure the gatingML is in place.
                             try {
+
                                 sleep(7000);
+
                             } catch (InterruptedException e) {
                                 e.printStackTrace();
                             }
+
 
                             popHash[0] = scaryTraversal(theNode, popHash[0], fcmlQueryElement);
 
@@ -531,6 +536,7 @@ public class ezDAFi extends R_Algorithm {
                                     ee.printStackTrace();
                                 }
                             }
+
                         }
                     });
                 } catch (Exception e) {

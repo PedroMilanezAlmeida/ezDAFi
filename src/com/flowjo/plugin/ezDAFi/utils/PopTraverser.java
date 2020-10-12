@@ -10,9 +10,11 @@ import java.util.Queue;
 
 public class PopTraverser {
 
+
 //    public static void scaryTraversal(PopNode theNode, HashMap<AppNode,SElement> popHash, SElement element)
     public static HashMap<AppNode,Integer> scaryTraversal(PopNode theNode, HashMap<AppNode, Integer> popHash, SElement element)
     {
+
         String sampID = null;
         boolean sampleFlag = false;
         int m = 0;
@@ -26,6 +28,7 @@ public class PopTraverser {
             while (l > 0) {
                 AppNode p = q.peek();
                 q.remove();
+
 
                 // Check if the node is a DP
                 if(!p.isDPNode()) {
@@ -46,6 +49,7 @@ public class PopTraverser {
                         }
                     }
                 }
+
                 m++;
 
                 // Put all children of the node in a list:
@@ -53,7 +57,9 @@ public class PopTraverser {
                     q.add(p.getChild(i));
                 l--;
             }
+
         }
         return popHash;
+
     }
 }

@@ -76,29 +76,29 @@ public class ezDAFiRFlowCalc extends RFlowCalculator {
         if(EngineManager.isWindows()) outputFolderString = outputFolderString.replaceAll("\\\\", "/");
 
         //String sParScale = options.get(com.flowjo.plugin.ezDAFi.ezDAFi.scaleOptionName);
-        String sParPlotStats = options.get(com.flowjo.plugin.ezDAFi.ezDAFi.plotStatsOptionName);
+        String sParPlotStats = options.get(ezDAFi.plotStatsOptionName);
         //String sParTrans = options.get(com.flowjo.plugin.ezDAFi.ezDAFi.transOptionName);
-        String sParBatch = options.get(com.flowjo.plugin.ezDAFi.ezDAFi.batchOptionName);
-        String sParkMeansSom = options.get(com.flowjo.plugin.ezDAFi.ezDAFi.kMeansSomOptionName);
-        String sParPLS = options.get(com.flowjo.plugin.ezDAFi.ezDAFi.PLSOptionName);
-        String sParMeta = options.get(com.flowjo.plugin.ezDAFi.ezDAFi.metaOptionName);
-        String sParApplyOnChildren = options.get(com.flowjo.plugin.ezDAFi.ezDAFi.applyOnChildrenOptionName);
-        String sParMinPopSize = options.get(com.flowjo.plugin.ezDAFi.ezDAFi.minPopSizeOptionName);
-        String sParMinDim = options.get(com.flowjo.plugin.ezDAFi.ezDAFi.minDimOptionName);
-        String sParMaxDim = options.get(com.flowjo.plugin.ezDAFi.ezDAFi.maxDimOptionName);
-        String sParXDim = options.get(com.flowjo.plugin.ezDAFi.ezDAFi.xDimOptionName);
-        String sParYDim = options.get(com.flowjo.plugin.ezDAFi.ezDAFi.yDimOptionName);
-        String sParApplyOnPrev = options.get(com.flowjo.plugin.ezDAFi.ezDAFi.applyOnPrevOptionName);
-        String sAddCellIdToResults = com.flowjo.plugin.ezDAFi.ezDAFi.isSeqGeq() ? TRUE : FALSE;
+        String sParBatch = options.get(ezDAFi.batchOptionName);
+        String sParkMeansSom = options.get(ezDAFi.kMeansSomOptionName);
+        String sParPLS = options.get(ezDAFi.PLSOptionName);
+        String sParMeta = options.get(ezDAFi.metaOptionName);
+        String sParApplyOnChildren = options.get(ezDAFi.applyOnChildrenOptionName);
+        String sParMinPopSize = options.get(ezDAFi.minPopSizeOptionName);
+        String sParMinDim = options.get(ezDAFi.minDimOptionName);
+        String sParMaxDim = options.get(ezDAFi.maxDimOptionName);
+        String sParXDim = options.get(ezDAFi.xDimOptionName);
+        String sParYDim = options.get(ezDAFi.yDimOptionName);
+        String sParApplyOnPrev = options.get(ezDAFi.applyOnPrevOptionName);
+        String sAddCellIdToResults = ezDAFi.isSeqGeq() ? TRUE : FALSE;
         //Added this to add runID to parameter
-        String parameterName = com.flowjo.plugin.ezDAFi.ezDAFi.pluginName;
+        String parameterName = ezDAFi.pluginName;
 
         //if (sParScale == null || sParScale.isEmpty() || com.flowjo.plugin.ezDAFi.ezDAFi.One.equals(sParScale) || com.flowjo.plugin.ezDAFi.ezDAFi.True.equals(sParScale))
 //            sParScale = TRUE; // TRUE is the default
         //      else
         //sParScale = FALSE;
 
-        if (sParPlotStats == null || sParPlotStats.isEmpty() || com.flowjo.plugin.ezDAFi.ezDAFi.One.equals(sParPlotStats) || com.flowjo.plugin.ezDAFi.ezDAFi.True.equals(sParPlotStats))
+        if (sParPlotStats == null || sParPlotStats.isEmpty() || ezDAFi.One.equals(sParPlotStats) || ezDAFi.True.equals(sParPlotStats))
             sParPlotStats = TRUE; // TRUE is the default
               else
         sParPlotStats = FALSE;
@@ -108,33 +108,33 @@ public class ezDAFiRFlowCalc extends RFlowCalculator {
         //else
         //  sParTrans = FALSE;
 
-        if (sParBatch == null || sParBatch.isEmpty() || com.flowjo.plugin.ezDAFi.ezDAFi.One.equals(sParBatch) || com.flowjo.plugin.ezDAFi.ezDAFi.True.equals(sParBatch))
+        if (sParBatch == null || sParBatch.isEmpty() || ezDAFi.One.equals(sParBatch) || ezDAFi.True.equals(sParBatch))
             sParBatch = TRUE; // TRUE is the default
         else
             sParBatch = FALSE;
 
-        if (sParkMeansSom == null || sParkMeansSom.isEmpty() || com.flowjo.plugin.ezDAFi.ezDAFi.One.equals(sParkMeansSom) || com.flowjo.plugin.ezDAFi.ezDAFi.True.equals(sParkMeansSom))
+        if (sParkMeansSom == null || sParkMeansSom.isEmpty() || ezDAFi.One.equals(sParkMeansSom) || ezDAFi.True.equals(sParkMeansSom))
             sParkMeansSom = TRUE; // TRUE is the default
         else
             sParkMeansSom = FALSE;
 
-        if (sParPLS == null || sParPLS.isEmpty() || com.flowjo.plugin.ezDAFi.ezDAFi.One.equals(sParPLS) || com.flowjo.plugin.ezDAFi.ezDAFi.True.equals(sParPLS))
+        if (sParPLS == null || sParPLS.isEmpty() || ezDAFi.One.equals(sParPLS) || ezDAFi.True.equals(sParPLS))
             sParPLS = TRUE; // TRUE is the default
         else
             sParPLS = FALSE;
 
-        if (sParMeta == null || sParMeta.isEmpty() || com.flowjo.plugin.ezDAFi.ezDAFi.One.equals(sParMeta) || com.flowjo.plugin.ezDAFi.ezDAFi.True.equals(sParMeta))
+        if (sParMeta == null || sParMeta.isEmpty() || ezDAFi.One.equals(sParMeta) || ezDAFi.True.equals(sParMeta))
             sParMeta = TRUE; // TRUE is the default
         else
             sParMeta = FALSE;
 
-        if (sParApplyOnChildren == null || sParApplyOnChildren.isEmpty() || com.flowjo.plugin.ezDAFi.ezDAFi.One.equals(sParApplyOnChildren) || com.flowjo.plugin.ezDAFi.ezDAFi.True.equals(sParApplyOnChildren))
+        if (sParApplyOnChildren == null || sParApplyOnChildren.isEmpty() || ezDAFi.One.equals(sParApplyOnChildren) || ezDAFi.True.equals(sParApplyOnChildren))
             sParApplyOnChildren = TRUE; // TRUE is the default
         else
             sParApplyOnChildren = FALSE;
 
         if (sParApplyOnPrev == null || sParApplyOnPrev.isEmpty())
-            sParApplyOnPrev = com.flowjo.plugin.ezDAFi.ezDAFi.defaultApplyOnPrev;
+            sParApplyOnPrev = ezDAFi.defaultApplyOnPrev;
         if (sParApplyOnPrev.length() > 5) // i.e., not "None"
             sParApplyOnPrev = outputFolder + File.separator + sParApplyOnPrev;
         if(EngineManager.isWindows()) sParApplyOnPrev = sParApplyOnPrev.replaceAll("\\\\", "/");
@@ -145,44 +145,44 @@ public class ezDAFiRFlowCalc extends RFlowCalculator {
 
         try {
             if ((Integer.parseInt(sParMinPopSize) < 100) || (Integer.parseInt(sParMinPopSize) > 1000000))
-                sParMinPopSize= Integer.toString(com.flowjo.plugin.ezDAFi.ezDAFi.defaultMinPopSize);
+                sParMinPopSize= Integer.toString(ezDAFi.defaultMinPopSize);
         } catch (Exception e) {
-            sParMinPopSize = Integer.toString(com.flowjo.plugin.ezDAFi.ezDAFi.defaultMinPopSize);
+            sParMinPopSize = Integer.toString(ezDAFi.defaultMinPopSize);
         }
 
         try {
             if ((Integer.parseInt(sParMinDim) < 1) || (Integer.parseInt(sParMinDim) > 999999))
-                sParMinDim= Integer.toString(com.flowjo.plugin.ezDAFi.ezDAFi.defaultMinDim);
+                sParMinDim= Integer.toString(ezDAFi.defaultMinDim);
         } catch (Exception e) {
-            sParMinDim = Integer.toString(com.flowjo.plugin.ezDAFi.ezDAFi.defaultMinDim);
+            sParMinDim = Integer.toString(ezDAFi.defaultMinDim);
         }
 
         try {
           if ((Integer.parseInt(sParMaxDim) < 1) || (Integer.parseInt(sParMaxDim) > 999999))
-              sParMaxDim= Integer.toString(com.flowjo.plugin.ezDAFi.ezDAFi.defaultMaxDim);
+              sParMaxDim= Integer.toString(ezDAFi.defaultMaxDim);
         } catch (Exception e) {
-          sParMaxDim = Integer.toString(com.flowjo.plugin.ezDAFi.ezDAFi.defaultMaxDim);
+          sParMaxDim = Integer.toString(ezDAFi.defaultMaxDim);
         }
 
         try {
             if ((Integer.parseInt(sParXDim) < 3) || (Integer.parseInt(sParXDim) > 32))
-                sParXDim = Integer.toString(com.flowjo.plugin.ezDAFi.ezDAFi.defaultXDim);
+                sParXDim = Integer.toString(ezDAFi.defaultXDim);
         } catch (Exception e) {
-            sParXDim = Integer.toString(com.flowjo.plugin.ezDAFi.ezDAFi.defaultXDim);
+            sParXDim = Integer.toString(ezDAFi.defaultXDim);
         }
 
         try {
             if ((Integer.parseInt(sParYDim) < 3) || (Integer.parseInt(sParYDim) > 32))
-                sParYDim = Integer.toString(com.flowjo.plugin.ezDAFi.ezDAFi.defaultYDim);
+                sParYDim = Integer.toString(ezDAFi.defaultYDim);
         } catch (Exception e) {
-            sParYDim = Integer.toString(com.flowjo.plugin.ezDAFi.ezDAFi.defaultYDim);
+            sParYDim = Integer.toString(ezDAFi.defaultYDim);
         }
 
-        int minPopSize = com.flowjo.plugin.ezDAFi.ezDAFi.defaultMinPopSize;
-        int minDim = com.flowjo.plugin.ezDAFi.ezDAFi.defaultMinDim;
-        int maxDim = com.flowjo.plugin.ezDAFi.ezDAFi.defaultMaxDim;
-        int xDim = com.flowjo.plugin.ezDAFi.ezDAFi.defaultXDim;
-        int yDim = com.flowjo.plugin.ezDAFi.ezDAFi.defaultYDim;
+        int minPopSize = ezDAFi.defaultMinPopSize;
+        int minDim = ezDAFi.defaultMinDim;
+        int maxDim = ezDAFi.defaultMaxDim;
+        int xDim = ezDAFi.defaultXDim;
+        int yDim = ezDAFi.defaultYDim;
         try {
             minPopSize = Integer.parseInt(sParMinPopSize);
             minDim = Integer.parseInt(sParMinDim);
