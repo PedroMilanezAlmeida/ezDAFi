@@ -25,6 +25,8 @@
 
 package com.flowjo.plugin.ezDAFi;
 
+
+import com.flowjo.plugin.ezDAFi.utils.MakeLink;
 import com.treestar.flowjo.application.workspace.Workspace;
 import com.treestar.flowjo.application.workspace.manager.FJApplication;
 import com.treestar.flowjo.application.workspace.manager.WSDocument;
@@ -60,20 +62,22 @@ import java.awt.event.ItemListener;
 import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.*;
 import java.util.List;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import static com.flowjo.plugin.ezDAFi.RScriptFlowCalculator.fOutFile;
 import static com.flowjo.plugin.ezDAFi.RScriptFlowCalculator.fOutFileLastLines;
+import static com.flowjo.plugin.ezDAFi.utils.CustomDAFTiLayout.createOverlay;
+import static com.flowjo.plugin.ezDAFi.utils.CustomDAFTiLayout.formatLegend;
 import static com.flowjo.plugin.ezDAFi.utils.PopTraverser.scaryTraversal;
 import static java.lang.System.currentTimeMillis;
 import static java.lang.Thread.sleep;
 
 public class ezDAFi extends R_Algorithm {
 
-    private static final String pluginVersion = "0.1p01";
+    private static final String pluginVersion = "0.3p02";
     public static String pluginName = "ezDAFi";
     public static boolean runAgain = false;
     public static boolean nameSet = false;
@@ -101,6 +105,8 @@ public class ezDAFi extends R_Algorithm {
     private FJCheckBox fMetaOptionCheckbox = null;
     private FJCheckBox fApplyOnChildrenCheckbox = null;
 
+    private FJCheckBox fSummaryOptionCheckbox = null;
+
     private static final int fixedLabelWidth = 130;
     private static final int fixedFieldWidth = 75;
     private static final int fixedLabelHeigth = 25;
@@ -120,7 +126,7 @@ public class ezDAFi extends R_Algorithm {
     private static final String mustBeMinPopSizeLabel = "(min # of events must be larger than SOM grid size W x H!)";
     private static final String minPopSizeTooltip = "Smallest number of cells to apply ezDAFi on.";
     private static final String minDimLabel = "# of dimensions: min";
-    private static final String maxDimLabel = "hidden dimensions:";
+    private static final String maxDimLabel = "Additional Clustering Dimensions:";
     //private static final String mustBeMinDimLabel = "(use min AND max = 1 for auto-selection)";
     private static final String minDimTooltip = "Min and max number of dimensions to apply ezDAFi on. High number of dimensions lead to high dimensional noise, low number of dimensions lead to no improvement over manual gate.";
     private static final String maxDimTooltip = "Expand your bi-dimensional gates with hidden dimensions. ezDAFi learns the most informative hidden dimensions from the data for every downstream gate. This number determines how many hidden dimensions to include in the dim-expanded gates.";
@@ -146,6 +152,8 @@ public class ezDAFi extends R_Algorithm {
         + "<br>(otherwise, recursive).";
     private static final String applyOnChildrenTooltip = "If checked, ezDAFi will refine only the children of the selected population. If unchecked, all children of children will be refined recursively (i.e., all sub-populations downstream of the selected one).";
 
+    private static final String summaryLabel = "Create a summary layout.";
+
     //public static final String scaleOptionName = "scale";
     public static final String plotStatsOptionName = "plotStats";
     //public static final String transOptionName = "trans";
@@ -165,6 +173,8 @@ public class ezDAFi extends R_Algorithm {
     public static final String sampleURISlot = "sampleURI";
     public static final String samplePopNodeSlot = "samplePopNode";
     public static final String sampleFileSlot = "sampleFile";
+
+    public static final String summaryLayout = "summaryLayout";
 
     public static final String RDataFileExtension = ".RData";
     public static final String RDataFileSuffix = ".csv.ezDAFi.csv.RData";
@@ -186,6 +196,8 @@ public class ezDAFi extends R_Algorithm {
     public static final boolean defaultMeta = false;
     public static final boolean defaultApplyOnChildren = false;
 
+    public static final boolean defaultSummaryLayout = true;
+
     //private boolean fScale = defaultScale;
     private boolean fPlotStats = defaultPlotStats;
     //private boolean fTrans = defaultTrans;
@@ -195,6 +207,10 @@ public class ezDAFi extends R_Algorithm {
     private boolean fPLS = defaultPLS;
     private boolean fMeta = defaultMeta;
     private boolean fApplyOnChildren = defaultApplyOnChildren;
+
+    private boolean summaryLayoutBool = defaultSummaryLayout;
+
+
     private int fndimx = defaultXDim, fndimy = defaultYDim;
     private int fnMinPopSize = defaultMinPopSize;
     private int fnMinDim = defaultMinDim;
@@ -211,10 +227,18 @@ public class ezDAFi extends R_Algorithm {
     private static final String pathToScriptLabelLine3 = "where 'numbers' is time of creation in milliseconds.";
     private static final String pathToScriptLabelLine4 = "";
 
-    private static final String citingLabelLine1 = "Required: if using ezDAFi, cite";
-    private static final String citingLabelLine2 = "ADD CITATION LINE 1";
-    private static final String citingLabelLine3 = "ADD CITATION LINE 2";
-    private static final String citingLabelLine4 = "ADD CITATION LINE 3";
+    // Initial Publication:
+    /**
+     * Lee, Alexandra J., et al. "DAFi: A directed recursive data filtering and clustering
+     * approach for improving and interpreting data clustering identification of cell populations
+     * from polychromatic flow cytometry data." Cytometry Part A 93.6 (2018): 597-610.
+     */
+
+    private static final String citingLabelLine1 = "If using ezDAFi, please cite:";
+    private static final String citingLabelLine2 = "Lee, Alexandra J., et al. \"DAFi: A directed recursive data filtering and clustering";
+    private static final String citingLabelLine3 = "approach for improving and interpreting data clustering identification of cell populations";
+    private static final String citingLabelLine4 = "from polychromatic flow cytometry data.\" Cytometry Part A 93.6 (2018): 597-610.";
+    private static final String citation = "https://onlinelibrary.wiley.com/doi/pdf/10.1002/cyto.a.23371";
 
     protected static final String sIconName = "images/ezDAFiIcon.png";
 
@@ -368,7 +392,7 @@ public class ezDAFi extends R_Algorithm {
             ezDAFiRFlowCalc calculator = new ezDAFiRFlowCalc();
             // Added the population node
             File ezDAFiResult = calculator.runezDAFi(thisSampleURI, wsName, wsDir, sampleFile, sampleName, thisSamplePopNode, sampleNode.getName(), parameterNames, fOptions, outputFolder.getAbsolutePath(), useExistingFiles(), millisTime);
-            calculator.deleteScriptFile();
+//            calculator.deleteScriptFile();
             checkROutFile(calculator);
 
             boolean invFlag = false;
@@ -424,13 +448,15 @@ public class ezDAFi extends R_Algorithm {
                     fShowRScript = false;
                 }
 
-                if (fShowRScript){
-                    try {
-                        Desktop.getDesktop().open(fOutFile);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
+//                if (fShowRScript){
+//                    try {
+                        // Make this open a folder of genesets... or just don't open it at all.
+//                        Desktop.getDesktop().open(fOutFile.getParentFile());
+//                        Desktop.getDesktop().open(fOutFile);
+//                    } catch (IOException e) {
+//                        e.printStackTrace();
+//                    }
+//                }
 
             } catch (Exception error) {
                 try{
@@ -453,13 +479,12 @@ public class ezDAFi extends R_Algorithm {
             if (invFlag) {
 
                 ExecutorService threadPool = Executors.newFixedThreadPool(1);
-                Sample sample02 = FJPluginHelper.getSample(fcmlQueryElement);
 
-                PopNode theNode = FJPluginHelper.getParentPopNode(fcmlQueryElement) == null ? sample02.getSampleNode() : FJPluginHelper
+                PopNode theNode = FJPluginHelper.getParentPopNode(fcmlQueryElement) == null ? sample.getSampleNode() : FJPluginHelper
                         .getParentPopNode(fcmlQueryElement);
 
                 invFlag = false;
-                final HashMap<AppNode, SElement>[] popHash = new HashMap[]{new HashMap<>()};
+                final HashMap<AppNode, Integer>[] popHash = new HashMap[]{new HashMap<>()};
 
                 try {
                     threadPool.submit(new Runnable() {
@@ -467,12 +492,51 @@ public class ezDAFi extends R_Algorithm {
 
                             // wish we didn't need to do this, but want to try and be sure the gatingML is in place.
                             try {
-                                sleep(6000);
+
+                                sleep(7000);
+
                             } catch (InterruptedException e) {
                                 e.printStackTrace();
                             }
 
-                            scaryTraversal(theNode, popHash[0], fcmlQueryElement);
+
+                            popHash[0] = scaryTraversal(theNode, popHash[0], fcmlQueryElement);
+
+                            // DONE List:
+                            //      - Create "geneset library" from top features for each population within R
+                            //      - Add class for dealing with layouts
+                            //      - Impliment that crafted output
+                            //      - Give flag for summary layout creation
+                            //      - Add information from geneset libraries to annotations in LE
+
+                            // TODO List:
+                            //      - Get recording and add it to documentation
+
+
+                            boolean bLayout = false;
+                            String sLayout = fOptions.get(summaryLayout);
+                            if (sLayout != null && !sLayout.isEmpty())
+                                 bLayout = One.equals(sLayout) || True.equals(sLayout);
+
+
+                            if(bLayout) {
+                                try {
+                                    sleep(500);
+                                } catch (InterruptedException e) {
+                                    e.printStackTrace();
+                                }
+
+                                try {
+                                    createOverlay(popHash[0], sample, "ezDAFi Summary " + sample.getName(),
+                                            30, fcmlQueryElement, true, fOutFile.getParentFile());
+
+                                    formatLegend(sample);
+
+                                } catch (Exception ee) {
+                                    ee.printStackTrace();
+                                }
+                            }
+
                         }
                     });
                 } catch (Exception e) {
@@ -904,6 +968,8 @@ public class ezDAFi extends R_Algorithm {
         fnMinDim = defaultMinDim;
         fnMaxDim = defaultMaxDim;
 
+        summaryLayoutBool = defaultSummaryLayout;
+
         // If there are option set already (e.g., from the workspace), then
         // let's retrieve those and use them instead of defaults.
         Iterator<SElement> iterator = selement.getChildren("Option").iterator();
@@ -927,6 +993,10 @@ public class ezDAFi extends R_Algorithm {
                   if (savedApplyOnPrevOption.startsWith(itemValue))
                       fApplyOnPrevCombo.setSelectedIndex(j);
               }
+
+            String sLayout = option.getAttributeValue(summaryLayout);
+            if (sLayout != null && !sLayout.isEmpty())
+                summaryLayoutBool = One.equals(sLayout) || True.equals(sLayout);
 
             String savedApplyOnChildren = option.getAttributeValue(applyOnChildrenOptionName);
             if (savedApplyOnChildren != null && !savedApplyOnChildren.isEmpty())
@@ -1092,6 +1162,12 @@ public class ezDAFi extends R_Algorithm {
         //fTransOptionCheckbox.setSelected(fTrans);
         //componentList.add(new HBox(new Component[]{fTransOptionCheckbox}));
 
+        fSummaryOptionCheckbox = new FJCheckBox(summaryLabel);
+        fSummaryOptionCheckbox.setToolTipText(makeHTMPar("Adds a layout of summary overlays to the workspace.", fixedToolTipWidth,
+                9, "left", false));
+        fSummaryOptionCheckbox.setSelected(summaryLayoutBool);
+        componentList.add(new HBox(new Component[]{fSummaryOptionCheckbox}));
+
         FJLabel hSpaceLabelCiting = new FJLabel("");
         GuiFactory.setSizes(hSpaceLabelCiting, new Dimension(fixedLabelWidth, hSpaceHeigth));
         componentList.add(hSpaceLabelCiting);
@@ -1105,6 +1181,26 @@ public class ezDAFi extends R_Algorithm {
         componentList.add(new FJLabel(citingLabelLine2));
         componentList.add(new FJLabel(citingLabelLine3));
         componentList.add(new FJLabel(citingLabelLine4));
+
+
+        MakeLink ml = new MakeLink();
+        FJLabel citeLink = ml.makeCLink(citation);
+        componentList.add(citeLink);
+
+        componentList.add(new JSeparator());
+        String helpText = makeHTMPar("For any questions about the plugin, please reach out: ", 5, 9,"left",
+                false);
+        FJLabel helpLabel = new FJLabel(helpText);
+
+        String HELP = "";
+        if (SeqGeq()) {
+            HELP = "mailto:seqgeq@bd.com";
+        } else {
+            HELP = "mailto:flowjo@bd.com";
+        }
+        FJLabel help = ml.makeCLink(HELP);
+        componentList.add(helpLabel);
+        componentList.add(help);
 
         return componentList;
     }
@@ -1130,6 +1226,24 @@ public class ezDAFi extends R_Algorithm {
         return null;
     }
 
+    public static boolean SeqGeq() {
+        if (FJApplication.getInstance() != null &&
+                FJApplication.getInstance().getAppName() != null &&
+                FJApplication.getInstance().getAppName().toLowerCase().contains("seqgeq"))
+            return true;
+        return false;
+    }
+
+    // t = text, w = width, s = font-size, a = alignment (left|right|center|justify)
+    public static String makeHTMPar(String t, int w, int s, String a, boolean bold) {
+        String ret = "<html><p style=\"width: " + w + "px;\" style=\"font-size:" + s + "px\" text-align:\"" + a + "\">";
+        if (bold) ret += "<b>";
+        ret += t;
+        if (bold) ret += "</b>";
+        ret += "</p></html>";
+        return ret;
+    }
+
 
     protected void refreshComponentsEnabled(FJComboBox applyOnPrevCombo) {
       if (applyOnPrevCombo != null) {
@@ -1145,6 +1259,7 @@ public class ezDAFi extends R_Algorithm {
               if (fPLSOptionCheckbox != null) fPLSOptionCheckbox.setEnabled(false);
               if (fMetaOptionCheckbox != null) fMetaOptionCheckbox.setEnabled(false);
               if (fApplyOnChildrenCheckbox != null) fApplyOnChildrenCheckbox.setEnabled(false);
+              if (fSummaryOptionCheckbox != null) fSummaryOptionCheckbox.setEnabled(false);
 
                 // If we are selecting the application on existing map then let's select the same parameters
                 // in the parameter selector, and let's do so based on the CSV file that has those.
@@ -1188,7 +1303,6 @@ public class ezDAFi extends R_Algorithm {
                             fParameterNameList.setSelectedIndices(indices);
                             fParameterNameList.setEnabled(false);
 
-
                         } catch (FileNotFoundException e) {
                         }
                     }
@@ -1206,6 +1320,7 @@ public class ezDAFi extends R_Algorithm {
               if (fMetaOptionCheckbox != null) fMetaOptionCheckbox.setEnabled(true);
               if (fApplyOnChildrenCheckbox != null) fApplyOnChildrenCheckbox.setEnabled(true);
               if (fParameterNameList != null) fParameterNameList.setEnabled(true);
+              if (fSummaryOptionCheckbox != null) fSummaryOptionCheckbox.setEnabled(true);
             }
         }
     }
@@ -1252,6 +1367,7 @@ public class ezDAFi extends R_Algorithm {
         fOptions.put(PLSOptionName, fPLSOptionCheckbox.isSelected() ? One : Zero);
         fOptions.put(metaOptionName, fMetaOptionCheckbox.isSelected() ? One : Zero);
         fOptions.put(applyOnChildrenOptionName, fApplyOnChildrenCheckbox.isSelected() ? One : Zero);
+        fOptions.put(summaryLayout, fSummaryOptionCheckbox.isSelected() ? One : Zero);
         if (fApplyOnPrevCombo.getSelectedIndex() <= 0) {
             fOptions.put(applyOnPrevOptionName, fApplyOnPrevCombo.getSelectedItem().toString());
         } else {
