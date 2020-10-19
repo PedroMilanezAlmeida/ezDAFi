@@ -25,7 +25,6 @@
 
 package com.flowjo.plugin.ezDAFi;
 
-
 import com.flowjo.plugin.ezDAFi.utils.MakeLink;
 import com.treestar.flowjo.application.workspace.Workspace;
 import com.treestar.flowjo.application.workspace.manager.FJApplication;
@@ -60,7 +59,6 @@ import java.awt.*;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.io.*;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.List;
 import java.util.*;
@@ -69,15 +67,14 @@ import java.util.concurrent.Executors;
 
 import static com.flowjo.plugin.ezDAFi.RScriptFlowCalculator.fOutFile;
 import static com.flowjo.plugin.ezDAFi.RScriptFlowCalculator.fOutFileLastLines;
-import static com.flowjo.plugin.ezDAFi.utils.CustomDAFTiLayout.createOverlay;
-import static com.flowjo.plugin.ezDAFi.utils.CustomDAFTiLayout.formatLegend;
+import static com.flowjo.plugin.ezDAFi.utils.CustomDAFTiLayout.*;
 import static com.flowjo.plugin.ezDAFi.utils.PopTraverser.scaryTraversal;
 import static java.lang.System.currentTimeMillis;
 import static java.lang.Thread.sleep;
 
 public class ezDAFi extends R_Algorithm {
 
-    private static final String pluginVersion = "0.3p02";
+    private static final String pluginVersion = "0.4";
     public static String pluginName = "ezDAFi";
     public static boolean runAgain = false;
     public static boolean nameSet = false;
@@ -106,6 +103,7 @@ public class ezDAFi extends R_Algorithm {
     private FJCheckBox fApplyOnChildrenCheckbox = null;
 
     private FJCheckBox fSummaryOptionCheckbox = null;
+    private FJCheckBox fOverlayCheckbox = null;
 
     private static final int fixedLabelWidth = 130;
     private static final int fixedFieldWidth = 75;
@@ -153,6 +151,7 @@ public class ezDAFi extends R_Algorithm {
     private static final String applyOnChildrenTooltip = "If checked, ezDAFi will refine only the children of the selected population. If unchecked, all children of children will be refined recursively (i.e., all sub-populations downstream of the selected one).";
 
     private static final String summaryLabel = "Create a summary layout.";
+    private static final String overlayLabel = "Overlay ezDAFi population.";
 
     //public static final String scaleOptionName = "scale";
     public static final String plotStatsOptionName = "plotStats";
@@ -175,6 +174,7 @@ public class ezDAFi extends R_Algorithm {
     public static final String sampleFileSlot = "sampleFile";
 
     public static final String summaryLayout = "summaryLayout";
+    public static final String fOverlayString = "fOverlay";
 
     public static final String RDataFileExtension = ".RData";
     public static final String RDataFileSuffix = ".csv.ezDAFi.csv.RData";
@@ -197,6 +197,7 @@ public class ezDAFi extends R_Algorithm {
     public static final boolean defaultApplyOnChildren = false;
 
     public static final boolean defaultSummaryLayout = true;
+    public static final boolean defaultOverlay = false;
 
     //private boolean fScale = defaultScale;
     private boolean fPlotStats = defaultPlotStats;
@@ -209,6 +210,7 @@ public class ezDAFi extends R_Algorithm {
     private boolean fApplyOnChildren = defaultApplyOnChildren;
 
     private boolean summaryLayoutBool = defaultSummaryLayout;
+    private boolean fOverlay = defaultOverlay;
 
 
     private int fndimx = defaultXDim, fndimy = defaultYDim;
@@ -492,13 +494,10 @@ public class ezDAFi extends R_Algorithm {
 
                             // wish we didn't need to do this, but want to try and be sure the gatingML is in place.
                             try {
-
                                 sleep(7000);
-
                             } catch (InterruptedException e) {
                                 e.printStackTrace();
                             }
-
 
                             popHash[0] = scaryTraversal(theNode, popHash[0], fcmlQueryElement);
 
@@ -508,15 +507,21 @@ public class ezDAFi extends R_Algorithm {
                             //      - Impliment that crafted output
                             //      - Give flag for summary layout creation
                             //      - Add information from geneset libraries to annotations in LE
+                            //      - Get recording and add it to documentation
 
                             // TODO List:
-                            //      - Get recording and add it to documentation
+                            //      - Give option to not overlay in summary Layout
 
 
                             boolean bLayout = false;
                             String sLayout = fOptions.get(summaryLayout);
                             if (sLayout != null && !sLayout.isEmpty())
                                  bLayout = One.equals(sLayout) || True.equals(sLayout);
+
+                            boolean lOverlay = false;
+                            String sOverlay = fOptions.get(fOverlayString);
+                            if (sLayout != null && !sLayout.isEmpty())
+                                lOverlay = One.equals(sOverlay) || True.equals(sOverlay);
 
 
                             if(bLayout) {
@@ -527,16 +532,21 @@ public class ezDAFi extends R_Algorithm {
                                 }
 
                                 try {
-                                    createOverlay(popHash[0], sample, "ezDAFi Summary " + sample.getName(),
-                                            30, fcmlQueryElement, true, fOutFile.getParentFile());
 
-                                    formatLegend(sample);
+                                    if(lOverlay) {
+                                        createOverlay(popHash[0], sample, "ezDAFi Summary " + sample.getName(),
+                                                30, fcmlQueryElement, true, fOutFile.getParentFile());
+
+                                        formatLegend(sample);
+                                    } else {
+                                        createNoOverlay(popHash[0], sample, "ezDAFi Summary " + sample.getName(),
+                                                30, fcmlQueryElement, true, fOutFile.getParentFile());
+                                    }
 
                                 } catch (Exception ee) {
                                     ee.printStackTrace();
                                 }
                             }
-
                         }
                     });
                 } catch (Exception e) {
@@ -969,6 +979,7 @@ public class ezDAFi extends R_Algorithm {
         fnMaxDim = defaultMaxDim;
 
         summaryLayoutBool = defaultSummaryLayout;
+        fOverlay = defaultOverlay;
 
         // If there are option set already (e.g., from the workspace), then
         // let's retrieve those and use them instead of defaults.
@@ -993,6 +1004,10 @@ public class ezDAFi extends R_Algorithm {
                   if (savedApplyOnPrevOption.startsWith(itemValue))
                       fApplyOnPrevCombo.setSelectedIndex(j);
               }
+
+            String overlayString = option.getAttributeValue(fOverlayString);
+            if (overlayString != null && !overlayString.isEmpty())
+                fOverlay = One.equals(overlayString) || True.equals(overlayString);
 
             String sLayout = option.getAttributeValue(summaryLayout);
             if (sLayout != null && !sLayout.isEmpty())
@@ -1168,6 +1183,12 @@ public class ezDAFi extends R_Algorithm {
         fSummaryOptionCheckbox.setSelected(summaryLayoutBool);
         componentList.add(new HBox(new Component[]{fSummaryOptionCheckbox}));
 
+        fOverlayCheckbox = new FJCheckBox(overlayLabel);
+        fOverlayCheckbox.setToolTipText(makeHTMPar("Creates an overlay on manual gating, otherwise plots comparing manual " +
+                        "gates to ezDAFi clusters sit side by side.", fixedToolTipWidth, 9, "left", false));
+        fOverlayCheckbox.setSelected(fOverlay);
+        componentList.add(new HBox(new Component[]{new FJLabel("     "),fOverlayCheckbox}));
+
         FJLabel hSpaceLabelCiting = new FJLabel("");
         GuiFactory.setSizes(hSpaceLabelCiting, new Dimension(fixedLabelWidth, hSpaceHeigth));
         componentList.add(hSpaceLabelCiting);
@@ -1260,6 +1281,7 @@ public class ezDAFi extends R_Algorithm {
               if (fMetaOptionCheckbox != null) fMetaOptionCheckbox.setEnabled(false);
               if (fApplyOnChildrenCheckbox != null) fApplyOnChildrenCheckbox.setEnabled(false);
               if (fSummaryOptionCheckbox != null) fSummaryOptionCheckbox.setEnabled(false);
+              if (fOverlayCheckbox != null) fOverlayCheckbox.setEnabled(false);
 
                 // If we are selecting the application on existing map then let's select the same parameters
                 // in the parameter selector, and let's do so based on the CSV file that has those.
@@ -1321,6 +1343,7 @@ public class ezDAFi extends R_Algorithm {
               if (fApplyOnChildrenCheckbox != null) fApplyOnChildrenCheckbox.setEnabled(true);
               if (fParameterNameList != null) fParameterNameList.setEnabled(true);
               if (fSummaryOptionCheckbox != null) fSummaryOptionCheckbox.setEnabled(true);
+              if (fOverlayCheckbox != null) fOverlayCheckbox.setEnabled(true);
             }
         }
     }
@@ -1368,6 +1391,7 @@ public class ezDAFi extends R_Algorithm {
         fOptions.put(metaOptionName, fMetaOptionCheckbox.isSelected() ? One : Zero);
         fOptions.put(applyOnChildrenOptionName, fApplyOnChildrenCheckbox.isSelected() ? One : Zero);
         fOptions.put(summaryLayout, fSummaryOptionCheckbox.isSelected() ? One : Zero);
+        fOptions.put(fOverlayString, fOverlayCheckbox.isSelected() ? One : Zero);
         if (fApplyOnPrevCombo.getSelectedIndex() <= 0) {
             fOptions.put(applyOnPrevOptionName, fApplyOnPrevCombo.getSelectedItem().toString());
         } else {

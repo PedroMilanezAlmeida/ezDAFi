@@ -639,6 +639,8 @@ for(pop_to_SOM in seq_along(pops_to_SOM)){
           keep.marker <- colnames(pop.exprs) %in%
             keep.marker
 
+          names(keep.marker) <- colnames(pop.exprs)
+
           print("gate:")
           print(gate)
           print("markers t-stat:")
@@ -649,12 +651,17 @@ for(pop_to_SOM in seq_along(pops_to_SOM)){
                                   "t-score" = as.numeric(),
                                   stringsAsFactors = F
                                   )
+          reord.keep.marker <- keep.marker[names(markers.t)]
           for(m in 1:length( markers.t )){
-            # if(keep.marker[m]){
-              ParListDF[iterator,1] <- names(markers.t[m])
-              ParListDF[iterator,2] <- paste0(" ", signif(markers.t[[m]], 3))
+              if(reord.keep.marker[m]){
+              ParListDF[iterator,1] <- paste0("<b>", names(markers.t[m]), "</b>")
+              ParListDF[iterator,2] <- paste0("  <b>", signif(markers.t[[m]], 3), "</b>")
               iterator = iterator + 1
-            # }
+            } else {
+                ParListDF[iterator,1] <- names(markers.t[m])
+                ParListDF[iterator,2] <- paste0(" ", signif(markers.t[[m]], 3))
+                iterator = iterator + 1
+            }
           }
           popSets[ITerator] <- gate
           parSets[[ITerator]] <- ParListDF
@@ -2890,7 +2897,6 @@ write.csv(nonezDAFi_labels,
                      fixed = FALSE),
           row.names = FALSE,
           quote = TRUE)
-
 
 
 ##################################
