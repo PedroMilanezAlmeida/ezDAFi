@@ -74,7 +74,7 @@ import static java.lang.Thread.sleep;
 
 public class ezDAFi extends R_Algorithm {
 
-    private static final String pluginVersion = "0.4";
+    private static final String pluginVersion = "0.5";
     public static String pluginName = "ezDAFi";
     public static boolean runAgain = false;
     public static boolean nameSet = false;
@@ -149,6 +149,8 @@ public class ezDAFi extends R_Algorithm {
     private static final String applyOnChildrenLabel = "<html>Apply on children only."
         + "<br>(otherwise, recursive).";
     private static final String applyOnChildrenTooltip = "If checked, ezDAFi will refine only the children of the selected population. If unchecked, all children of children will be refined recursively (i.e., all sub-populations downstream of the selected one).";
+
+    private static final String supportedByString = "This work was supported by the Intramural Research Program of NIAID, NIH.";
 
     private static final String summaryLabel = "Create a summary layout.";
     private static final String overlayLabel = "Overlay ezDAFi population.";
@@ -240,7 +242,9 @@ public class ezDAFi extends R_Algorithm {
     private static final String citingLabelLine2 = "Lee, Alexandra J., et al. \"DAFi: A directed recursive data filtering and clustering";
     private static final String citingLabelLine3 = "approach for improving and interpreting data clustering identification of cell populations";
     private static final String citingLabelLine4 = "from polychromatic flow cytometry data.\" Cytometry Part A 93.6 (2018): 597-610.";
-    private static final String citation = "https://onlinelibrary.wiley.com/doi/pdf/10.1002/cyto.a.23371";
+
+//    private static final String citation = "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6030426";
+    private static final String citation = "https://onlinelibrary.wiley.com/doi/pdf/10.1002/cyto.a.23371";    // Link redirects too much on Dan's machine... nope misunderstood - haha
 
     protected static final String sIconName = "images/ezDAFiIcon.png";
 
@@ -1203,9 +1207,8 @@ public class ezDAFi extends R_Algorithm {
         componentList.add(new FJLabel(citingLabelLine3));
         componentList.add(new FJLabel(citingLabelLine4));
 
-
         MakeLink ml = new MakeLink();
-        FJLabel citeLink = ml.makeCLink(citation);
+        FJLabel citeLink = ml.makeCLink02(citation);
         componentList.add(citeLink);
 
         componentList.add(new JSeparator());
@@ -1219,9 +1222,13 @@ public class ezDAFi extends R_Algorithm {
         } else {
             HELP = "mailto:flowjo@bd.com";
         }
-        FJLabel help = ml.makeCLink(HELP);
+        FJLabel help = ml.makeCLink01(HELP);
         componentList.add(helpLabel);
         componentList.add(help);
+
+        String supportedByText = makeHTMPar("<br>" + supportedByString, 5,8,"left", false);
+        FJLabel supportedByLabel = new FJLabel(supportedByText);
+        componentList.add(supportedByLabel);
 
         return componentList;
     }
