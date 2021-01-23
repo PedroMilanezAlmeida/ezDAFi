@@ -38,23 +38,23 @@ Rver.min.2 <- strsplit(x = version$minor,
                        useBytes = FALSE)[[1]][2]
 
 if(Rver.maj < 4){
-    stop(paste0("The plugin cannot run with R versions older than 4.0.1. ",
-    "Your version is: ",
-    paste0(version$major, ".", version$minor),
-    ". Please, update R and try again."))
+  stop(paste0("The plugin cannot run with R versions older than 4.0.1. ",
+              "Your version is: ",
+              paste0(version$major, ".", version$minor),
+              ". Please, update R and try again."))
 } else if(Rver.maj == 4 &
-    Rver.min.1 < 0){
-        stop(paste0("The plugin cannot run with R versions older than 4.0.1. ",
-        "Your version is: ",
-        paste0(version$major, ".", version$minor),
-        ". Please, update R and try again."))
+          Rver.min.1 < 0){
+  stop(paste0("The plugin cannot run with R versions older than 4.0.1. ",
+              "Your version is: ",
+              paste0(version$major, ".", version$minor),
+              ". Please, update R and try again."))
 } else if(Rver.maj == 4 &
-    Rver.min.1 == 0 &
-    Rver.min.2 < 1) {
-        stop(paste0("The plugin cannot run with R versions older than 4.0.1. ",
-        "Your version is: ",
-        paste0(version$major, ".", version$minor),
-        ". Please, update R and try again."))
+          Rver.min.1 == 0 &
+          Rver.min.2 < 1) {
+  stop(paste0("The plugin cannot run with R versions older than 4.0.1. ",
+              "Your version is: ",
+              paste0(version$major, ".", version$minor),
+              ". Please, update R and try again."))
 }
 
 tryCatch(suppressMessages(library("BiocManager")),
@@ -212,6 +212,25 @@ tryCatch(suppressMessages(library("ggcyto")),
                                 ask = FALSE)
            suppressMessages(library("ggcyto"))
          })
+tryCatch(suppressMessages(library("readr")),
+         error = function(e){
+           install.packages(pkgs =  "readr",
+                            repos = 'http://cran.us.r-project.org')
+           suppressMessages(library("readr"))
+         })
+tryCatch(suppressMessages(library("Matrix")),
+         error = function(e){
+           install.packages(pkgs =  "Matrix",
+                            repos = 'http://cran.us.r-project.org')
+           suppressMessages(library("Matrix"))
+         })
+tryCatch(suppressMessages(library("matrixTests")),
+         error = function(e){
+           install.packages(pkgs =  "matrixTests",
+                            repos = 'http://cran.us.r-project.org')
+           suppressMessages(library("matrixTests"))
+         })
+
 
 hierarc.str <- function(ezDAFi_gate_name, n){
   i <- n
@@ -261,7 +280,7 @@ fj_par_scale
 fj_par_som <- FJ_PAR_SOM
 #fj_par_som <- !fj_par_som
 fj_par_som
-fj_par_plsda <- FJ_PAR_PLSDA
+fj_par_plsda <- FALSE #FJ_PAR_PLSDA
 fj_par_plsda
 #fj_par_xdim <- FJ_PAR_XDIM
 #fj_par_xdim
@@ -276,7 +295,7 @@ fj_population_name <- "FJ_POPULATION_NAME"
 fj_population_name
 fj_millis_time <- "FJ_MILLIS_TIME"
 fj_millis_time
-fj_par_meta <- FJ_PAR_META
+fj_par_meta <- FALSE #FJ_PAR_META
 fj_par_meta
 plotDir <- paste0(wspDir,
                   "/",
@@ -289,7 +308,7 @@ statsDir <- paste0(wspDir,
                    "_ezDAFi_stats")
 statsDir
 max.nPar <- FJ_MAX_N_PAR
-fj_plot_stats <- FJ_PLOT_STATS
+fj_plot_stats <- FALSE #FJ_PLOT_STATS
 
 ## Code to read gates from wsp file
 #load wsp file
@@ -347,7 +366,7 @@ newSampleURI <- normalizePath(sampleURI)
 
 gs <- gs[flowWorkspace::keyword(gs,
                                 "FILENAME")$FILENAME ==
-        newSampleURI]
+           newSampleURI]
 
 flowCore::fsApply(flowWorkspace::gs_pop_get_data(gs),
                   print)
@@ -362,6 +381,42 @@ eventsCount <- flowWorkspace::gh_pop_get_data(gs[[1]]) %>%
 if (eventsCount == 0){
   stop("R failed to read the input file.",
        call.=FALSE)
+}
+
+# add multi-omics feature
+fj_par_multi <- FJ_PAR_MULTI
+if(fj_par_multi){
+  genesets <- tryCatch({
+    suppressMessages(
+      newSampleURI %>%
+        paste0("_genesets.csv") %>%
+        readr::read_csv(file = .) %>%
+        as.list() %>%
+        lapply(function(geneset)
+          geneset[!is.na(geneset)]))
+  },
+  error = function(e) {
+    stop("Please provide genesets as columns of a csv file (each geneset in a column, each gene id matching the gene ids of the RNA file). The csv file has to be named exactly as the provided fcs file plus the ending '_genesets.csv'",
+         call. = FALSE)
+  }
+  )
+  RNA <- tryCatch({
+    suppressMessages(
+      newSampleURI %>%
+        paste0("_RNA.rds") %>%
+        readRDS
+    )
+  },
+  error = function(e) {
+    stop("Please provide normalized RNA data as rds file containing a matrix (preferenitally sparse) with cells in rows and genes in columns. The rds file has to be named exactly as the provided fcs file plus the ending '_RNA.rds'",
+         call. = FALSE)
+  }
+  )
+  if(eventsCount != dim(RNA)[1]){
+    stop("RNA file must have the same number of cells as fcs file.",
+         call. = FALSE)
+  }
+  
 }
 
 #define gates of the selected samples that will be used here
@@ -420,8 +475,8 @@ if(length(names_gates_SOM) == 1 &
 
 # TODO: CHANGE CODE TO BE ABLE TO HANDLE WHEN PLUGIN IS CALLED ON ROOT
 #if(popOfInt == "root"){
- # stop("It looks like the plugin was either called on a gate with a name that ends in '.fcs' (which is not supported, please change the gate name if that is the case) or the plugin was called on the sample directly, not on a gate thereof (the plugin cannot handle the that yet, please select a gate and rerun ezDAFi).",
-  #     call. = FALSE)
+# stop("It looks like the plugin was either called on a gate with a name that ends in '.fcs' (which is not supported, please change the gate name if that is the case) or the plugin was called on the sample directly, not on a gate thereof (the plugin cannot handle the that yet, please select a gate and rerun ezDAFi).",
+#     call. = FALSE)
 #}
 
 # for recursive analysis, run whole ezDAFi process for each
@@ -533,12 +588,12 @@ ITerator = 1
 
 #actual ezDAFi
 for(pop_to_SOM in seq_along(pops_to_SOM)){
-
+  
   print("clustering pop:")
   print(pops_to_SOM[pop_to_SOM] %>%
           names(.))
   for(fSample in seq_along(gs)) {
-
+    
     if(dim(flowWorkspace::gh_pop_get_data(gs[[fSample]],
                                           pops_to_SOM[pop_to_SOM] %>%
                                           names(.)))[1] > minPopSize) {#[,parIndices])[1] > minPopSize) { # in case a subpop is smaller than min #events, SOM is not applied
@@ -550,10 +605,11 @@ for(pop_to_SOM in seq_along(pops_to_SOM)){
           pops_to_SOM[[pop_to_SOM]])
       )
       for(gate in gates) {
-
+        
         pop.exprs <- flowWorkspace::gh_pop_get_data(
           gs[[fSample]],
-          pops_to_SOM[[pop_to_SOM]]) %>%
+          y = pops_to_SOM[pop_to_SOM] %>%
+            names(.)) %>%
           flowCore::exprs()
         colnames(pop.exprs) <- ifelse(
           is.na(pData.asDF$desc),
@@ -611,17 +667,62 @@ for(pop_to_SOM in seq_along(pops_to_SOM)){
                  gate))[
                    flowWorkspace::gh_pop_get_indices(
                      gs[[fSample]],
-                     pops_to_SOM[[pop_to_SOM]])
+                     pops_to_SOM[pop_to_SOM] %>%
+                       names(.))
                  ]
-        if(sum(in.gate) > 4 &
-           sum(!in.gate) > 4) {
+        if(sum(in.gate) > 10 &
+           sum(!in.gate) > 10) {
+        # get signature scores if multi-omics
+        if(fj_par_multi){
+          scores <- lapply(genesets,
+                           function(geneset){
+                             pop.RNA <- RNA[
+                               flowWorkspace::gh_pop_get_indices(
+                                 gs[[fSample]],
+                                 pops_to_SOM[pop_to_SOM] %>%
+                                   names(.)),
+                               colnames(RNA) %in%
+                                 geneset]
+                             pop.RNA <- pop.RNA[, 
+                                                apply(pop.RNA, 
+                                                      2, 
+                                                      var) != 0]
+                             if(dim(pop.RNA)[2] < 3) {
+                               next
+                             }
+                             X.df <- data.frame(X = scale(pop.RNA,
+                                                          center = TRUE,
+                                                          scale = TRUE) %>%
+                                                  I(),
+                                                Y = ((in.gate) * 1 ) %>%
+                                                  I())
+                             score <- pls::cppls(Y ~ X,
+                                                 ncomp = 1,
+                                                 data = X.df,
+                                                 center = TRUE)$scores[,1]
+                             # <- prcomp(x = pop.RNA,
+                             #                center = TRUE,
+                             #               scale. = TRUE,
+                             #               rank. = 1) %>%
+                             # .$x %>%
+                             # .[,1]
+                             return(score)
+                           }) %>%
+            unlist(.,
+                   use.names = FALSE) %>%
+            matrix(.,
+                   ncol = length(genesets),
+                   byrow = FALSE,
+                   dimnames = list(NULL,
+                                   names(genesets)))
+          pop.exprs <- cbind(pop.exprs,
+                             scores)
+        }
           # rank markers by t-stat absolute value
-          markers.t <- apply(pop.exprs,
-                             2,
-                             function(marker)
-                               t.test(marker[in.gate],
-                                      marker[!in.gate],
-                                      var.equal = FALSE)$statistic) %>%
+          markers.t <- matrixTests::col_t_welch(x = pop.exprs[in.gate,],
+                                                y = pop.exprs[!in.gate,])["statistic"] %>%
+            t() %>%
+            .[1,] %>%
             abs() %>%
             sort(decreasing = TRUE)
           keep.marker <- ezDAFi.nPar
@@ -635,58 +736,58 @@ for(pop_to_SOM in seq_along(pops_to_SOM)){
             keep.marker <- c(keep.marker,
                              names(markers.t)[2])
           }
-
+          
           keep.marker <- colnames(pop.exprs) %in%
             keep.marker
-
+          
           names(keep.marker) <- colnames(pop.exprs)
-
+          
           print("gate:")
           print(gate)
           print("markers t-stat:")
           print(markers.t)
-
+          
           iterator = 1
           ParListDF <- data.frame("Parameter" = as.character(),
                                   "t-score" = as.numeric(),
                                   stringsAsFactors = F
-                                  )
+          )
           reord.keep.marker <- keep.marker[names(markers.t)]
           for(m in 1:length( markers.t )){
-              if(reord.keep.marker[m]){
+            if(reord.keep.marker[m]){
               ParListDF[iterator,1] <- paste0("<b>", names(markers.t[m]), "</b>")
               ParListDF[iterator,2] <- paste0("  <b>", signif(markers.t[[m]], 3), "</b>")
               iterator = iterator + 1
             } else {
-                ParListDF[iterator,1] <- names(markers.t[m])
-                ParListDF[iterator,2] <- paste0(" ", signif(markers.t[[m]], 3))
-                iterator = iterator + 1
+              ParListDF[iterator,1] <- names(markers.t[m])
+              ParListDF[iterator,2] <- paste0(" ", signif(markers.t[[m]], 3))
+              iterator = iterator + 1
             }
           }
           popSets[ITerator] <- gate
           parSets[[ITerator]] <- ParListDF
           ITerator = ITerator + 1
-
+          
         } else { #else call: if there are too few cells in traditional gate
           print("gate:")
           print(gate)
           print("Not enough cells to find most informative hidden dimensions.")
           print("ezDAFi will simply apply the manual gate for this gate.")
-
+          
           iterator = 1
           ParListDF <- data.frame("Parameter" = as.character(),
                                   "t-score" = as.character(),
                                   stringsAsFactors = F
           )
           for(m in 1:length( gate_par )){
-              ParListDF[iterator,1] <- gate_par[m]
-              ParListDF[iterator,2] <- " NA: too few cells"
-              iterator = iterator + 1
+            ParListDF[iterator,1] <- gate_par[m]
+            ParListDF[iterator,2] <- " NA: too few cells"
+            iterator = iterator + 1
           }
           popSets[ITerator] <- gate
           parSets[[ITerator]] <- ParListDF
           ITerator = ITerator + 1
-
+          
           flowWorkspace::gs_pop_add(
             gs[[fSample]],
             flowWorkspace::gh_pop_get_gate(
@@ -706,9 +807,6 @@ for(pop_to_SOM in seq_along(pops_to_SOM)){
         }
         print("used markers: ")
         print(colnames(pop.exprs)[keep.marker])
-        keep.marker <- ifelse(pData.asDF$desc %in% colnames(pop.exprs)[keep.marker],
-                              yes = pData.asDF$desc %in% colnames(pop.exprs)[keep.marker],
-                              no = pData.asDF$name %in% colnames(pop.exprs)[keep.marker])
         #### number of centroids ####
         # if the number of cells is larger than 1k, 100 centroids are used;
         # if the number of cells is between 1000 and 50, the number of centroids
@@ -731,148 +829,134 @@ for(pop_to_SOM in seq_along(pops_to_SOM)){
         }
         print("number of centroids:")
         print(fj_par_xdim ^ 2)
-
+        
         #### PLS ####
+        
+        ### FOR PLS TO WORK, pop.exprs NEEDS TO BE DERIVED FROM THE ORIGINAL GATES USING:
+        
+        ### flowWorkspace::gh_pop_get_data(
+        ###   gs[[fSample]],
+        ###   pops_to_SOM[[pop_to_SOM]]) %>%
+        ###   flowCore::exprs()
+        
+        ### HOWEVER, MULTI-OMICS WILL NOT WORK
+        
         # Only run PLS-DA if target pop (Y == TRUE) is larger than 10!
         # Y (in.gate) needs to be updated according to results of ezDAFi-ing
         # the parent population;
         # this will be done here by simply applying the manual gate to
         # the ezDAFi-ed parent as an approximation
-        ezDAFi.in.gate <- flowWorkspace::gh_pop_get_indices(
-          gs[[fSample]],
-          paste0(pops_to_SOM[[pop_to_SOM]],
-                 "/",
-                 gate))[
-                   flowWorkspace::gh_pop_get_indices(
-                     gs[[fSample]],
-                     pops_to_SOM[pop_to_SOM] %>%
-                       names(.))
-                 ]
-        if(fj_par_plsda &
-           sum(ezDAFi.in.gate) > 10) {
-          X.df <- data.frame(X = scale(flowWorkspace::gh_pop_get_data(gs[[fSample]],
-                                                                      pops_to_SOM[pop_to_SOM] %>%
-                                                                        names(.)) %>%
-                                         .[,keep.marker] %>%
-                                         flowCore::exprs(),
-                                       center = TRUE,
-                                       scale = TRUE) %>%
-                               I(),
-                             Y = ((ezDAFi.in.gate) * 1 ) %>%
-                               I())
-          PLS <- tryCatch({
-            pls::cppls(Y ~ X,
-                       ncomp = sum(keep.marker),
-                       data = X.df,
-                       center = TRUE)
-          },
-          error = function(e) {
-            stop("PLS-DA cannot easily handle highly correlated features. Please reduce the number of hidden dimensions to about 3 or turn PLS-DA off.",
-                 call. = FALSE)
-          }
-          )
-          ls_pop.PLS <- PLS$scores %>%
-            matrix(ncol = sum(keep.marker), dimnames = list(rownames(PLS$scores),
-                                                            colnames(PLS$scores))) %>%
-            list()
-          names(ls_pop.PLS) <- rownames(flowCore::pData(gs[[fSample]]))
-          fS_pop.PLS <- lapply(ls_pop.PLS,
-                               function(sample)
-                                 flowCore::flowFrame(sample)) %>%
-            flowCore::flowSet()
-          fSOM <- FlowSOM::ReadInput(fS_pop.PLS,
-                                     compensate = FALSE,
-                                     transform = FALSE,
-                                     scale = FALSE,
-                                     silent = TRUE)
+        #ezDAFi.in.gate <- flowWorkspace::gh_pop_get_indices(
+        # gs[[fSample]],
+        # paste0(pops_to_SOM[[pop_to_SOM]],
+        #        "/",
+        #        gate))[
+        #          flowWorkspace::gh_pop_get_indices(
+        #            gs[[fSample]],
+        #            pops_to_SOM[pop_to_SOM] %>%
+        #              names(.))
+        #        ]
+        #if(fj_par_plsda &
+        #sum(ezDAFi.in.gate) > 10) {
+        #ls_pop.PLS <- PLS$scores %>%
+        # matrix(ncol = sum(keep.marker), 
+        #        dimnames = list(rownames(PLS$scores),
+        #                        colnames(PLS$scores))) %>%
+        # list()
+        #names(ls_pop.PLS) <- rownames(flowCore::pData(gs[[fSample]]))
+        #fS_pop.PLS <- lapply(ls_pop.PLS,
+        #                    function(sample)
+        #                      flowCore::flowFrame(sample)) %>%
+        # flowCore::flowSet()
+        #fSOM <- FlowSOM::ReadInput(fS_pop.PLS,
+        #                          compensate = FALSE,
+        #                          transform = FALSE,
+        #                          scale = FALSE,
+        #                          silent = TRUE)
+        #} else {
+        #  if(fj_par_plsda) {
+        # print("Too few cells in target population to run PLS-DA. Clustering will be run on original space instead of on PLS latent variables.")
+        #}
+        fSOM <- FlowSOM::ReadInput(pop.exprs[,keep.marker],
+                                   compensate = FALSE,
+                                   transform = FALSE,
+                                   scale = TRUE,
+                                   silent = TRUE)
+      #}
+      if(fj_par_som){
+        #### SOM/kmeans clustering ####
+        # Code to generate SOM centroids
+        set.seed(2020)
+        fSOM <- FlowSOM::BuildSOM(fSOM,
+                                  colsToUse = NULL,
+                                  silent = TRUE,
+                                  xdim = fj_par_xdim,
+                                  ydim = fj_par_xdim)
+        # Code to gate flowSOM results
+        # retrieve codes
+        if(!fj_par_plsda) {
+          codes <- t(apply(fSOM$map$codes,
+                           1,
+                           function(centroid)
+                             centroid *
+                             fSOM$scaled.scale +
+                             fSOM$scaled.center))
         } else {
-          if(fj_par_plsda) {
-            print("Too few cells in target population to run PLS-DA. Clustering will be run on original space instead of on PLS latent variables.")
-          }
-          fSOM <- FlowSOM::ReadInput(
-            flowWorkspace::gh_pop_get_data(gs[[fSample]],
-                                           pops_to_SOM[pop_to_SOM] %>%
-                                             names(.)) %>%
-              .[,keep.marker],
-            compensate = FALSE,
-            transform = FALSE,
-            scale = TRUE,
-            silent = TRUE)
+          codes <- fSOM$map$codes
         }
-        if(fj_par_som){
-          #### SOM/kmeans clustering ####
-          # Code to generate SOM centroids
-          set.seed(2020)
-          fSOM <- FlowSOM::BuildSOM(fSOM,
-                                    colsToUse = NULL,
-                                    silent = TRUE,
-                                    xdim = fj_par_xdim,
-                                    ydim = fj_par_xdim)
-          # Code to gate flowSOM results
-          # retrieve codes
-          if(!fj_par_plsda) {
-            codes <- t(apply(fSOM$map$codes,
-                             1,
-                             function(centroid)
-                               centroid *
-                               fSOM$scaled.scale +
-                               fSOM$scaled.center))
-          } else {
-            codes <- fSOM$map$codes
-          }
-        } else { # if the user decides to use kmeans
-          # Code to generate kmeans centroids
-          set.seed(2020)
+      } else { # if the user decides to use kmeans
+        # Code to generate kmeans centroids
+        set.seed(2020)
+        fkMeans <- stats::kmeans(x = fSOM$data,
+                                 centers = fj_par_xdim * fj_par_xdim,
+                                 iter.max = 100)
+        if(fkMeans$ifault == 4) { # https://stackoverflow.com/a/30055776
           fkMeans <- stats::kmeans(x = fSOM$data,
-                                   centers = fj_par_xdim * fj_par_xdim,
-                                   iter.max = 100)
-          if(fkMeans$ifault == 4) { # https://stackoverflow.com/a/30055776
-            fkMeans <- stats::kmeans(x = fSOM$data,
-                                     centers = fkMeans$centers,
-                                     iter.max = 100,
-                                     algorithm = "MacQueen")
-          }
-          # Code to gate kmeans results
-          # retrieve codes
-          if(!fj_par_plsda) {
-            codes <- t(apply(fkMeans$centers,
-                             1,
-                             function(centroid)
-                               centroid *
-                               fSOM$scaled.scale +
-                               fSOM$scaled.center))
-          } else {
-            codes <- fkMeans$centers
-          }
+                                   centers = fkMeans$centers,
+                                   iter.max = 100,
+                                   algorithm = "MacQueen")
         }
-        if(fj_par_plsda) {
-          codes <- codes %*%
-            t(PLS$loadings) %>%
-            apply(.,
-                  1,
-                  function(parameter)
-                    parameter *
-                    attr(X.df$X,
-                         "scaled:scale") +
-                    attr(X.df$X,
-                         "scaled:center")) %>%
-            t()
-          colnames(codes) <- pData.asDF$name[keep.marker]
+        # Code to gate kmeans results
+        # retrieve codes
+        if(!fj_par_plsda) {
+          codes <- t(apply(fkMeans$centers,
+                           1,
+                           function(centroid)
+                             centroid *
+                             fSOM$scaled.scale +
+                             fSOM$scaled.center))
+        } else {
+          codes <- fkMeans$centers
         }
-        #### meta cluster centroids ####
-        if(fj_par_meta &
-           dim(codes)[1] > 10) { # minPopSize that can trigger spectral meta-clustering = 160 cells
-          codes <- scale(codes,#[,gate_par_asName],
-                         center = TRUE,
-                         scale = TRUE)
-          ##############################
-          #####
-          ##### The next several lines are adapted from https://github.com/SofieVG/FlowSOM/blob/master/R/4_metaClustering.R.
-          ##### Credit to the author, SofieVG.
-          #####
-          ##############################
-          meta <- suppressMessages(
-            ConsensusClusterPlus::ConsensusClusterPlus(
+      }
+      if(fj_par_plsda) {
+        codes <- codes %*%
+          t(PLS$loadings) %>%
+          apply(.,
+                1,
+                function(parameter)
+                  parameter *
+                  attr(X.df$X,
+                       "scaled:scale") +
+                  attr(X.df$X,
+                       "scaled:center")) %>%
+          t()
+        colnames(codes) <- colnames(pop.exprs)[keep.marker]
+      }
+      #### meta cluster centroids ####
+      if(fj_par_meta &
+         dim(codes)[1] > 10) { # minPopSize that can trigger spectral meta-clustering = 160 cells
+        codes <- scale(codes,#[,gate_par_asName],
+                       center = TRUE,
+                       scale = TRUE)
+        ##############################
+        #####
+        ##### The next several lines are adapted from https://github.com/SofieVG/FlowSOM/blob/master/R/4_metaClustering.R.
+        ##### Credit to the author, SofieVG.
+        #####
+        ##############################
+        meta <- suppressMessages(
+          ConsensusClusterPlus::ConsensusClusterPlus(
             d = t(codes),
             maxK = (dim(codes)[1] / 10) %>%
               ceiling(),
@@ -885,149 +969,156 @@ for(pop_to_SOM in seq_along(pops_to_SOM)){
             clusterAlg = "hc",
             distance = "euclidean",
             seed = 2020)
-            )[[((dim(codes)[1] / 10) %>%
-                 ceiling())]]$consensusClass
-          # get centroids of metaclusters
-          meta.codes <- sapply(
-            (dim(codes)[1] / 10) %>%
-              ceiling() %>%
-              seq(),
-            function(metacl)
-              if(sum(meta == metacl) > 1){
-                if(dim(codes)[2] != 1) {
-                  colMeans(codes[meta == metacl,])
-                } else {
-                  mean(codes[meta == metacl,])
-                }
+        )[[((dim(codes)[1] / 10) %>%
+              ceiling())]]$consensusClass
+        # get centroids of metaclusters
+        meta.codes <- sapply(
+          (dim(codes)[1] / 10) %>%
+            ceiling() %>%
+            seq(),
+          function(metacl)
+            if(sum(meta == metacl) > 1){
+              if(dim(codes)[2] != 1) {
+                colMeans(codes[meta == metacl,])
               } else {
-                codes[meta == metacl,]
-              }) %>%
-            t()
-          codes <- apply(meta.codes,
-                         1,
-                         function(metacl)
-                           metacl *
-                           attr(codes,
-                                "scaled:scale") +
-                           attr(codes,
-                                "scaled:center")) %>%
-            t()
-          #if(dim(codes)[1] == 1) {
-          #  codes <- matrix(codes,
-          #                  ncol = 1,
-          #                  dimnames = list(NULL,
-          #                                  gate_par_asName))
-          #}
-        }
-        #### gate centroids ####
-        ls_fSOM <- list(codes)
-        names(ls_fSOM) <- rownames(flowCore::pData(gs[[fSample]]))
-        #create FlowSet with FlowSOM centroids
-        fS_SOM <- lapply(ls_fSOM,
-                         function(sample)
-                           flowCore::flowFrame(sample)) %>%
-          flowCore::flowSet()
-        #if(fj_par_meta){
-        #  flowCore::parameters(fS_SOM[[1]]) <- flowCore::parameters(
-        #    flowWorkspace::gh_pop_get_data(
-        #      gs[[fSample]],
-        #      y = "root")[,gate_par_asName])
+                mean(codes[meta == metacl,])
+              }
+            } else {
+              codes[meta == metacl,]
+            }) %>%
+          t()
+        codes <- apply(meta.codes,
+                       1,
+                       function(metacl)
+                         metacl *
+                         attr(codes,
+                              "scaled:scale") +
+                         attr(codes,
+                              "scaled:center")) %>%
+          t()
+        #if(dim(codes)[1] == 1) {
+        #  codes <- matrix(codes,
+        #                  ncol = 1,
+        #                  dimnames = list(NULL,
+        #                                  gate_par_asName))
         #}
-        #else {
-          flowCore::parameters(fS_SOM[[1]]) <- flowCore::parameters(
-            flowWorkspace::gh_pop_get_data(
-              gs[[fSample]],
-              y = "root")[,keep.marker])
-          #}
-        #create GatingSet with FlowSOM centroids
-        suppressMessages(gs_SOM <- GatingSet(fS_SOM))
-        flowCore::pData(gs_SOM) <- flowCore::pData(gs[[fSample]])
-        #get gates and apply to cluster centroids
-        suppressMessages(
-          flowWorkspace::gs_pop_add(
-            gs_SOM,
-            flowWorkspace::gh_pop_get_gate(
-              gs[[fSample]],
-              paste0(pops_to_SOM[[pop_to_SOM]],
-                     "/", gate))))
-        tryCatch({
-          suppressMessages(flowWorkspace::recompute(gs_SOM))
-        },
-        error = function(e){
-          stop(paste0("It looks like the channel \"",
-                      strsplit(x = e$message,
-                               split = "\n  ",
-                               fixed = TRUE)[[1]][2] %>%
-                        strsplit(x = .,
-                                 split = " not found",
-                                 fixed = TRUE) %>%
-                        .[[1]] %>%
-                        .[1],
-                      "\" has not been selected when the plugin was called although it was used down the gating hiearchy. \nPlease, make sure all flow channels used in the gating tree are selected when calling the plugin."),
-               call. = FALSE)
-        })
-        SOM_labels <- rep(FALSE,
-                          dim(codes)[1])
-        SOM_labels[
-          flowWorkspace::gh_pop_get_indices(gs_SOM[[1]],
-                                            gate)
-        ] <- TRUE
-        if(fj_par_meta){
-          SOM_labels <- SOM_labels[meta]
-        }
-        if(fj_par_som){
-          cell_ezDAFi_label <- SOM_labels[fSOM$map$mapping[,1]]
-        } else {
-          cell_ezDAFi_label <- SOM_labels[fkMeans$cluster]
-        }
-        all_cells_ezDAFi_label <- rep(FALSE,
-                                      length(
-                                        flowWorkspace::gh_pop_get_indices(
-                                          gs[[fSample]],
-                                          y = pops_to_SOM[pop_to_SOM] %>%
-                                            names(.)))
-        )
-        all_cells_ezDAFi_label[
-          flowWorkspace::gh_pop_get_indices(gs[[fSample]],
-                                            y = pops_to_SOM[pop_to_SOM] %>%
-                                              names(.))
-        ] <- cell_ezDAFi_label
-        all_cells_ezDAFi_label <- list(all_cells_ezDAFi_label)
-        names(all_cells_ezDAFi_label) <- sampleNames(gs[[fSample]])
-        flowWorkspace::gs_pop_add(gs[[fSample]],
-                                  all_cells_ezDAFi_label,
-                                  parent = pops_to_SOM[pop_to_SOM] %>%
-                                    names(.),
-                                  name = paste0("ezDAFi_", gate) %>%
-                                    gsub(pattern = "^/",
-                                         replacement = "",
-                                         x = .))
-        suppressMessages(flowWorkspace::recompute(gs[[fSample]]))
       }
-    } else {
-      gates <- basename(
-        flowWorkspace::gh_pop_get_children(
+      
+      #### gate centroids ####
+      
+      codes <- codes[,gate_par]
+      colnames(codes) <- pData.asDF$name[match(gate_par, pData.asDF$desc)]
+      
+      ls_fSOM <- list(codes)
+      names(ls_fSOM) <- rownames(flowCore::pData(gs[[fSample]]))
+      #create FlowSet with FlowSOM centroids
+      fS_SOM <- lapply(ls_fSOM,
+                       function(sample)
+                         flowCore::flowFrame(sample)) %>%
+        flowCore::flowSet()
+      #if(fj_par_meta){
+      #  flowCore::parameters(fS_SOM[[1]]) <- flowCore::parameters(
+      #    flowWorkspace::gh_pop_get_data(
+      #      gs[[fSample]],
+      #      y = "root")[,gate_par_asName])
+      #}
+      #else {
+      flowCore::parameters(fS_SOM[[1]]) <- flowCore::parameters(
+        flowWorkspace::gh_pop_get_data(
           gs[[fSample]],
-          pops_to_SOM[[pop_to_SOM]]))
-      for(gate in gates) {
+          y = "root")[, 
+                      pData.asDF$name %in%
+                        colnames(codes)])
+      #}
+      #create GatingSet with FlowSOM centroids
+      suppressMessages(gs_SOM <- GatingSet(fS_SOM))
+      flowCore::pData(gs_SOM) <- flowCore::pData(gs[[fSample]])
+      #get gates and apply to cluster centroids
+      suppressMessages(
         flowWorkspace::gs_pop_add(
-          gs[[fSample]],
+          gs_SOM,
           flowWorkspace::gh_pop_get_gate(
             gs[[fSample]],
             paste0(pops_to_SOM[[pop_to_SOM]],
-                   "/",
-                   gate)),
-          parent = pops_to_SOM[pop_to_SOM] %>%
-            names(.),
-          name = paste0("ezDAFi_",
-                        gate) %>%
-            gsub(pattern = "^/",
-                 replacement = "",
-                 x = .))
+                   "/", gate))))
+      tryCatch({
+        suppressMessages(flowWorkspace::recompute(gs_SOM))
+      },
+      error = function(e){
+        stop(paste0("It looks like the channel \"",
+                    strsplit(x = e$message,
+                             split = "\n  ",
+                             fixed = TRUE)[[1]][2] %>%
+                      strsplit(x = .,
+                               split = " not found",
+                               fixed = TRUE) %>%
+                      .[[1]] %>%
+                      .[1],
+                    "\" has not been selected when the plugin was called although it was used down the gating hiearchy. \nPlease, make sure all flow channels used in the gating tree are selected when calling the plugin."),
+             call. = FALSE)
+      })
+      SOM_labels <- rep(FALSE,
+                        dim(codes)[1])
+      SOM_labels[
+        flowWorkspace::gh_pop_get_indices(gs_SOM[[1]],
+                                          gate)
+      ] <- TRUE
+      if(fj_par_meta){
+        SOM_labels <- SOM_labels[meta]
       }
+      if(fj_par_som){
+        cell_ezDAFi_label <- SOM_labels[fSOM$map$mapping[,1]]
+      } else {
+        cell_ezDAFi_label <- SOM_labels[fkMeans$cluster]
+      }
+      all_cells_ezDAFi_label <- rep(FALSE,
+                                    length(
+                                      flowWorkspace::gh_pop_get_indices(
+                                        gs[[fSample]],
+                                        y = pops_to_SOM[pop_to_SOM] %>%
+                                          names(.)))
+      )
+      all_cells_ezDAFi_label[
+        flowWorkspace::gh_pop_get_indices(gs[[fSample]],
+                                          y = pops_to_SOM[pop_to_SOM] %>%
+                                            names(.))
+      ] <- cell_ezDAFi_label
+      all_cells_ezDAFi_label <- list(all_cells_ezDAFi_label)
+      names(all_cells_ezDAFi_label) <- sampleNames(gs[[fSample]])
+      flowWorkspace::gs_pop_add(gs[[fSample]],
+                                all_cells_ezDAFi_label,
+                                parent = pops_to_SOM[pop_to_SOM] %>%
+                                  names(.),
+                                name = paste0("ezDAFi_", gate) %>%
+                                  gsub(pattern = "^/",
+                                       replacement = "",
+                                       x = .))
       suppressMessages(flowWorkspace::recompute(gs[[fSample]]))
     }
+  } else {
+    gates <- basename(
+      flowWorkspace::gh_pop_get_children(
+        gs[[fSample]],
+        pops_to_SOM[[pop_to_SOM]]))
+    for(gate in gates) {
+      flowWorkspace::gs_pop_add(
+        gs[[fSample]],
+        flowWorkspace::gh_pop_get_gate(
+          gs[[fSample]],
+          paste0(pops_to_SOM[[pop_to_SOM]],
+                 "/",
+                 gate)),
+        parent = pops_to_SOM[pop_to_SOM] %>%
+          names(.),
+        name = paste0("ezDAFi_",
+                      gate) %>%
+          gsub(pattern = "^/",
+               replacement = "",
+               x = .))
+    }
+    suppressMessages(flowWorkspace::recompute(gs[[fSample]]))
   }
+}
 }
 
 post_ezDAFi_gates <- flowWorkspace::gh_get_pop_paths(gs[[1]])
@@ -1245,7 +1336,7 @@ if(fj_plot_stats){
   pop.stats.percent <- gh_pop_get_stats(gs[[1]],
                                         type =  "percent")
   pop.stats.percent$percent <- pop.stats.percent$percent * 100
-
+  
   pop.stats.count.ezDAFi <- pop.stats.count[pop.stats.count$pop %in%
                                               ezDAFi_nodes,]$count
   names(pop.stats.count.ezDAFi) <- pop.stats.count[pop.stats.count$pop %in%
@@ -1253,7 +1344,7 @@ if(fj_plot_stats){
   pop.stats.count.ezDAFi <- data.frame(pop.stats.count.ezDAFi) %>%
     t
   rownames(pop.stats.count.ezDAFi) <- basename(sampleURI)
-
+  
   pop.stats.percent.ezDAFi <- pop.stats.percent[pop.stats.percent$pop %in%
                                                   ezDAFi_nodes,]$percent
   names(pop.stats.percent.ezDAFi) <- pop.stats.percent[pop.stats.percent$pop %in%
@@ -1261,7 +1352,7 @@ if(fj_plot_stats){
   pop.stats.percent.ezDAFi <- data.frame(pop.stats.percent.ezDAFi) %>%
     t
   rownames(pop.stats.percent.ezDAFi) <- basename(sampleURI)
-
+  
   pop.stats.count.trad <- pop.stats.count[
     match(gsub(pattern = "ezDAFi_",
                replacement = "",
@@ -1279,7 +1370,7 @@ if(fj_plot_stats){
   pop.stats.count.trad <- data.frame(pop.stats.count.trad) %>%
     t
   rownames(pop.stats.count.trad) <- basename(sampleURI)
-
+  
   pop.stats.percent.trad <- pop.stats.percent[
     match(gsub(pattern = "ezDAFi_",
                replacement = "",
@@ -1594,7 +1685,7 @@ if(fj_plot_stats){
                 quote = TRUE,
                 col.names = TRUE)
   }
-
+  
   # create heatmaps with median expression of all selected paramaters on ezDAFi vs traditional gates
   # as well as pseudocolor for the bidimensional gate
   if(!dir.exists(plotDir)){
@@ -1943,14 +2034,14 @@ for(pop in seq_along(colnames(all.labels))) {
                                      ncol = 1,
                                      dimnames = list(c("min", "max"),
                                                      ezDAFi_gate)))
-
+      
     }
     rgs <- rev(rgs) # parent gate must come later
     flowEnv[[as.character(colnames(all.labels)[pop])]] <-
       new("subsetFilter",
           filterId = colnames(all.labels)[pop],
           filters = rgs)
-
+    
   }
 }
 
@@ -1971,25 +2062,25 @@ outputFile <- paste0(fj_output_folder,
 modified.write.gatingML <- function(flowEnv, file = NULL)
 {
   #THIS FUNCTION HAS BEEN MODIFIED BY A CLUELESS PERSON! DONT TRUST IT TOO MUCH! SOURCE:https://rdrr.io/bioc/flowUtils/src/R/writeGatingML.R
-
+  
   if(!is.null(file) && !is(file, "character"))
     stop("A file has to be either NULL or a character string.", call. = FALSE)
   if(is.null(flowEnv) || !is.environment(flowEnv))
     stop("A flowEnv environment with objects to be saved is requred.", call. = FALSE)
   if(!is.null(file) && substr(file, nchar(file) - 3, nchar(file)) != ".xml")
     file <- paste(file, "xml", sep=".")
-
+  
   flowEnv[['.debugMessages']] = c()
-
+  
   namespaces <- c(
     "gating" = "http://www.isac-net.org/std/Gating-ML/v2.0/gating",
     "xsi" = "http://www.w3.org/2001/XMLSchema-instance",
     "transforms" = "http://www.isac-net.org/std/Gating-ML/v2.0/transformations",
     "data-type" = "http://www.isac-net.org/std/Gating-ML/v2.0/datatypes")
-
+  
   gatingMLNode = suppressWarnings(xmlTree("gating:Gating-ML", namespaces = namespaces,
                                           attrs = c("xsi:schemaLocation" = "http://www.isac-net.org/std/Gating-ML/v2.0/gating http://flowcyt.sourceforge.net/gating/2.0/xsd/Gating-ML.v2.0.xsd http://www.isac-net.org/std/Gating-ML/v2.0/transformations http://flowcyt.sourceforge.net/gating/2.0/xsd/Transformations.v2.0.xsd http://www.isac-net.org/std/Gating-ML/v2.0/datatypes http://flowcyt.sourceforge.net/gating/2.0/xsd/DataTypes.v2.0.xsd")))
-
+  
   ##### THE FOLLOWING SEVERAL LINES ARE NOT COMMENTED OUT IN THE ORIGINAL
   #gatingMLNode$addNode("data-type:custom_info", close = FALSE)
   #gatingMLNode$addNode("info", "Gating-ML 2.0 export generated by R/flowUtils/flowCore")
@@ -1998,9 +2089,9 @@ modified.write.gatingML <- function(flowEnv, file = NULL)
   #gatingMLNode$addNode("flowUtils-version", as.character(packageVersion("flowUtils")))
   #gatingMLNode$addNode("XML-version", as.character(packageVersion("XML")))
   #gatingMLNode$closeTag()
-
+  
   flowEnv[['.objectIDsWrittenToXMLOutput']] = list() # Use this list to collect XML Ids
-
+  
   somethingUseful = FALSE
   for (x in ls(flowEnv)) {
     object = objectNameToObject(x, flowEnv)
@@ -2011,30 +2102,30 @@ modified.write.gatingML <- function(flowEnv, file = NULL)
     }
   }
   if(!somethingUseful) warning("Nothing useful seems to be present in the environment; the output Gating-ML file may not be very useful.", call. = FALSE)
-
+  
   # Go over everything and temporarily add transformations and argument gates to flowEnv
   # if they are not saved in flowEnv directly, but they are being used in other objects
   flowEnv[['.addedObjects']] = list() # List of object identifiers of objects that we have to temporarily add to flowEnv
   for (x in ls(flowEnv)) addReferencedObjectsToEnv(x, flowEnv)
-
+  
   flowEnv[['.singleParTransforms']] = new.env() # Use this env to collect transformations
   for (x in ls(flowEnv)) if(is(flowEnv[[x]], "singleParameterTransform")) collectTransform(x, flowEnv)
-
+  
   # Transforms go first unless they can be skipped all together
   for (x in ls(flowEnv)) if(is(flowEnv[[x]], "transform"))
     if(!shouldTransformationBeSkipped(x, flowEnv)) addObjectToGatingML(gatingMLNode, x, flowEnv)
   for (x in ls(flowEnv)) if(!is(flowEnv[[x]], "transform")) addObjectToGatingML(gatingMLNode, x, flowEnv)
-
+  
   if(!is.null(file)) sink(file = file)
   cat(saveXML(gatingMLNode$value(), encoding = "UTF-8"))
   if(!is.null(file)) sink()
-
+  
   rm(list = ls(flowEnv[['.singleParTransforms']], all.names = TRUE), envir = flowEnv[['.singleParTransforms']])
   rm('.singleParTransforms', envir = flowEnv)
-
+  
   rm(list = as.character(flowEnv[['.addedObjects']]), envir = flowEnv)
   rm('.addedObjects', envir = flowEnv)
-
+  
   rm('.objectIDsWrittenToXMLOutput', envir = flowEnv)
 }
 
@@ -2083,12 +2174,12 @@ addRectangleGateNode <- function(gatingMLNode, x, flowEnv, addParent, forceGateI
   gate = objectNameToObject(x, flowEnv)
   if(!is(gate, "rectangleGate")) stop(paste("Unexpected object insted of a rectangleGate - ", class(gate)))
   addDebugMessage(paste("Working on rectangleGate ", gate@filterId, sep=""), flowEnv)
-
+  
   myID = getObjectId(gate, forceGateId, flowEnv)
   if(isIdWrittenToXMLAlready(myID, flowEnv)) return(FALSE)
   attrs = c("gating:id" = myID)
   if (!is.null(addParent)) attrs = c(attrs, "gating:parent_id" = filterIdtoXMLId(addParent, flowEnv))
-
+  
   gatingMLNode$addNode("gating:RectangleGate", attrs = attrs, close = FALSE)
   addDimensions(gatingMLNode, x, flowEnv)
   gatingMLNode$closeTag() # </gating:RectangleGate>
@@ -2100,12 +2191,12 @@ addPolygonGateNode <- function(gatingMLNode, x, flowEnv, addParent, forceGateId)
   gate = objectNameToObject(x, flowEnv)
   if(!is(gate, "polygonGate")) stop(paste("Unexpected object insted of a polygonGate - ", class(gate)))
   addDebugMessage(paste("Working on polygonGate ", gate@filterId, sep=""), flowEnv)
-
+  
   myID = getObjectId(gate, forceGateId, flowEnv)
   if(isIdWrittenToXMLAlready(myID, flowEnv)) return(FALSE)
   attrs = c("gating:id" = myID)
   if (!is.null(addParent)) attrs = c(attrs, "gating:parent_id" = filterIdtoXMLId(addParent, flowEnv))
-
+  
   gatingMLNode$addNode("gating:PolygonGate", attrs = attrs, close = FALSE)
   addDimensions(gatingMLNode, x, flowEnv)
   for (i in 1:length(gate@boundaries[,1]))
@@ -2128,15 +2219,15 @@ addEllipsoidGateNode <- function(gatingMLNode, x, flowEnv, addParent, forceGateI
   gate = objectNameToObject(x, flowEnv)
   if(!is(gate, "ellipsoidGate")) stop(paste("Unexpected object insted of an ellipsoidGate - ", class(gate)))
   addDebugMessage(paste("Working on ellipsoidGate ", gate@filterId, sep=""), flowEnv)
-
+  
   myID = getObjectId(gate, forceGateId, flowEnv)
   if(isIdWrittenToXMLAlready(myID, flowEnv)) return(FALSE)
   attrs = c("gating:id" = myID)
   if (!is.null(addParent)) attrs = c(attrs, "gating:parent_id" = filterIdtoXMLId(addParent, flowEnv))
-
+  
   gatingMLNode$addNode("gating:EllipsoidGate", attrs = attrs, close = FALSE)
   addDimensions(gatingMLNode, x, flowEnv)
-
+  
   gatingMLNode$addNode("gating:mean", close = FALSE)
   for (i in 1:length(gate@mean))
   {
@@ -2144,7 +2235,7 @@ addEllipsoidGateNode <- function(gatingMLNode, x, flowEnv, addParent, forceGateI
     gatingMLNode$addNode("gating:coordinate", attrs = attrs)
   }
   gatingMLNode$closeTag() # </gating:mean>
-
+  
   gatingMLNode$addNode("gating:covarianceMatrix", close = FALSE)
   for (row in 1:length(gate@cov[,1]))
   {
@@ -2157,10 +2248,10 @@ addEllipsoidGateNode <- function(gatingMLNode, x, flowEnv, addParent, forceGateI
     gatingMLNode$closeTag() # </gating:row>
   }
   gatingMLNode$closeTag() # </gating:covarianceMatrix>
-
+  
   attrs = c("data-type:value" = gate@distance ^ 2)
   gatingMLNode$addNode("gating:distanceSquare", attrs = attrs)
-
+  
   gatingMLNode$closeTag() # </gating:EllipsoidGate>
 }
 
@@ -2170,12 +2261,12 @@ addBooleanAndGateNode <- function(gatingMLNode, x, flowEnv, addParent, forceGate
   gate = objectNameToObject(x, flowEnv)
   if(!is(gate, "intersectFilter")) stop(paste("Unexpected object insted of an intersectFilter - ", class(gate)))
   addDebugMessage(paste("Working on intersectFilter ", gate@filterId, sep=""), flowEnv)
-
+  
   myID = getObjectId(gate, forceGateId, flowEnv)
   if(isIdWrittenToXMLAlready(myID, flowEnv)) return(FALSE)
   attrs = c("gating:id" = myID)
   if (!is.null(addParent)) attrs = c(attrs, "gating:parent_id" = filterIdtoXMLId(addParent, flowEnv))
-
+  
   gatingMLNode$addNode("gating:BooleanGate", attrs = attrs, close = FALSE)
   gatingMLNode$addNode("gating:and", close = FALSE)
   if(length(gate@filters) == 0)
@@ -2201,12 +2292,12 @@ addBooleanOrGateNode <- function(gatingMLNode, x, flowEnv, addParent, forceGateI
   gate = objectNameToObject(x, flowEnv)
   if(!is(gate, "unionFilter")) stop(paste("Unexpected object insted of a unionFilter - ", class(gate)))
   addDebugMessage(paste("Working on unionFilter ", gate@filterId, sep=""), flowEnv)
-
+  
   myID = getObjectId(gate, forceGateId, flowEnv)
   if(isIdWrittenToXMLAlready(myID, flowEnv)) return(FALSE)
   attrs = c("gating:id" = myID)
   if (!is.null(addParent)) attrs = c(attrs, "gating:parent_id" = filterIdtoXMLId(addParent, flowEnv))
-
+  
   gatingMLNode$addNode("gating:BooleanGate", attrs = attrs, close = FALSE)
   gatingMLNode$addNode("gating:or", close = FALSE)
   if(length(gate@filters) == 0)
@@ -2232,12 +2323,12 @@ addBooleanNotGateNode <- function(gatingMLNode, x, flowEnv, addParent, forceGate
   gate = objectNameToObject(x, flowEnv)
   if(!is(gate, "complementFilter")) stop(paste("Unexpected object insted of a complementFilter - ", class(gate)))
   addDebugMessage(paste("Working on complementFilter ", gate@filterId, sep=""), flowEnv)
-
+  
   myID = getObjectId(gate, forceGateId, flowEnv)
   if(isIdWrittenToXMLAlready(myID, flowEnv)) return(FALSE)
   attrs = c("gating:id" = myID)
   if (!is.null(addParent)) attrs = c(attrs, "gating:parent_id" = filterIdtoXMLId(addParent, flowEnv))
-
+  
   gatingMLNode$addNode("gating:BooleanGate", attrs = attrs, close = FALSE)
   gatingMLNode$addNode("gating:not", close = FALSE)
   if(length(gate@filters)  == 1)
@@ -2255,15 +2346,15 @@ addQuadGateNode <- function(gatingMLNode, x, flowEnv, addParent, forceGateId)
   gate = objectNameToObject(x, flowEnv)
   if(!is(gate, "quadGate")) stop(paste("Unexpected object insted of a quadGate - ", class(gate)))
   addDebugMessage(paste("Working on quadGate ", gate@filterId, sep=""), flowEnv)
-
+  
   myID = getObjectId(gate, forceGateId, flowEnv)
   if(isIdWrittenToXMLAlready(myID, flowEnv)) return(FALSE)
   attrs = c("gating:id" = myID)
   if (!is.null(addParent)) attrs = c(attrs, "gating:parent_id" = filterIdtoXMLId(addParent, flowEnv))
-
+  
   gatingMLNode$addNode("gating:QuadrantGate", attrs = attrs, close = FALSE)
   addDimensions(gatingMLNode, x, flowEnv, myID)
-
+  
   attrs = c("gating:id" = paste(myID, ".PP", sep = ""))
   gatingMLNode$addNode("gating:Quadrant", attrs = attrs, close = FALSE)
   attrs = c("gating:divider_ref" = paste(myID, ".D1", sep = ""))
@@ -2273,7 +2364,7 @@ addQuadGateNode <- function(gatingMLNode, x, flowEnv, addParent, forceGateId)
   attrs = c(attrs, "gating:location" = as.character(gate@boundary[2] + 1))
   gatingMLNode$addNode("gating:position", attrs = attrs)
   gatingMLNode$closeTag() # </gating:Quadrant>
-
+  
   attrs = c("gating:id" = paste(myID, ".PN", sep = ""))
   gatingMLNode$addNode("gating:Quadrant", attrs = attrs, close = FALSE)
   attrs = c("gating:divider_ref" = paste(myID, ".D1", sep = ""))
@@ -2283,7 +2374,7 @@ addQuadGateNode <- function(gatingMLNode, x, flowEnv, addParent, forceGateId)
   attrs = c(attrs, "gating:location" = as.character(gate@boundary[2] - 1))
   gatingMLNode$addNode("gating:position", attrs = attrs)
   gatingMLNode$closeTag() # </gating:Quadrant>
-
+  
   attrs = c("gating:id" = paste(myID, ".NP", sep = ""))
   gatingMLNode$addNode("gating:Quadrant", attrs = attrs, close = FALSE)
   attrs = c("gating:divider_ref" = paste(myID, ".D1", sep = ""))
@@ -2293,7 +2384,7 @@ addQuadGateNode <- function(gatingMLNode, x, flowEnv, addParent, forceGateId)
   attrs = c(attrs, "gating:location" = as.character(gate@boundary[2] + 1))
   gatingMLNode$addNode("gating:position", attrs = attrs)
   gatingMLNode$closeTag() # </gating:Quadrant>
-
+  
   attrs = c("gating:id" = paste(myID, ".NN", sep = ""))
   gatingMLNode$addNode("gating:Quadrant", attrs = attrs, close = FALSE)
   attrs = c("gating:divider_ref" = paste(myID, ".D1", sep = ""))
@@ -2303,7 +2394,7 @@ addQuadGateNode <- function(gatingMLNode, x, flowEnv, addParent, forceGateId)
   attrs = c(attrs, "gating:location" = as.character(gate@boundary[2] - 1))
   gatingMLNode$addNode("gating:position", attrs = attrs)
   gatingMLNode$closeTag() # </gating:Quadrant>
-
+  
   gatingMLNode$closeTag() # </gating:QuadrantGate>
 }
 
@@ -2329,17 +2420,17 @@ addCompensation <- function(gatingMLNode, x, flowEnv)
   myComp = objectNameToObject(x, flowEnv)
   if(!is(myComp, "compensation")) stop(paste("Unexpected object insted of a compensation - ", class(myComp)))
   addDebugMessage(paste("Working on compensation ", myComp@compensationId, sep=""), flowEnv)
-
+  
   myID = getObjectId(myComp, NULL, flowEnv)
   if(isIdWrittenToXMLAlready(myID, flowEnv)) return(FALSE)
-
+  
   detectors <- colnames(myComp@spillover)
   if (is.null(detectors))
   {
     stop(paste("Cannot export a spillover matrix without column names (", myComp@compensationId, ").", sep=""))
     return
   }
-
+  
   fluorochromes <- rownames(myComp@spillover)
   if(is.null(fluorochromes))
   {
@@ -2353,10 +2444,10 @@ addCompensation <- function(gatingMLNode, x, flowEnv)
       fluorochromes <- detectors
     }
   }
-
+  
   attrs = c("transforms:id" = myID)
   gatingMLNode$addNode("transforms:spectrumMatrix", attrs = attrs, close = FALSE)
-
+  
   gatingMLNode$addNode("transforms:fluorochromes", close = FALSE)
   for (fname in fluorochromes)
   {
@@ -2364,7 +2455,7 @@ addCompensation <- function(gatingMLNode, x, flowEnv)
     gatingMLNode$addNode("data-type:fcs-dimension", attrs = attrs)
   }
   gatingMLNode$closeTag() # </transforms:fluorochromes>
-
+  
   gatingMLNode$addNode("transforms:detectors", close = FALSE)
   for (dname in detectors)
   {
@@ -2372,7 +2463,7 @@ addCompensation <- function(gatingMLNode, x, flowEnv)
     gatingMLNode$addNode("data-type:fcs-dimension", attrs = attrs)
   }
   gatingMLNode$closeTag() # </transforms:detectors>
-
+  
   for (rowNo in 1:nrow(myComp@spillover))
   {
     gatingMLNode$addNode("transforms:spectrum", close = FALSE)
@@ -2384,7 +2475,7 @@ addCompensation <- function(gatingMLNode, x, flowEnv)
     }
     gatingMLNode$closeTag() # </transforms:spectrum>
   }
-
+  
   gatingMLNode$closeTag() # </transforms:spectrumMatrix>
 }
 
@@ -2394,10 +2485,10 @@ addAsinhtGml2 <- function(gatingMLNode, x, flowEnv)
   myTrans = objectNameToObject(x, flowEnv)
   if(!is(myTrans, "asinhtGml2")) stop(paste("Unexpected object insted of asinhtGml2 - ", class(myTrans)))
   addDebugMessage(paste("Working on asinhtGml2 ", myTrans@transformationId, sep=""), flowEnv)
-
+  
   myID = getObjectId(myTrans, NULL, flowEnv)
   if(isIdWrittenToXMLAlready(myID, flowEnv)) return(FALSE)
-
+  
   attrs = c("transforms:id" = myID)
   if (is.finite(myTrans@boundMin)) attrs = append(attrs, c("transforms:boundMin" = myTrans@boundMin))
   if (is.finite(myTrans@boundMax)) attrs = append(attrs, c("transforms:boundMax" = myTrans@boundMax))
@@ -2426,18 +2517,18 @@ addAsinhtGml1.5 <- function(gatingMLNode, x, flowEnv)
   myTrans = objectNameToObject(x, flowEnv)
   if(!is(myTrans, "asinht")) stop(paste("Unexpected object insted of asinht - ", class(myTrans)))
   addDebugMessage(paste("Working on asinht ", myTrans@transformationId, sep=""), flowEnv)
-
+  
   myID = getObjectId(myTrans, NULL, flowEnv)
   if(isIdWrittenToXMLAlready(myID, flowEnv)) return(FALSE)
-
+  
   attrs = c("transforms:id" = myID)
   gatingMLNode$addNode("transforms:transformation", attrs = attrs, close = FALSE)
-
+  
   A = 0
   M = 1 / (myTrans@b * log(10))
   T = (sinh(1/myTrans@b)) / myTrans@a
   attrs = c("transforms:T" = T, "transforms:M" = M, "transforms:A" = A)
-
+  
   gatingMLNode$addNode("transforms:fasinh", attrs = attrs)
   gatingMLNode$closeTag() # </transforms:transformation>
 }
@@ -2448,10 +2539,10 @@ addHyperlogtGml2 <- function(gatingMLNode, x, flowEnv)
   myTrans = objectNameToObject(x, flowEnv)
   if(!is(myTrans, "hyperlogtGml2")) stop(paste("Unexpected object insted of hyperlogtGml2 - ", class(myTrans)))
   addDebugMessage(paste("Working on hyperlogtGml2 ", myTrans@transformationId, sep=""), flowEnv)
-
+  
   myID = getObjectId(myTrans, NULL, flowEnv)
   if(isIdWrittenToXMLAlready(myID, flowEnv)) return(FALSE)
-
+  
   attrs = c("transforms:id" = myID)
   if (is.finite(myTrans@boundMin)) attrs = append(attrs, c("transforms:boundMin" = myTrans@boundMin))
   if (is.finite(myTrans@boundMax)) attrs = append(attrs, c("transforms:boundMax" = myTrans@boundMax))
@@ -2467,10 +2558,10 @@ addLogicletGml2 <- function(gatingMLNode, x, flowEnv)
   myTrans = objectNameToObject(x, flowEnv)
   if(!is(myTrans, "logicletGml2")) stop(paste("Unexpected object insted of logicletGml2 - ", class(myTrans)))
   addDebugMessage(paste("Working on logicletGml2 ", myTrans@transformationId, sep=""), flowEnv)
-
+  
   myID = getObjectId(myTrans, NULL, flowEnv)
   if(isIdWrittenToXMLAlready(myID, flowEnv)) return(FALSE)
-
+  
   attrs = c("transforms:id" = myID)
   if (is.finite(myTrans@boundMin)) attrs = append(attrs, c("transforms:boundMin" = myTrans@boundMin))
   if (is.finite(myTrans@boundMax)) attrs = append(attrs, c("transforms:boundMax" = myTrans@boundMax))
@@ -2486,10 +2577,10 @@ addLintGml2 <- function(gatingMLNode, x, flowEnv)
   myTrans = objectNameToObject(x, flowEnv)
   if(!is(myTrans, "lintGml2")) stop(paste("Unexpected object insted of lintGml2 - ", class(myTrans)))
   addDebugMessage(paste("Working on lintGml2 ", myTrans@transformationId, sep=""), flowEnv)
-
+  
   myID = getObjectId(myTrans, NULL, flowEnv)
   if(isIdWrittenToXMLAlready(myID, flowEnv)) return(FALSE)
-
+  
   attrs = c("transforms:id" = myID)
   if (is.finite(myTrans@boundMin)) attrs = append(attrs, c("transforms:boundMin" = myTrans@boundMin))
   if (is.finite(myTrans@boundMax)) attrs = append(attrs, c("transforms:boundMax" = myTrans@boundMax))
@@ -2505,10 +2596,10 @@ addLogtGml2 <- function(gatingMLNode, x, flowEnv)
   myTrans = objectNameToObject(x, flowEnv)
   if(!is(myTrans, "logtGml2")) stop(paste("Unexpected object insted of logtGml2 - ", class(myTrans)))
   addDebugMessage(paste("Working on logtGml2 ", myTrans@transformationId, sep=""), flowEnv)
-
+  
   myID = getObjectId(myTrans, NULL, flowEnv)
   if(isIdWrittenToXMLAlready(myID, flowEnv)) return(FALSE)
-
+  
   attrs = c("transforms:id" = myID)
   if (is.finite(myTrans@boundMin)) attrs = append(attrs, c("transforms:boundMin" = myTrans@boundMin))
   if (is.finite(myTrans@boundMax)) attrs = append(attrs, c("transforms:boundMax" = myTrans@boundMax))
@@ -2524,10 +2615,10 @@ addRatiotGml2 <- function(gatingMLNode, x, flowEnv)
   myTrans = objectNameToObject(x, flowEnv)
   if(!is(myTrans, "ratiotGml2")) stop(paste("Unexpected object insted of ratiotGml2 - ", class(myTrans)))
   addDebugMessage(paste("Working on ratiotGml2 ", myTrans@transformationId, sep=""), flowEnv)
-
+  
   myID = getObjectId(myTrans, NULL, flowEnv)
   if(isIdWrittenToXMLAlready(myID, flowEnv)) return(FALSE)
-
+  
   attrs = c("transforms:id" = myID)
   if (is.finite(myTrans@boundMin)) attrs = append(attrs, c("transforms:boundMin" = myTrans@boundMin))
   if (is.finite(myTrans@boundMax)) attrs = append(attrs, c("transforms:boundMax" = myTrans@boundMax))
@@ -2548,10 +2639,10 @@ addRatioGml1.5 <- function(gatingMLNode, x, flowEnv)
   myTrans = objectNameToObject(x, flowEnv)
   if(!is(myTrans, "ratio")) stop(paste("Unexpected object insted of ratio - ", class(myTrans)))
   addDebugMessage(paste("Working on ratio ", myTrans@transformationId, sep=""), flowEnv)
-
+  
   myID = getObjectId(myTrans, NULL, flowEnv)
   if(isIdWrittenToXMLAlready(myID, flowEnv)) return(FALSE)
-
+  
   attrs = c("transforms:id" = myID)
   gatingMLNode$addNode("transforms:transformation", attrs = attrs, close = FALSE)
   attrs = c("transforms:A" = "1", "transforms:B" = "0", "transforms:C" = "0")
@@ -2571,7 +2662,7 @@ addDimensions <- function(gatingMLNode, x, flowEnv, quadGateDividerIdBasedName =
   {
     attrs = c()
     parameter = gate@parameters[[i]]
-
+    
     if (is(gate, "rectangleGate"))
     {
       min = gate@min[[i]]
@@ -2579,7 +2670,7 @@ addDimensions <- function(gatingMLNode, x, flowEnv, quadGateDividerIdBasedName =
       if(min != -Inf) attrs = c(attrs, "gating:min" = min)
       if(max != Inf) attrs = c(attrs, "gating:max" = max)
     }
-
+    
     if(is(parameter, "transformReference")) parameter = resolveTransformationReference(parameter)
     if(is(parameter, "unitytransform")) attrs = c(attrs, "gating:compensation-ref" = "uncompensated")
     else if(is(parameter, "singleParameterTransform"))
@@ -2587,7 +2678,7 @@ addDimensions <- function(gatingMLNode, x, flowEnv, quadGateDividerIdBasedName =
       attrs = c(attrs, "gating:transformation-ref" = filterIdtoXMLId(parameter@transformationId, flowEnv))
       parameter = parameter@parameters
       if(is(parameter, "transformReference")) parameter = resolveTransformationReference(parameter)
-
+      
       if(is(parameter, "unitytransform")) attrs = c(attrs, "gating:compensation-ref" = "uncompensated")
       else if(is(parameter, "compensatedParameter")) attrs = addCompensationRef(attrs, parameter, flowEnv)
       else if(is(parameter, "ratiotGml2") || is(parameter, "ratio")) attrs = addCompensationRef(attrs, parameter@numerator, flowEnv)
@@ -2596,14 +2687,14 @@ addDimensions <- function(gatingMLNode, x, flowEnv, quadGateDividerIdBasedName =
     else if(is(parameter, "compensatedParameter")) attrs = addCompensationRef(attrs, parameter, flowEnv)
     else if(is(parameter, "ratiotGml2") || is(parameter, "ratio")) attrs = addCompensationRef(attrs, parameter@numerator, flowEnv)
     else stop(paste("Unexpected parameter class", class(parameter), "- not supported in Gating-ML 2.0 output)."))
-
+    
     if(is(gate, "quadGate"))
     {
       attrs = c(attrs, "gating:id" = paste(quadGateDividerIdBasedName, ".D", i, sep = ""))
       gatingMLNode$addNode("gating:divider", attrs = attrs, close = FALSE)
     }
     else gatingMLNode$addNode("gating:dimension", attrs = attrs, close = FALSE)
-
+    
     addDimensionContents(gatingMLNode, parameter, flowEnv)
     if (is(gate, "quadGate")) gatingMLNode$addNode("gating:value", as.character(gate@boundary[i]))
     gatingMLNode$closeTag() # </gating:dimension> or </gating:divider>
@@ -2628,7 +2719,7 @@ addDimensionContents <- function(gatingMLNode, parameter, flowEnv)
     newDimension = TRUE
   }
   else stop(paste("Unrecognized parameter type, class ", class(parameter), ". Note that compound transformations are not supported in Gating-ML 2.0.", sep=""))
-
+  
   if(newDimension)
     gatingMLNode$addNode("data-type:new-dimension", attrs = attrs)
   else
@@ -2643,7 +2734,7 @@ filterIdtoXMLId <- function(x, flowEnv)
 {
   if(!(is.character(x))) stop(paste("Object of class", class(x), "cannot be converted to an XML identifier."))
   if(length(x) <= 0) stop(paste("An empty string cannot be converted to an XML identifier."))
-
+  
   # First, if it is a singleParameterTransform then check for a representative and use it instead eventually
   trEnv = flowEnv[['.singleParTransforms']]
   trans = flowEnv[[x]]
@@ -2652,7 +2743,7 @@ filterIdtoXMLId <- function(x, flowEnv)
     key = createTransformIdentifier(trans)
     if (!is.null(trEnv[[key]])) x = trEnv[[key]]
   }
-
+  
   # Now make it a safe XML identifier
   # 1) Put an underscore prefix if it starts with a number
   if(substr(x, 1, 1) >= "0" && substr(x, 1, 1) <= "9") x = paste("_", x, sep="")
@@ -2788,7 +2879,7 @@ addCompensationRef <- function(attrs, parameter, flowEnv)
       attrs = c(attrs, "gating:compensation-ref" = "FCS")
   }
   else stop(paste("Unexpected parameter class", class(parameter)))
-
+  
   attrs
 }
 
@@ -2803,7 +2894,7 @@ addRectGateMinMax <- function(attrs, gate, i)
     if(min != -Inf) attrs = c(attrs, "gating:min" = min)
     if(max != Inf) attrs = c(attrs, "gating:max" = max)
   } else stop(paste("Unexpected gate class", class(gate), "- expected a rectangleGate."))
-
+  
   attrs
 }
 
@@ -2823,7 +2914,7 @@ getObjectId <- function(object, forceGateId, flowEnv)
     if (is.null(forceGateId)) myID = filterIdtoXMLId(object@compensationId, flowEnv)
     else myID = filterIdtoXMLId(forceGateId, flowEnv)
   }
-
+  
   else stop(paste("Unexpected object to get id from, class", class(object)))
   myID
 }
@@ -2850,7 +2941,7 @@ addReferencedObjectsToEnv <- function(x, flowEnv)
     doubleCheckExistanceOfParameter(object@parameters, flowEnv)
   else if (is(object, "setOperationFilter"))
     for(filt in object@filters) doubleCheckExistanceOfFilter(filt, flowEnv)
-
+  
 }
 
 # If par is a transform then check whether it exists in the flowEnv environment,
@@ -2899,6 +2990,7 @@ write.csv(nonezDAFi_labels,
           quote = TRUE)
 
 
+
 ##################################
 ## WRITE OUT THE PARAMETER SETS ##
 
@@ -2908,13 +3000,13 @@ for (n in 1:length(popSets)){
   assign(nam, downDEG)
   namGS <- paste0("/",popSets[[n]], "_", "Features.csv")
   fGSnam <- paste0(fj_output_folder, namGS)
-
-  write.table("[GeneSet]", file = fGSnam, append = F, quote = F, row.names = F, col.names = F )
+  
+  write.table("[MarkerSelection]", file = fGSnam, append = F, quote = F, row.names = F, col.names = F )
   write.table("$SchemaVersion,1", file = fGSnam, append = T, quote = F, row.names = F, col.names = F )
-  write.table(paste0("$GeneSetName,", popSets[[n]],"_Features"), file = fGSnam, append = T, quote = F, row.names = F, col.names = F )
-  write.table(paste0("$GeneSetDescription,Marker Parameter-set Calculated by DAFi for ",popSets[[n]],"."), file = fGSnam, append = T, quote = F, row.names = F, col.names = F )
+  write.table(paste0("$MarkerSelectionName,", popSets[[n]],"_Features"), file = fGSnam, append = T, quote = F, row.names = F, col.names = F )
+  write.table(paste0("$MarkerSelectionDescription,Marker Parameter-set Calculated by ezDAFi for ",popSets[[n]],"."), file = fGSnam, append = T, quote = F, row.names = F, col.names = F )
   write.table(" ", file = fGSnam, append = T, quote = F, row.names = F, col.names = F )
-  write.table("[Genes],t-Value", file = fGSnam, append = T, quote = F, row.names = F, col.names = F )
+  write.table("[Markers],t-Value", file = fGSnam, append = T, quote = F, row.names = F, col.names = F )
   write.table(downDEG, file = fGSnam, sep = ',', append = T, quote = F, row.names = F, col.names = F , na="")
 }
 

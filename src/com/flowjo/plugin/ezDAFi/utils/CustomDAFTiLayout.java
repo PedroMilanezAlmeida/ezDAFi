@@ -330,7 +330,7 @@ public class CustomDAFTiLayout {
                             StringTokenizer tokenizer = new StringTokenizer(csvLine, "\n");
                             String token = tokenizer.nextToken();
 
-                            if(token.contains("[Genes],t-Value")) {
+                            if(token.contains("[Markers],t-Value")) {
                                 startWrite = true;
                                 colCt = 0;
                             }

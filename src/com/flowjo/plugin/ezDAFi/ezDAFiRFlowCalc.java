@@ -76,12 +76,13 @@ public class ezDAFiRFlowCalc extends RFlowCalculator {
         if(EngineManager.isWindows()) outputFolderString = outputFolderString.replaceAll("\\\\", "/");
 
         //String sParScale = options.get(com.flowjo.plugin.ezDAFi.ezDAFi.scaleOptionName);
-        String sParPlotStats = options.get(ezDAFi.plotStatsOptionName);
+        //String sParPlotStats = options.get(ezDAFi.plotStatsOptionName);
         //String sParTrans = options.get(com.flowjo.plugin.ezDAFi.ezDAFi.transOptionName);
         String sParBatch = options.get(ezDAFi.batchOptionName);
         String sParkMeansSom = options.get(ezDAFi.kMeansSomOptionName);
-        String sParPLS = options.get(ezDAFi.PLSOptionName);
-        String sParMeta = options.get(ezDAFi.metaOptionName);
+        String sParMulti = options.get(ezDAFi.multiOptionName);
+        //String sParPLS = options.get(ezDAFi.PLSOptionName);
+        //String sParMeta = options.get(ezDAFi.metaOptionName);
         String sParApplyOnChildren = options.get(ezDAFi.applyOnChildrenOptionName);
         String sParMinPopSize = options.get(ezDAFi.minPopSizeOptionName);
         String sParMinDim = options.get(ezDAFi.minDimOptionName);
@@ -98,10 +99,10 @@ public class ezDAFiRFlowCalc extends RFlowCalculator {
         //      else
         //sParScale = FALSE;
 
-        if (sParPlotStats == null || sParPlotStats.isEmpty() || ezDAFi.One.equals(sParPlotStats) || ezDAFi.True.equals(sParPlotStats))
-            sParPlotStats = TRUE; // TRUE is the default
-              else
-        sParPlotStats = FALSE;
+        //if (sParPlotStats == null || sParPlotStats.isEmpty() || ezDAFi.One.equals(sParPlotStats) || ezDAFi.True.equals(sParPlotStats))
+        //  sParPlotStats = TRUE; // TRUE is the default
+        //    else
+        //sParPlotStats = FALSE;
 
         //if (sParTrans == null || sParTrans.isEmpty() || com.flowjo.plugin.ezDAFi.ezDAFi.One.equals(sParTrans) || com.flowjo.plugin.ezDAFi.ezDAFi.True.equals(sParTrans))
         //  sParTrans = TRUE; // TRUE is the default
@@ -118,15 +119,20 @@ public class ezDAFiRFlowCalc extends RFlowCalculator {
         else
             sParkMeansSom = FALSE;
 
-        if (sParPLS == null || sParPLS.isEmpty() || ezDAFi.One.equals(sParPLS) || ezDAFi.True.equals(sParPLS))
-            sParPLS = TRUE; // TRUE is the default
+        if (sParMulti == null || sParMulti.isEmpty() || ezDAFi.One.equals(sParMulti) || ezDAFi.True.equals(sParMulti))
+            sParMulti = TRUE; // TRUE is the default
         else
-            sParPLS = FALSE;
+            sParMulti = FALSE;
 
-        if (sParMeta == null || sParMeta.isEmpty() || ezDAFi.One.equals(sParMeta) || ezDAFi.True.equals(sParMeta))
-            sParMeta = TRUE; // TRUE is the default
-        else
-            sParMeta = FALSE;
+        //if (sParPLS == null || sParPLS.isEmpty() || ezDAFi.One.equals(sParPLS) || ezDAFi.True.equals(sParPLS))
+        //  sParPLS = TRUE; // TRUE is the default
+        //else
+        //  sParPLS = FALSE;
+
+        //if (sParMeta == null || sParMeta.isEmpty() || ezDAFi.One.equals(sParMeta) || ezDAFi.True.equals(sParMeta))
+        //  sParMeta = TRUE; // TRUE is the default
+        //else
+        //  sParMeta = FALSE;
 
         if (sParApplyOnChildren == null || sParApplyOnChildren.isEmpty() || ezDAFi.One.equals(sParApplyOnChildren) || ezDAFi.True.equals(sParApplyOnChildren))
             sParApplyOnChildren = TRUE; // TRUE is the default
@@ -214,12 +220,13 @@ public class ezDAFiRFlowCalc extends RFlowCalculator {
                 scriptLine = scriptLine.replace("FJ_CSV_OUPUT_FILE", outFileName);
                 scriptLine = scriptLine.replace("FJ_GATING_ML_OUTPUT_FILE", gatingMLOutFile.getAbsolutePath());
                 //scriptLine = scriptLine.replace("FJ_PAR_SCALE", sParScale);
-                scriptLine = scriptLine.replace("FJ_PLOT_STATS", sParPlotStats);
+                //scriptLine = scriptLine.replace("FJ_PLOT_STATS", sParPlotStats);
                 //scriptLine = scriptLine.replace("FJ_TRANSFORM", sParTrans);
                 scriptLine = scriptLine.replace("FJ_BATCH_MODE", sParBatch);
                 scriptLine = scriptLine.replace("FJ_PAR_SOM", sParkMeansSom);
-                scriptLine = scriptLine.replace("FJ_PAR_PLSDA", sParPLS);
-                scriptLine = scriptLine.replace("FJ_PAR_META", sParMeta);
+                scriptLine = scriptLine.replace("FJ_PAR_MULTI", sParMulti);
+                //scriptLine = scriptLine.replace("FJ_PAR_PLSDA", sParPLS);
+                //scriptLine = scriptLine.replace("FJ_PAR_META", sParMeta);
                 scriptLine = scriptLine.replace("FJ_PAR_CHILDREN", sParApplyOnChildren);
                 scriptLine = scriptLine.replace("FJ_PAR_MINPOPSIZE", sParMinPopSize);
                 scriptLine = scriptLine.replace("FJ_MIN_N_PAR", sParMinDim);
