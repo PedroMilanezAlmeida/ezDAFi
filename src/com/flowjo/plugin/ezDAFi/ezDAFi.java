@@ -88,7 +88,7 @@ public class ezDAFi extends R_Algorithm {
 
 
     private RangedIntegerTextField fDimXField = null, fDimYField = null;
-    private RangedIntegerTextField fMinPopSizeField = null;
+    private RangedIntegerTextField fEzExpSeedField = null;
     private RangedIntegerTextField fMinDimField = null;
     private RangedIntegerTextField fMaxDimField = null;
     private FJComboBox fApplyOnPrevCombo = null;
@@ -122,9 +122,8 @@ public class ezDAFi extends R_Algorithm {
     private static final String dimXLabel = "SOM grid size (W x H)";
     private static final String dimXTooltip = "Width of the grid for building the self-organizing map.";
     private static final String dimYTooltip = "Height of the grid for building the self-organizing map.";
-    private static final String minPopSizeLabel = "min # of events";
-    private static final String mustBeMinPopSizeLabel = "(min # of events must be larger than SOM grid size W x H!)";
-    private static final String minPopSizeTooltip = "Smallest number of cells to apply ezDAFi on.";
+    private static final String ezExpSeedLabel = "Set reproducibility seed.";
+    private static final String ezExpSeedTooltip = "Used as seed generator for random numbers to ensure reproducibility. Compare results across several seeds to ensure results are stable.";
     private static final String minDimLabel = "# of dimensions: min";
     private static final String maxDimLabel = "Additional Clustering Dimensions:";
     //private static final String mustBeMinDimLabel = "(use min AND max = 1 for auto-selection)";
@@ -176,7 +175,7 @@ public class ezDAFi extends R_Algorithm {
     public static final String applyOnChildrenOptionName = "childrenOnly";
     public static final String xDimOptionName = "xdim";
     public static final String yDimOptionName = "ydim";
-    public static final String minPopSizeOptionName = "minPopSize";
+    public static final String ezExpSeedOptionName = "ezExpSeed";
     public static final String minDimOptionName = "minDim";
     public static final String maxDimOptionName = "maxDim";
     public static final String applyOnPrevOptionName = "applyOn"; // "None" or file path to an RData file with a ezDAFi object
@@ -194,7 +193,7 @@ public class ezDAFi extends R_Algorithm {
 
     public static final int defaultXDim = 10;
     public static final int defaultYDim = 10;
-    public static final int defaultMinPopSize = 50;
+    public static final int defaultEzExpSeed = 42;
     public static final int defaultMinDim = 1;
     public static final int defaultMaxDim = 3;
     public static final String defaultApplyOnPrev = "None";
@@ -230,7 +229,7 @@ public class ezDAFi extends R_Algorithm {
 
 
     private int fndimx = defaultXDim, fndimy = defaultYDim;
-    private int fnMinPopSize = defaultMinPopSize;
+    private int fnEzExpSeed = defaultEzExpSeed;
     private int fnMinDim = defaultMinDim;
     private int fnMaxDim = defaultMaxDim;
     private String fAnalysisPathSampleURI = "test1";
@@ -441,7 +440,7 @@ public class ezDAFi extends R_Algorithm {
                 try {
                     String ezExpPDF = "ezExplorer." + thisSamplePopNode + "." + millisTime + ".pdf";
                     File ezExpPDFFile = new File(wsDir, ezExpPDF);
-                    Desktop.getDesktop().open(ezExpPDFFile.getParentFile());
+                    //Desktop.getDesktop().open(ezExpPDFFile.getParentFile());
                     Desktop.getDesktop().open(ezExpPDFFile);
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -994,7 +993,7 @@ public class ezDAFi extends R_Algorithm {
         //fPLS = defaultPLS;
         //fMeta = defaultMeta;
         fApplyOnChildren = defaultApplyOnChildren;
-        fnMinPopSize = defaultMinPopSize;
+        fnEzExpSeed = defaultEzExpSeed;
         fnMinDim = defaultMinDim;
         fnMaxDim = defaultMaxDim;
 
@@ -1077,8 +1076,8 @@ public class ezDAFi extends R_Algorithm {
             if (savedNaive != null && !savedNaive.isEmpty())
                 fNaive = One.equals(savedNaive) || True.equals(savedNaive);
 
-            int savedMinPopSize = option.getInt(minPopSizeOptionName, -1);
-            if (savedMinPopSize >= 16 && savedMinPopSize <= 99999999) fnMinPopSize = savedMinPopSize;
+            int savedEzExpSeed = option.getInt(ezExpSeedOptionName, -1);
+            if (savedEzExpSeed >= 0 && savedEzExpSeed <= 999) fnEzExpSeed = savedEzExpSeed;
 
             int savedMinDim = option.getInt(minDimOptionName, -1);
             if (savedMinDim >= 1 && savedMinDim <= 999999) fnMinDim = savedMinDim;
@@ -1120,18 +1119,6 @@ public class ezDAFi extends R_Algorithm {
         //HBox hboxApplyOnPrev = new HBox(new Component[]{LabelApplyOnPrev, fApplyOnPrevCombo});
         //componentList.add(hboxApplyOnPrev);
         //componentList.add(new HBox(new Component[]{new FJLabel(orPerformezDAFiLabel)}));
-
-        FJLabel fjLabelMinPopSize = new FJLabel(minPopSizeLabel);
-        fMinPopSizeField = new RangedIntegerTextField(16, 99999999);
-        fMinPopSizeField.setInt(fnMinPopSize);
-        fMinPopSizeField.setToolTipText("<html><p width=\"" + fixedToolTipWidth + "\">" + minPopSizeTooltip + "</p></html>");
-        GuiFactory.setSizes(fMinPopSizeField, new Dimension(fixedFieldWidth, fixedFieldHeigth));
-        GuiFactory.setSizes(fjLabelMinPopSize, new Dimension(fixedLabelWidth, fixedLabelHeigth));
-
-        HBox hboxMinPopSize = new HBox(new Component[]{fjLabelMinPopSize, fMinPopSizeField});
-        // UNDO COMMENT OUT BELOW TO MAKE IT POSSIBLE FOR THE USER TO SELECT MIN POP SIZE TO RUN ezDAFi ON
-        //componentList.add(hboxMinPopSize);
-        //componentList.add(new HBox(new Component[]{new FJLabel(mustBeMinPopSizeLabel)}));
 
         FJLabel fjLabelMinDim = new FJLabel(minDimLabel);
         fMinDimField = new RangedIntegerTextField(1, 999999);
@@ -1222,6 +1209,16 @@ public class ezDAFi extends R_Algorithm {
         fEzExpCheckbox.setToolTipText("<html><p width=\"" + fixedToolTipWidth + "\">" + ezExpTooltip + "</p></html>");
         fEzExpCheckbox.setSelected(fEzExp);
         componentList.add(new HBox(new Component[]{fEzExpCheckbox}));
+
+        FJLabel fjLabelEzExpSeed = new FJLabel(ezExpSeedLabel);
+        fEzExpSeedField = new RangedIntegerTextField(0, 999);
+        fEzExpSeedField.setInt(fnEzExpSeed);
+        fEzExpSeedField.setToolTipText("<html><p width=\"" + fixedToolTipWidth + "\">" + ezExpSeedTooltip + "</p></html>");
+        GuiFactory.setSizes(fEzExpSeedField, new Dimension(fixedFieldWidth, fixedFieldHeigth));
+        GuiFactory.setSizes(fjLabelEzExpSeed, new Dimension(fixedLabelWidth, fixedLabelHeigth));
+
+        HBox hboxEzExpSeed = new HBox(new Component[]{fjLabelEzExpSeed, fEzExpSeedField});
+        componentList.add(hboxEzExpSeed);
 
         FJLabel hSpaceLabelCITESeq = new FJLabel("");
         GuiFactory.setSizes(hSpaceLabelCITESeq, new Dimension(fixedLabelWidth, hSpaceHeigth));
@@ -1434,7 +1431,7 @@ public class ezDAFi extends R_Algorithm {
         fOptions.put(sampleURISlot, fAnalysisPathSampleURI);
         fOptions.put(samplePopNodeSlot, fAnalysisPathSamplePopNode);
         fOptions.put(sampleFileSlot, fAnalysisPathSampleFile);
-        fOptions.put(minPopSizeOptionName, Integer.toString(fMinPopSizeField.getInt()));
+        fOptions.put(ezExpSeedOptionName, Integer.toString(fEzExpSeedField.getInt()));
         fOptions.put(minDimOptionName, Integer.toString(fMinDimField.getInt()));
         fOptions.put(maxDimOptionName, Integer.toString(fMaxDimField.getInt()));
         fOptions.put(xDimOptionName, Integer.toString(fDimXField.getInt()));

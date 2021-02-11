@@ -520,6 +520,8 @@ if(length(popOfInt_full_path) > 1){
 
 if(FJ_PAR_EX){
   
+  fj_par_ezExp_seed <- FJ_PAR_EZEXP_SEED
+  
   prot <- flowWorkspace::gs_pop_get_data(obj = gs, 
                                          y = popOfInt_full_path)[[1]] %>% 
     flowCore::exprs()
@@ -548,7 +550,7 @@ if(FJ_PAR_EX){
   }
   
   if((dim(prot)[1] * dim(prot)[2]) < 1e7){
-    set.seed(2021)
+    set.seed(fj_par_ezExp_seed)
     kmeans.res <- suppressWarnings(stats::kmeans(x = prot,
                                                  centers = 500,
                                                  iter.max = 10))
@@ -561,7 +563,7 @@ if(FJ_PAR_EX){
         seq()
     }
   } else {
-    set.seed(2021)
+    set.seed(fj_par_ezExp_seed)
     kmeans.res <- suppressWarnings(
       mbkmeans::mbkmeans(
         x = t(prot),
@@ -584,7 +586,8 @@ if(FJ_PAR_EX){
       seq()
     colnames(kmeans.res$centers) <- colnames(prot)
   }
-  
+
+  set.seed(fj_par_ezExp_seed)
   kmeans.res$graphs <- Seurat::FindNeighbors(
     object = kmeans.res$centers,
     k.param = 5,
@@ -597,7 +600,7 @@ if(FJ_PAR_EX){
   
   kmeans.res$leiden <- leiden::leiden(object = kmeans.res$graphs$snn,
                                       resolution_parameter = 1,
-                                      seed = 2021,
+                                      seed = fj_par_ezExp_seed,
                                       n_iterations = 10L) %>%
     as.factor()
   
@@ -618,7 +621,7 @@ if(FJ_PAR_EX){
                     data = X.df,
                     center = TRUE)
   
-  set.seed(2021)
+  set.seed(fj_par_ezExp_seed)
   umap.res <- uwot::umap(
     X = kmeans.res$centers,
     n_neighbors = 5,
@@ -654,6 +657,7 @@ if(FJ_PAR_EX){
     tmpdir = tempdir(),
     verbose = FALSE)
   
+  set.seed(fj_par_ezExp_seed)
   umap.res <- uwot::umap_transform(
     X = prot,
     model = umap.res,
