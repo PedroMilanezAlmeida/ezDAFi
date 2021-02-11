@@ -96,7 +96,8 @@ public class ezDAFi extends R_Algorithm {
     //private FJCheckBox fPlotStatsOptionCheckbox = null;
     //private FJCheckBox fTransOptionCheckbox = null;
     private FJCheckBox fBatchOptionCheckbox = null;
-    //private FJCheckBox fShowRScriptCheckbox = null;
+    private FJCheckBox fEzExpCheckbox = null;
+    private FJCheckBox fNaiveCheckbox = null;
     private FJCheckBox fKMeansSomOptionCheckbox = null;
     private FJCheckBox fMultiOptionCheckbox = null;
     //private FJCheckBox fPLSOptionCheckbox = null;
@@ -139,8 +140,10 @@ public class ezDAFi extends R_Algorithm {
     //private static final String transTooltip = "If not working with raw FCS files but pre-processed CSV files from other applications such as CITE-seq or histo-cytometry, the data may already have been transformed and this box should be unchecked.";
     private static final String batchLabel = "Advanced (results not re-imported to FlowJo; batch mode).";
     private static final String batchTooltip = "ezDAFi all samples, plot back-gating results and continue analysis in R. Gates will not be re-imported to FlowJo.";
-    //private static final String showRScriptLabel = "Show RScript (.txt format) upon completion.";
-    //private static final String showRScriptTooltip = "Show the resulting RScript file (in .txt format), created doing the ezDAFi process.";
+    private static final String ezExpLabel = "Data exploration with ezExplorer.";
+    private static final String ezExpTooltip = "Help to guide manual gating. This function provides a quick overview of population structure with ultra-fast automated clustering, dimensionality reduction and suggested dimensions and hierarchy.";
+    private static final String naiveLabel = "Use naive DAFi algorithm.";
+    private static final String naiveTooltip = "Select this only if all dimensions should be used in clustering. Leave unchecked for automated dimension selection, which reduces the number of false positives and negatives.";
     private static final String kMeansSomLabel = "Cluster with self organizing maps (SOM; uncheck for k-means).";
     private static final String kMeansSomTooltip = "Which algorithm should be used for clustering?";
     private static final String multiLabel = "Use gene set-derived scores.";
@@ -156,13 +159,16 @@ public class ezDAFi extends R_Algorithm {
     private static final String supportedByString = "This work was supported by the Intramural Research Program of NIAID, NIH.";
 
     private static final String summaryLabel = "Create a summary layout.";
+    private static final String summaryTooltip = "Adds a layout of summary plots to the workspace.";
     private static final String overlayLabel = "Overlay ezDAFi population.";
+    private static final String overlayTooltip = "Creates an overlay on manual gating, otherwise plots comparing manual gates to ezDAFi clusters sit side by side.";
 
     //public static final String scaleOptionName = "scale";
     //public static final String plotStatsOptionName = "plotStats";
     //public static final String transOptionName = "trans";
     public static final String batchOptionName = "batch";
-    //public static final String showRScriptOptionName = "RScript";
+    public static final String ezExpOptionName = "ezExp";
+    public static final String naiveOptionName = "naive";
     public static final String kMeansSomOptionName = "kMeansSom";
     public static final String multiOptionName = "multi";
     //public static final String PLSOptionName = "PLS";
@@ -196,7 +202,8 @@ public class ezDAFi extends R_Algorithm {
     public static final boolean defaultPlotStats = false;
     //public static final boolean defaultTrans = true;
     public static final boolean defaultBatch = false;
-    public static final boolean defaultShowRScript = true;
+    public static final boolean defaultEzExp = false;
+    public static final boolean defaultNaive = false;
     public static final boolean defaultKMeansSom = true;
     public static final boolean defaultMulti = false;
     public static final boolean defaultPLS = false;
@@ -210,7 +217,8 @@ public class ezDAFi extends R_Algorithm {
     //private boolean fPlotStats = defaultPlotStats;
     //private boolean fTrans = defaultTrans;
     private boolean fBatch = defaultBatch;
-    //private boolean fShowRScript = defaultShowRScript;
+    private boolean fEzExp = defaultEzExp;
+    private boolean fNaive = defaultNaive;
     private boolean fKMeansSom = defaultKMeansSom;
     private boolean fMulti = defaultMulti;
     //private boolean fPLS = defaultPLS;
@@ -231,6 +239,13 @@ public class ezDAFi extends R_Algorithm {
 
     private static final String channelsLabelLine0 = "Make sure the selected population has at least one child gate.";
     private static final String channelsLabelLine1 = "";
+
+    private static final String channelsLabelLineEzExp0 = "The following option is meant for data exploration only and gates are not returned.";
+    private static final String channelsLabelLineEzExp1 = "";
+    //private static final String channelsLabelLineEzExp2 = "";
+
+    private static final String channelsLabelLineCITESeq0 = "The following option applies to CITE-Seq only.";
+    private static final String channelsLabelLineCITESeq1 = "";
 
     //private static final String pathToScriptLabelLine1 = "The RScript created in this analysis is located in the same folder as";
     //private static final String pathToScriptLabelLine2 = "the FJ workspace, under /WORKSPACE_NAME/ezDAFi/RScript.'numbers'.R.txt,";
@@ -412,63 +427,49 @@ public class ezDAFi extends R_Algorithm {
             //This is a workaround for the bug that FlowJo is not showing errors in R:
             //Try to read the results (import derived parameters and gatingML files), and, if requested, print the Rscript.
             //If this fails, print only the last 30 lines of the Rscript to make the error visible to the user.
+
+            String sParEzExp = fOptions.get(ezExpOptionName);
+            if (sParEzExp == null || sParEzExp.isEmpty() || ezDAFi.One.equals(sParEzExp) || ezDAFi.True.equals(sParEzExp)){
+              fEzExp = true;
+            } else {
+              fEzExp = false;
+            }
+
             try {
-                // Added to avoid issue with sub pops in FlowJo.
 
-                // the following code was used to try to add the capability of running flowjo on selected population if it has no child.
-                // i.e. run ezDAFi on parent of selected pop and refine selected pop.
-                // IT FAILED!
-                // The problem seems to be with "ExternalAlgorithmResults results", which apparently sends the results of the plugin back
-                // to the selected population but we need it to be sent back to its parent :'(
-
-                // detect whether ezDAFi was run on selected pop or on parent
-                //int nLinesFJOut = countLinesNew(sampleFile.getAbsolutePath());
-                //int nLinesPluginOut = countLinesNew(ezDAFiResult.getAbsolutePath());
-                //System.out.println(nLinesFJOut);
-                //System.out.println(nLinesPluginOut);
-
-                // try to make mergeCSVFile work on parent rather than selected pop: FAIL
-                //if (nLinesFJOut == nLinesPluginOut) {
-                mergeCSVFile(fcmlQueryElement, results, ezDAFiResult, sampleFile, outputFolder);
-                //} else {
-                //    mergeCSVFile(fcmlQueryElement.getParentSElement(), results, ezDAFiResult, csvParentFile, outputFolder);
-                //}
-
-                //}
-                System.out.println(ezDAFiResult.getAbsolutePath());
-                List<Float> values = extractUniqueValuesForParameter(ezDAFiResult);
-
-                //create a string which represents the gating-ml file
-                String xmlEnding = sampleFile.getName() + ".gating-ml2.xml";
-
-                //create a filter to find the gating-ml file in the folder
-                FilenameFilter xmlFileFilter = (dir, name) -> name.endsWith(xmlEnding);
-
-                File[] xmlFiles = outputFolder.listFiles(xmlFileFilter);
-
-                for (File xmlFile : xmlFiles)
-                {
-                    String gatingML = readGatingMLFile(xmlFile);
-                    results.setGatingML(gatingML);
-                    invFlag = true;
+                if (fEzExp) {
+                try {
+                    String ezExpPDF = "ezExplorer." + thisSamplePopNode + "." + millisTime + ".pdf";
+                    File ezExpPDFFile = new File(wsDir, ezExpPDF);
+                    Desktop.getDesktop().open(ezExpPDFFile.getParentFile());
+                    Desktop.getDesktop().open(ezExpPDFFile);
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
 
-                //String sParShowRScript = fOptions.get(showRScriptOptionName);
-                //if (sParShowRScript == null || sParShowRScript.isEmpty() || ezDAFi.One.equals(sParShowRScript) || ezDAFi.True.equals(sParShowRScript)){
-                //  fShowRScript = true; // TRUE is the default
-                //} else {
-                //  fShowRScript = false;
-                //}
+            } else {
 
-//                if (fShowRScript){
-//                    try {
-                        // Make this open a folder of genesets... or just don't open it at all.
-//                        Desktop.getDesktop().open(fOutFile.getParentFile());
-//                        Desktop.getDesktop().open(fOutFile);
-//                    } catch (IOException e) {
-//                        e.printStackTrace();
-//                    }
-//                }
+
+                    mergeCSVFile(fcmlQueryElement, results, ezDAFiResult, sampleFile, outputFolder);
+
+                    System.out.println(ezDAFiResult.getAbsolutePath());
+                    List<Float> values = extractUniqueValuesForParameter(ezDAFiResult);
+
+                    //create a string which represents the gating-ml file
+                    String xmlEnding = sampleFile.getName() + ".gating-ml2.xml";
+
+                    //create a filter to find the gating-ml file in the folder
+                    FilenameFilter xmlFileFilter = (dir, name) -> name.endsWith(xmlEnding);
+
+                    File[] xmlFiles = outputFolder.listFiles(xmlFileFilter);
+
+                    for (File xmlFile : xmlFiles) {
+                        String gatingML = readGatingMLFile(xmlFile);
+                        results.setGatingML(gatingML);
+                        invFlag = true;
+                    }
+
+                }
 
             } catch (Exception error) {
                 try{
@@ -939,6 +940,13 @@ public class ezDAFi extends R_Algorithm {
         FJLabel fjLabel0 = new FJLabel(channelsLabelLine0);
         FJLabel fjLabel1 = new FJLabel(channelsLabelLine1);
 
+        FJLabel fjLabelEzExp0 = new FJLabel(channelsLabelLineEzExp0);
+        FJLabel fjLabelEzExp1 = new FJLabel(channelsLabelLineEzExp1);
+        //FJLabel fjLabelEzExp2 = new FJLabel(channelsLabelLineEzExp2);
+
+        FJLabel fjLabelCITESeq0 = new FJLabel(channelsLabelLineCITESeq0);
+        FJLabel fjLabelCITESeq1 = new FJLabel(channelsLabelLineCITESeq1);
+
         componentList.add(fjLabel0);
         componentList.add(fjLabel1);
 
@@ -979,7 +987,8 @@ public class ezDAFi extends R_Algorithm {
         //fPlotStats = defaultPlotStats;
         //fTrans = defaultTrans;
         fBatch = defaultBatch;
-        //fShowRScript = defaultShowRScript;
+        fEzExp = defaultEzExp;
+        fNaive = defaultNaive;
         fKMeansSom = defaultKMeansSom;
         fMulti = defaultMulti;
         //fPLS = defaultPLS;
@@ -1060,9 +1069,13 @@ public class ezDAFi extends R_Algorithm {
             if (savedBatch != null && !savedBatch.isEmpty())
                 fBatch = One.equals(savedBatch) || True.equals(savedBatch);
 
-            //String savedShowRScript = option.getAttributeValue(showRScriptOptionName);
-            //if (savedShowRScript != null && !savedShowRScript.isEmpty())
-            //  fShowRScript = One.equals(savedShowRScript) || True.equals(savedShowRScript);
+            String savedEzExp = option.getAttributeValue(ezExpOptionName);
+            if (savedEzExp != null && !savedEzExp.isEmpty())
+                fEzExp = One.equals(savedEzExp) || True.equals(savedEzExp);
+
+            String savedNaive = option.getAttributeValue(naiveOptionName);
+            if (savedNaive != null && !savedNaive.isEmpty())
+                fNaive = One.equals(savedNaive) || True.equals(savedNaive);
 
             int savedMinPopSize = option.getInt(minPopSizeOptionName, -1);
             if (savedMinPopSize >= 16 && savedMinPopSize <= 99999999) fnMinPopSize = savedMinPopSize;
@@ -1143,7 +1156,7 @@ public class ezDAFi extends R_Algorithm {
 
         // NEXT TWO LINES ADDED TO SEPARATE MAX DIM BOX FROM MIN DIM BOX
         HBox hboDimMax = new HBox(new Component[]{fjLabelMaxDim, fMaxDimField});
-        componentList.add(hboDimMax);
+        //componentList.add(hboDimMax);
 
         fApplyOnChildrenCheckbox = new FJCheckBox(applyOnChildrenLabel);
         fApplyOnChildrenCheckbox.setToolTipText("<html><p width=\"" + fixedToolTipWidth + "\">" + applyOnChildrenTooltip + "</p></html>");
@@ -1156,20 +1169,20 @@ public class ezDAFi extends R_Algorithm {
         fKMeansSomOptionCheckbox.setSelected(fKMeansSom);
         componentList.add(new HBox(new Component[]{fKMeansSomOptionCheckbox}));
 
-        fMultiOptionCheckbox = new FJCheckBox(multiLabel);
-        fMultiOptionCheckbox.setToolTipText("<html><p width=\"" + fixedToolTipWidth + "\">" + multiTooltip + "</p></html>");
-        fMultiOptionCheckbox.setSelected(fMulti);
-        componentList.add(new HBox(new Component[]{fMultiOptionCheckbox}));
+        fSummaryOptionCheckbox = new FJCheckBox(summaryLabel);
+        fSummaryOptionCheckbox.setToolTipText("<html><p width=\"" + fixedToolTipWidth + "\">" + summaryTooltip + "</p></html>");
+        fSummaryOptionCheckbox.setSelected(summaryLayoutBool);
+        componentList.add(new HBox(new Component[]{fSummaryOptionCheckbox}));
+
+        fOverlayCheckbox = new FJCheckBox(overlayLabel);
+        fOverlayCheckbox.setToolTipText("<html><p width=\"" + fixedToolTipWidth + "\">" + overlayTooltip + "</p></html>");
+        fOverlayCheckbox.setSelected(fOverlay);
+        componentList.add(new HBox(new Component[]{new FJLabel("     "),fOverlayCheckbox}));
 
         //fScaleOptionCheckbox = new FJCheckBox(scaleLabel);
         //fScaleOptionCheckbox.setToolTipText("<html><p width=\"" + fixedToolTipWidth + "\">" + scaleTooltip + "</p></html>");
         //fScaleOptionCheckbox.setSelected(fScale);
         //componentList.add(new HBox(new Component[]{fScaleOptionCheckbox}));
-
-        //fShowRScriptCheckbox = new FJCheckBox(showRScriptLabel);
-        //fShowRScriptCheckbox.setToolTipText("<html><p width=\"" + fixedToolTipWidth + "\">" + showRScriptTooltip + "</p></html>");
-        //fShowRScriptCheckbox.setSelected(fShowRScript);
-        //componentList.add(new HBox(new Component[]{fShowRScriptCheckbox}));
 
         //fPlotStatsOptionCheckbox = new FJCheckBox(plotStatsLabel);
         //fPlotStatsOptionCheckbox.setToolTipText("<html><p width=\"" + fixedToolTipWidth + "\">" + plotStatsTooltip + "</p></html>");
@@ -1192,22 +1205,40 @@ public class ezDAFi extends R_Algorithm {
         // UNDO COMMENT OUT BELOW TO MAKE IT POSSIBLE FOR THE USER TO FINISH UP ANALYSIS IN R
         //componentList.add(new HBox(new Component[]{fBatchOptionCheckbox}));
 
-        //fTransOptionCheckbox = new FJCheckBox(transLabel);
+        fNaiveCheckbox = new FJCheckBox(naiveLabel);
+        fNaiveCheckbox.setToolTipText("<html><p width=\"" + fixedToolTipWidth + "\">" + naiveTooltip + "</p></html>");
+        fNaiveCheckbox.setSelected(fNaive);
+        componentList.add(new HBox(new Component[]{fNaiveCheckbox}));
+
+        FJLabel hSpaceLabelEzExp = new FJLabel("");
+        GuiFactory.setSizes(hSpaceLabelEzExp, new Dimension(fixedLabelWidth, hSpaceHeigth));
+        componentList.add(hSpaceLabelEzExp);
+
+        componentList.add(fjLabelEzExp0);
+        componentList.add(fjLabelEzExp1);
+        //componentList.add(fjLabelEzExp2);
+
+        fEzExpCheckbox = new FJCheckBox(ezExpLabel);
+        fEzExpCheckbox.setToolTipText("<html><p width=\"" + fixedToolTipWidth + "\">" + ezExpTooltip + "</p></html>");
+        fEzExpCheckbox.setSelected(fEzExp);
+        componentList.add(new HBox(new Component[]{fEzExpCheckbox}));
+
+        FJLabel hSpaceLabelCITESeq = new FJLabel("");
+        GuiFactory.setSizes(hSpaceLabelCITESeq, new Dimension(fixedLabelWidth, hSpaceHeigth));
+        componentList.add(hSpaceLabelCITESeq);
+
+        componentList.add(fjLabelCITESeq0);
+        componentList.add(fjLabelCITESeq1);
+
+        fMultiOptionCheckbox = new FJCheckBox(multiLabel);
+        fMultiOptionCheckbox.setToolTipText("<html><p width=\"" + fixedToolTipWidth + "\">" + multiTooltip + "</p></html>");
+        fMultiOptionCheckbox.setSelected(fMulti);
+        componentList.add(new HBox(new Component[]{fMultiOptionCheckbox}));
+
+//fTransOptionCheckbox = new FJCheckBox(transLabel);
         //fTransOptionCheckbox.setToolTipText("<html><p width=\"" + fixedToolTipWidth + "\">" + transTooltip + "</p></html>");
         //fTransOptionCheckbox.setSelected(fTrans);
         //componentList.add(new HBox(new Component[]{fTransOptionCheckbox}));
-
-        fSummaryOptionCheckbox = new FJCheckBox(summaryLabel);
-        fSummaryOptionCheckbox.setToolTipText(makeHTMPar("Adds a layout of summary overlays to the workspace.", fixedToolTipWidth,
-                9, "left", false));
-        fSummaryOptionCheckbox.setSelected(summaryLayoutBool);
-        componentList.add(new HBox(new Component[]{fSummaryOptionCheckbox}));
-
-        fOverlayCheckbox = new FJCheckBox(overlayLabel);
-        fOverlayCheckbox.setToolTipText(makeHTMPar("Creates an overlay on manual gating, otherwise plots comparing manual " +
-                        "gates to ezDAFi clusters sit side by side.", fixedToolTipWidth, 9, "left", false));
-        fOverlayCheckbox.setSelected(fOverlay);
-        componentList.add(new HBox(new Component[]{new FJLabel("     "),fOverlayCheckbox}));
 
         FJLabel hSpaceLabelCiting = new FJLabel("");
         GuiFactory.setSizes(hSpaceLabelCiting, new Dimension(fixedLabelWidth, hSpaceHeigth));
@@ -1298,7 +1329,8 @@ public class ezDAFi extends R_Algorithm {
               //if (fPlotStatsOptionCheckbox != null) fPlotStatsOptionCheckbox.setEnabled(false);
               //if (fTransOptionCheckbox != null) fTransOptionCheckbox.setEnabled(false);
               if (fBatchOptionCheckbox != null) fBatchOptionCheckbox.setEnabled(false);
-              //if (fShowRScriptCheckbox != null) fShowRScriptCheckbox.setEnabled(false);
+              if (fEzExpCheckbox != null) fEzExpCheckbox.setEnabled(false);
+              if (fNaiveCheckbox != null) fNaiveCheckbox.setEnabled(false);
               if (fKMeansSomOptionCheckbox != null) fKMeansSomOptionCheckbox.setEnabled(false);
               if (fMultiOptionCheckbox != null) fMultiOptionCheckbox.setEnabled(false);
               //if (fPLSOptionCheckbox != null) fPLSOptionCheckbox.setEnabled(false);
@@ -1360,7 +1392,8 @@ public class ezDAFi extends R_Algorithm {
               //if (fPlotStatsOptionCheckbox != null) fPlotStatsOptionCheckbox.setEnabled(true);
               //if (fTransOptionCheckbox != null) fTransOptionCheckbox.setEnabled(true);
               //if (fBatchOptionCheckbox != null) fBatchOptionCheckbox.setEnabled(true);
-              //if (fShowRScriptCheckbox != null) fShowRScriptCheckbox.setEnabled(true);
+              if (fEzExpCheckbox != null) fEzExpCheckbox.setEnabled(true);
+              if (fNaiveCheckbox != null) fNaiveCheckbox.setEnabled(true);
               if (fKMeansSomOptionCheckbox != null) fKMeansSomOptionCheckbox.setEnabled(true);
               if (fMultiOptionCheckbox != null) fMultiOptionCheckbox.setEnabled(true);
               //if (fPLSOptionCheckbox != null) fPLSOptionCheckbox.setEnabled(true);
@@ -1410,7 +1443,8 @@ public class ezDAFi extends R_Algorithm {
         //fOptions.put(plotStatsOptionName, fPlotStatsOptionCheckbox.isSelected() ? One : Zero);
         //fOptions.put(transOptionName, fTransOptionCheckbox.isSelected() ? One : Zero);
         fOptions.put(batchOptionName, fBatchOptionCheckbox.isSelected() ? One : Zero);
-        //fOptions.put(showRScriptOptionName, fShowRScriptCheckbox.isSelected() ? One : Zero);
+        fOptions.put(ezExpOptionName, fEzExpCheckbox.isSelected() ? One : Zero);
+        fOptions.put(naiveOptionName, fNaiveCheckbox.isSelected() ? One : Zero);
         fOptions.put(kMeansSomOptionName, fKMeansSomOptionCheckbox.isSelected() ? One : Zero);
         fOptions.put(multiOptionName, fMultiOptionCheckbox.isSelected() ? One : Zero);
         //fOptions.put(PLSOptionName, fPLSOptionCheckbox.isSelected() ? One : Zero);

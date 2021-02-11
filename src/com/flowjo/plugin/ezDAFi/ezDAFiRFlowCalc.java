@@ -81,6 +81,8 @@ public class ezDAFiRFlowCalc extends RFlowCalculator {
         String sParBatch = options.get(ezDAFi.batchOptionName);
         String sParkMeansSom = options.get(ezDAFi.kMeansSomOptionName);
         String sParMulti = options.get(ezDAFi.multiOptionName);
+        String sParEzExp = options.get(ezDAFi.ezExpOptionName);
+        String sParNaive = options.get(ezDAFi.naiveOptionName);
         //String sParPLS = options.get(ezDAFi.PLSOptionName);
         //String sParMeta = options.get(ezDAFi.metaOptionName);
         String sParApplyOnChildren = options.get(ezDAFi.applyOnChildrenOptionName);
@@ -225,6 +227,8 @@ public class ezDAFiRFlowCalc extends RFlowCalculator {
                 scriptLine = scriptLine.replace("FJ_BATCH_MODE", sParBatch);
                 scriptLine = scriptLine.replace("FJ_PAR_SOM", sParkMeansSom);
                 scriptLine = scriptLine.replace("FJ_PAR_MULTI", sParMulti);
+                scriptLine = scriptLine.replace("FJ_PAR_EX", sParEzExp);
+                scriptLine = scriptLine.replace("FJ_PAR_NAIVE", sParNaive);
                 //scriptLine = scriptLine.replace("FJ_PAR_PLSDA", sParPLS);
                 //scriptLine = scriptLine.replace("FJ_PAR_META", sParMeta);
                 scriptLine = scriptLine.replace("FJ_PAR_CHILDREN", sParApplyOnChildren);
