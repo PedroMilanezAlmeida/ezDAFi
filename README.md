@@ -48,7 +48,7 @@ and copy it to FlowJo’s plugin folder as described
 [here](http://docs.flowjo.com/d2/plugins/installing-plugins/).
 
 Don’t forget to restart FlowJo before you can use the new plugin. The
-first time the plugin runs, it takes several minutes to install
+first time the plugin runs, it may take a few minutes to install
 additional packages.
 
 <!---  (Give it try! Just download the __DAFi.jar__ file above (soon you will also find it on [FlowJo's Plugin page](https://www.flowjo.com/exchange/#/)) and copy the file to your FlowJo plugins folder! Don't forget to restart FlowJo before using a new plugin.) --->
