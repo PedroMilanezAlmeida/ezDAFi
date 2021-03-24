@@ -122,7 +122,7 @@ public class ezDAFi extends R_Algorithm {
     private static final String dimXLabel = "SOM grid size (W x H)";
     private static final String dimXTooltip = "Width of the grid for building the self-organizing map.";
     private static final String dimYTooltip = "Height of the grid for building the self-organizing map.";
-    private static final String ezExpSeedLabel = "Set reproducibility seed.";
+    private static final String ezExpSeedLabel = "          Reproducible seed:";
     private static final String ezExpSeedTooltip = "Used as seed generator for random numbers to ensure reproducibility. Compare results across several seeds to ensure results are stable.";
     private static final String minDimLabel = "# of dimensions: min";
     private static final String maxDimLabel = "Additional Clustering Dimensions:";
@@ -152,7 +152,7 @@ public class ezDAFi extends R_Algorithm {
     //private static final String metaLabel = "Experimental: meta-cluster centroids (can be slow).";
     //private static final String metaTooltip = "Should the centroids be meta-clustered prior to gating? Intended to stabilize gating results in the presence of technical variation.";
     private static final String applyOnChildrenLabel = "<html>Apply on children only."
-        + "<br>(otherwise, recursive).";
+            + "<br>(otherwise, recursive).";
     private static final String applyOnChildrenTooltip = "If checked, ezDAFi will refine only the children of the selected population. If unchecked, all children of children will be refined recursively (i.e., all sub-populations downstream of the selected one).";
 
     private static final String supportedByString = "This work was supported by the Intramural Research Program of NIAID, NIH.";
@@ -239,7 +239,7 @@ public class ezDAFi extends R_Algorithm {
     private static final String channelsLabelLine0 = "Make sure the selected population has at least one child gate.";
     private static final String channelsLabelLine1 = "";
 
-    private static final String channelsLabelLineEzExp0 = "The following option is meant for data exploration only and gates are not returned.";
+    private static final String channelsLabelLineEzExp0 = "The following options are meant only for data exploration (gates are not returned).";
     private static final String channelsLabelLineEzExp1 = "";
     //private static final String channelsLabelLineEzExp2 = "";
 
@@ -263,7 +263,7 @@ public class ezDAFi extends R_Algorithm {
     private static final String citingLabelLine3 = "approach for improving and interpreting data clustering identification of cell populations";
     private static final String citingLabelLine4 = "from polychromatic flow cytometry data.\" Cytometry Part A 93.6 (2018): 597-610.";
 
-//    private static final String citation = "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6030426";
+    //    private static final String citation = "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6030426";
     private static final String citation = "https://onlinelibrary.wiley.com/doi/pdf/10.1002/cyto.a.23371";    // Link redirects too much on Dan's machine... nope misunderstood - haha
 
     protected static final String sIconName = "images/ezDAFiIcon.png";
@@ -428,25 +428,35 @@ public class ezDAFi extends R_Algorithm {
             //If this fails, print only the last 30 lines of the Rscript to make the error visible to the user.
 
             String sParEzExp = fOptions.get(ezExpOptionName);
+
+            System.out.println("sParEzExp: " + sParEzExp);
+
             if (sParEzExp == null || sParEzExp.isEmpty() || ezDAFi.One.equals(sParEzExp) || ezDAFi.True.equals(sParEzExp)){
-              fEzExp = true;
+                fEzExp = true;
             } else {
-              fEzExp = false;
+                fEzExp = false;
             }
+
+            System.out.println("fEzExp: " + fEzExp);
 
             try {
 
                 if (fEzExp) {
-                try {
-                    String ezExpPDF = "ezExplorer." + thisSamplePopNode + "." + millisTime + ".pdf";
-                    File ezExpPDFFile = new File(wsDir, ezExpPDF);
-                    //Desktop.getDesktop().open(ezExpPDFFile.getParentFile());
-                    Desktop.getDesktop().open(ezExpPDFFile);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+                    String sParEzExpSeed = fOptions.get(ezExpSeedOptionName);
+                    System.out.println("sParEzExpSeed: " + sParEzExpSeed);
+                    try {
+                        String ezExpPDF = "ezExplorer." + thisSamplePopNode + ".seed_" + sParEzExpSeed + ".pdf";
 
-            } else {
+                        System.out.println("ezExpPDF: " + ezExpPDF);
+
+                        File ezExpPDFFile = new File(wsDir, ezExpPDF);
+                        //Desktop.getDesktop().open(ezExpPDFFile.getParentFile());
+                        Desktop.getDesktop().open(ezExpPDFFile);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+
+                } else {
 
 
                     mergeCSVFile(fcmlQueryElement, results, ezDAFiResult, sampleFile, outputFolder);
@@ -526,7 +536,7 @@ public class ezDAFi extends R_Algorithm {
                             boolean bLayout = false;
                             String sLayout = fOptions.get(summaryLayout);
                             if (sLayout != null && !sLayout.isEmpty())
-                                 bLayout = One.equals(sLayout) || True.equals(sLayout);
+                                bLayout = One.equals(sLayout) || True.equals(sLayout);
 
                             boolean lOverlay = false;
                             String sOverlay = fOptions.get(fOverlayString);
@@ -958,19 +968,19 @@ public class ezDAFi extends R_Algorithm {
         if (pluginFolder != null && !pluginFolder.isEmpty()) {
             File myDir = new File(pluginFolder);
             if (myDir.exists()) {
-              File[] existingRDataFiles = myDir.listFiles(new FilenameFilter() {
-                  public boolean accept(File dir, String name) {
-                      return name.endsWith(ezDAFi.RDataFileExtension);
-                  }
-          });
-              for (File rDataFile : existingRDataFiles) {
-                  String rDataName = rDataFile.getName();
-                  if (rDataName.contains(ezDAFi.RDataFileSuffix))
-                      rDataName = rDataName.substring(0, rDataName.lastIndexOf(ezDAFi.RDataFileSuffix));
-                  fApplyOnPrevCombo.addItem(rDataName);
-              }
-          }
-      }
+                File[] existingRDataFiles = myDir.listFiles(new FilenameFilter() {
+                    public boolean accept(File dir, String name) {
+                        return name.endsWith(ezDAFi.RDataFileExtension);
+                    }
+                });
+                for (File rDataFile : existingRDataFiles) {
+                    String rDataName = rDataFile.getName();
+                    if (rDataName.contains(ezDAFi.RDataFileSuffix))
+                        rDataName = rDataName.substring(0, rDataName.lastIndexOf(ezDAFi.RDataFileSuffix));
+                    fApplyOnPrevCombo.addItem(rDataName);
+                }
+            }
+        }
 
         String sampleURI = selement.getString(sampleURISlot);
         String samplePopNode = selement.getString(samplePopNodeSlot);
@@ -1018,11 +1028,11 @@ public class ezDAFi extends R_Algorithm {
             int nApplyOnPrevComboItemsCount = fApplyOnPrevCombo.getItemCount();
             String savedApplyOnPrevOption = option.getString(applyOnPrevOptionName);
             if (savedApplyOnPrevOption != null && savedApplyOnPrevOption.length() > 5)
-            for (int j = 0; j < nApplyOnPrevComboItemsCount; j++) {
-                  String itemValue = (String) fApplyOnPrevCombo.getItemAt(j);
-                  if (savedApplyOnPrevOption.startsWith(itemValue))
-                      fApplyOnPrevCombo.setSelectedIndex(j);
-              }
+                for (int j = 0; j < nApplyOnPrevComboItemsCount; j++) {
+                    String itemValue = (String) fApplyOnPrevCombo.getItemAt(j);
+                    if (savedApplyOnPrevOption.startsWith(itemValue))
+                        fApplyOnPrevCombo.setSelectedIndex(j);
+                }
 
             String overlayString = option.getAttributeValue(fOverlayString);
             if (overlayString != null && !overlayString.isEmpty())
@@ -1088,10 +1098,10 @@ public class ezDAFi extends R_Algorithm {
         }
 
         fApplyOnPrevCombo.addItemListener(new ItemListener() {
-          @Override
-          public void itemStateChanged(ItemEvent e) {
-              refreshComponentsEnabled(fApplyOnPrevCombo);
-          }
+            @Override
+            public void itemStateChanged(ItemEvent e) {
+                refreshComponentsEnabled(fApplyOnPrevCombo);
+            }
         });
 
         FJLabel fjLabelDimX = new FJLabel(dimXLabel);
@@ -1279,22 +1289,22 @@ public class ezDAFi extends R_Algorithm {
 
     public JScrollPane addFlowJoParameterSelector(List<String> parameters) {
 
-          if (fParameterNameList == null) {
-          DefaultListModel dlm = new DefaultListModel();
-          for (int i = 0; i < parameters.size(); i++) {
-              dlm.add(i, parameters.get(i));
-          }
-          fParameterNameList = new FJList(dlm);
-          fParameterNameList.setSelectionMode(2);
-      }
+        if (fParameterNameList == null) {
+            DefaultListModel dlm = new DefaultListModel();
+            for (int i = 0; i < parameters.size(); i++) {
+                dlm.add(i, parameters.get(i));
+            }
+            fParameterNameList = new FJList(dlm);
+            fParameterNameList.setSelectionMode(2);
+        }
 
-          JScrollPane scrollableList = new JScrollPane(fParameterNameList);
-      int[] indexes = new int[fParameterNameList.getModel().getSize()];
-      for (int i = 0; i < indexes.length; i++) {
-          indexes[i] = i;
-      }
-      fParameterNameList.setSelectedIndices(indexes);
-      //return scrollableList;
+        JScrollPane scrollableList = new JScrollPane(fParameterNameList);
+        int[] indexes = new int[fParameterNameList.getModel().getSize()];
+        for (int i = 0; i < indexes.length; i++) {
+            indexes[i] = i;
+        }
+        fParameterNameList.setSelectedIndices(indexes);
+        //return scrollableList;
         return null;
     }
 
@@ -1318,23 +1328,23 @@ public class ezDAFi extends R_Algorithm {
 
 
     protected void refreshComponentsEnabled(FJComboBox applyOnPrevCombo) {
-      if (applyOnPrevCombo != null) {
-          if (applyOnPrevCombo.getSelectedIndex() > 0) {
-              if (fDimXField != null) fDimXField.setEnabled(false);
-              if (fDimYField != null) fDimYField.setEnabled(false);
-              //if (fScaleOptionCheckbox != null) fScaleOptionCheckbox.setEnabled(false);
-              //if (fPlotStatsOptionCheckbox != null) fPlotStatsOptionCheckbox.setEnabled(false);
-              //if (fTransOptionCheckbox != null) fTransOptionCheckbox.setEnabled(false);
-              if (fBatchOptionCheckbox != null) fBatchOptionCheckbox.setEnabled(false);
-              if (fEzExpCheckbox != null) fEzExpCheckbox.setEnabled(false);
-              if (fNaiveCheckbox != null) fNaiveCheckbox.setEnabled(false);
-              if (fKMeansSomOptionCheckbox != null) fKMeansSomOptionCheckbox.setEnabled(false);
-              if (fMultiOptionCheckbox != null) fMultiOptionCheckbox.setEnabled(false);
-              //if (fPLSOptionCheckbox != null) fPLSOptionCheckbox.setEnabled(false);
-              //if (fMetaOptionCheckbox != null) fMetaOptionCheckbox.setEnabled(false);
-              if (fApplyOnChildrenCheckbox != null) fApplyOnChildrenCheckbox.setEnabled(false);
-              if (fSummaryOptionCheckbox != null) fSummaryOptionCheckbox.setEnabled(false);
-              if (fOverlayCheckbox != null) fOverlayCheckbox.setEnabled(false);
+        if (applyOnPrevCombo != null) {
+            if (applyOnPrevCombo.getSelectedIndex() > 0) {
+                if (fDimXField != null) fDimXField.setEnabled(false);
+                if (fDimYField != null) fDimYField.setEnabled(false);
+                //if (fScaleOptionCheckbox != null) fScaleOptionCheckbox.setEnabled(false);
+                //if (fPlotStatsOptionCheckbox != null) fPlotStatsOptionCheckbox.setEnabled(false);
+                //if (fTransOptionCheckbox != null) fTransOptionCheckbox.setEnabled(false);
+                if (fBatchOptionCheckbox != null) fBatchOptionCheckbox.setEnabled(false);
+                if (fEzExpCheckbox != null) fEzExpCheckbox.setEnabled(false);
+                if (fNaiveCheckbox != null) fNaiveCheckbox.setEnabled(false);
+                if (fKMeansSomOptionCheckbox != null) fKMeansSomOptionCheckbox.setEnabled(false);
+                if (fMultiOptionCheckbox != null) fMultiOptionCheckbox.setEnabled(false);
+                //if (fPLSOptionCheckbox != null) fPLSOptionCheckbox.setEnabled(false);
+                //if (fMetaOptionCheckbox != null) fMetaOptionCheckbox.setEnabled(false);
+                if (fApplyOnChildrenCheckbox != null) fApplyOnChildrenCheckbox.setEnabled(false);
+                if (fSummaryOptionCheckbox != null) fSummaryOptionCheckbox.setEnabled(false);
+                if (fOverlayCheckbox != null) fOverlayCheckbox.setEnabled(false);
 
                 // If we are selecting the application on existing map then let's select the same parameters
                 // in the parameter selector, and let's do so based on the CSV file that has those.
@@ -1385,20 +1395,20 @@ public class ezDAFi extends R_Algorithm {
             } else {
                 if (fDimXField != null) fDimXField.setEnabled(true);
                 if (fDimYField != null) fDimYField.setEnabled(true);
-              //if (fScaleOptionCheckbox != null) fScaleOptionCheckbox.setEnabled(true);
-              //if (fPlotStatsOptionCheckbox != null) fPlotStatsOptionCheckbox.setEnabled(true);
-              //if (fTransOptionCheckbox != null) fTransOptionCheckbox.setEnabled(true);
-              //if (fBatchOptionCheckbox != null) fBatchOptionCheckbox.setEnabled(true);
-              if (fEzExpCheckbox != null) fEzExpCheckbox.setEnabled(true);
-              if (fNaiveCheckbox != null) fNaiveCheckbox.setEnabled(true);
-              if (fKMeansSomOptionCheckbox != null) fKMeansSomOptionCheckbox.setEnabled(true);
-              if (fMultiOptionCheckbox != null) fMultiOptionCheckbox.setEnabled(true);
-              //if (fPLSOptionCheckbox != null) fPLSOptionCheckbox.setEnabled(true);
-              //if (fMetaOptionCheckbox != null) fMetaOptionCheckbox.setEnabled(true);
-              if (fApplyOnChildrenCheckbox != null) fApplyOnChildrenCheckbox.setEnabled(true);
-              if (fParameterNameList != null) fParameterNameList.setEnabled(true);
-              if (fSummaryOptionCheckbox != null) fSummaryOptionCheckbox.setEnabled(true);
-              if (fOverlayCheckbox != null) fOverlayCheckbox.setEnabled(true);
+                //if (fScaleOptionCheckbox != null) fScaleOptionCheckbox.setEnabled(true);
+                //if (fPlotStatsOptionCheckbox != null) fPlotStatsOptionCheckbox.setEnabled(true);
+                //if (fTransOptionCheckbox != null) fTransOptionCheckbox.setEnabled(true);
+                //if (fBatchOptionCheckbox != null) fBatchOptionCheckbox.setEnabled(true);
+                if (fEzExpCheckbox != null) fEzExpCheckbox.setEnabled(true);
+                if (fNaiveCheckbox != null) fNaiveCheckbox.setEnabled(true);
+                if (fKMeansSomOptionCheckbox != null) fKMeansSomOptionCheckbox.setEnabled(true);
+                if (fMultiOptionCheckbox != null) fMultiOptionCheckbox.setEnabled(true);
+                //if (fPLSOptionCheckbox != null) fPLSOptionCheckbox.setEnabled(true);
+                //if (fMetaOptionCheckbox != null) fMetaOptionCheckbox.setEnabled(true);
+                if (fApplyOnChildrenCheckbox != null) fApplyOnChildrenCheckbox.setEnabled(true);
+                if (fParameterNameList != null) fParameterNameList.setEnabled(true);
+                if (fSummaryOptionCheckbox != null) fSummaryOptionCheckbox.setEnabled(true);
+                if (fOverlayCheckbox != null) fOverlayCheckbox.setEnabled(true);
             }
         }
     }
@@ -1419,7 +1429,7 @@ public class ezDAFi extends R_Algorithm {
             fParameterNames.add(parName);
             if (parName.equals(ezDAFi.cellIdParName))
                 cellIdParameterIncluded = true;
-                cellIdParameterIncluded = true;
+            cellIdParameterIncluded = true;
         }
 
         // TODO

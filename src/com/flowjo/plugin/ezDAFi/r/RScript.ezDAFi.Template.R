@@ -407,8 +407,6 @@ fj_output_folder
 fj_par_children <- FJ_PAR_CHILDREN
 fj_sample_node_name <- "FJ_SAMPLE_NODE_NAME"
 fj_sample_node_name
-fj_population_name <- "FJ_POPULATION_NAME"
-fj_population_name
 fj_millis_time <- "FJ_MILLIS_TIME"
 fj_millis_time
 fj_par_meta <- FALSE #FJ_PAR_META
@@ -426,6 +424,7 @@ statsDir <- paste0(wspDir,
                    wspName,
                    "_ezDAFi_stats")
 statsDir
+min.nPar <- 5
 max.nPar <- 10
 fj_plot_stats <- FALSE #FJ_PLOT_STATS
 fj_par_multi <- FJ_PAR_MULTI
@@ -441,13 +440,10 @@ ws <- CytoML::open_flowjo_xml(wspName,
 
 # ws <- CytoML::open_flowjo_xml(wspName)
 
-cs <- load_cytoset_from_fcs(
+cs <- flowWorkspace::load_cytoset_from_fcs(
   files = normalizePath(sampleURI),
-  #path = normalizePath(dirname(sampleURI)),
   pattern = NULL,
   phenoData = NULL,
-  #descriptions,
-  #name.keyword,
   transformation = "linearize",
   which.lines = NULL,
   alter.names = FALSE,
@@ -463,21 +459,18 @@ cs <- load_cytoset_from_fcs(
   ignore.text.offset = FALSE,
   sep = "\t",
   as.is = TRUE,
-  #name,
   h5_dir = tempdir(),
-  file_col_name = NULL#,
-  #  ...
-)
+  file_col_name = NULL)
 
 
 #if(!batch_mode) {
-gs <- CytoML::flowjo_to_gatingset(ws,
+gs <- CytoML::flowjo_to_gatingset(ws = ws,
                                   name = 1,
                                   subset = fj_sample_node_name,
                                   extend_val = -Inf,
                                   cytoset = cs,
-                                  additional.sampleID = TRUE
-)
+                                  additional.sampleID = TRUE, 
+                                  include_empty_tree = TRUE)
 
 # make sure only the intended FCS file is in the GatingSet
 
@@ -541,7 +534,7 @@ if(FJ_PAR_EX){
   }
   prot <- prot[,!irrel.par]
   
-  if(range(prot) != c(0, 100)){
+  if(any(range(prot) != c(0, 100))){
     prot <- apply(X = prot,
                   MARGIN = 2,
                   FUN = range_scale_trim,
@@ -586,7 +579,7 @@ if(FJ_PAR_EX){
       seq()
     colnames(kmeans.res$centers) <- colnames(prot)
   }
-
+  
   set.seed(fj_par_ezExp_seed)
   kmeans.res$graphs <- Seurat::FindNeighbors(
     object = kmeans.res$centers,
@@ -621,10 +614,13 @@ if(FJ_PAR_EX){
                     data = X.df,
                     center = TRUE)
   
+  n_neighbors <- 5
+  n_trees <- 100
+  
   set.seed(fj_par_ezExp_seed)
-  umap.res <- uwot::umap(
+  umap.res <- uwot::tumap(
     X = kmeans.res$centers,
-    n_neighbors = 5,
+    n_neighbors = n_neighbors,
     n_components = 2,
     metric = "euclidean",
     n_epochs = NULL,
@@ -632,32 +628,31 @@ if(FJ_PAR_EX){
     scale = FALSE,
     init = "spectral",
     init_sdev = 1e-4,
-    spread = 1,
-    min_dist = 0.01,
     set_op_mix_ratio = 1,
     local_connectivity = 1,
     bandwidth = 1,
     repulsion_strength = 1,
     negative_sample_rate = 5,
-    a = NULL,
-    b = NULL,
     nn_method = "annoy",
-    n_trees = 100,
-    search_k = 2 * 5 * 100,
-    approx_pow = FALSE,
+    n_trees = n_trees,
+    search_k = 2 * n_neighbors * n_trees,
+    n_threads = NULL,
+    n_sgd_threads = 0,
+    #grain_size = 1,
     y = NULL,
+    #target_n_neighbors = n_neighbors,
+    #target_metric = "euclidean",
+    #target_weight = 0.5,
     pca = NULL,
+    #pca_center = TRUE,
     pcg_rand = TRUE,
     fast_sgd = FALSE,
     ret_model = TRUE,
     ret_nn = FALSE,
     ret_extra = c(),
-    n_threads = NULL,
-    grain_size = 1,
     tmpdir = tempdir(),
     verbose = FALSE)
   
-  set.seed(fj_par_ezExp_seed)
   umap.res <- uwot::umap_transform(
     X = prot,
     model = umap.res,
@@ -677,8 +672,8 @@ if(FJ_PAR_EX){
                    size = I(0.1)) +
                theme_bw() + 
                theme(legend.position = "top") +
-               labs(x = "UMAP_1",
-                    y = "UMAP_2",
+               labs(x = "t-UMAP_1",
+                    y = "t-UMAP_2",
                     color = "") +
                guides(color = guide_legend(override.aes = list(size = I(2))))) %>%
     egg::set_panel_size(width = unit(2, "in"),
@@ -724,8 +719,8 @@ if(FJ_PAR_EX){
                                     treeheight_col = 10,
                                     silent = TRUE)
   
-  sc.dims.hierarchy <- seq_along(sub.pops) %>%
-    .[2:length(.)] %>%
+  sc.dims.hierarchy <- seq_along(sub.pops) %>% # number of sub.pops
+    .[2:length(.)] %>% # number of cuts of the tree
     lapply(function(sub.pop) {
       tree <- stats::cutree(tree = top.prot.HM$tree_row,
                             k = sub.pop)
@@ -767,19 +762,23 @@ if(FJ_PAR_EX){
         .[1:2] %>%
         names()
       
-      (qplot(x = parent.prot[,prot.t[1]],
-             y = parent.prot[,prot.t[2]],
-             geom = "density_2d",
-             color = factor(x = in.gate,
-                            levels = c("TRUE",
-                                       "FALSE"),
-                            labels = c(paste0("in gate: ",
-                                              paste0(gate, 
-                                                     collapse = ", ")),
-                                       paste0("not in gate: ",
-                                              paste0(parent[!parent %in% gate], 
-                                                     collapse = ", "))))
-      ) +
+      (data.frame(parent.prot[,prot.t[1], drop = FALSE],
+                  parent.prot[,prot.t[2], drop = FALSE],
+                  cluster = factor(x = in.gate,
+                                   levels = c("TRUE",
+                                              "FALSE"),
+                                   labels = c(paste0("clusters: ",
+                                                     paste0(gate, 
+                                                            collapse = ", ")),
+                                              paste0("clusters: ",
+                                                     paste0(parent[!parent %in% gate], 
+                                                            collapse = ", ")))),
+                  check.names = FALSE) %>%
+          ggplot(data = .,
+                 mapping = aes(x = !!dplyr::sym(prot.t[1]),
+                               y = !!dplyr::sym(prot.t[2]),
+                               fill = cluster,
+                               color = cluster)) +
           theme_bw() + 
           theme(legend.position = "top",
                 axis.text = element_blank()) + 
@@ -787,32 +786,59 @@ if(FJ_PAR_EX){
           ylim(c(0,100)) +
           labs(x = prot.t[1],
                y = prot.t[2],
-               color = "")+
-          guides(color = guide_legend(nrow = 2,
-                                      override.aes = list(size = I(2))))) %>%
+               fill = "") +
+          #geom_density_2d() +
+          geom_hex(binwidth = c(2,
+                                2),
+                   mapping = aes(alpha = stat(log(count) / max(log(count)))),
+                   color = 0) +
+          guides(fill = guide_legend(nrow = 2,
+                                     override.aes = list(size = I(2))),
+                 alpha = "none",
+                 color = "none")) %>%
         set_panel_size(width = unit(2, "in"),
-                       height = unit(2, "in"))
+                       height = unit(2, "in")) %>% 
+        suppressWarnings()
     }) %>%
     c(ncol = 4) %>%
     do.call(arrangeGrob,
             .)
   
-  arrangeGrob(UMAP.p,
-              top.prot.HM[[4]],
-              ncol = 2) %>%
-    arrangeGrob(sc.dims.hierarchy,
-                heights = c(4, ceiling((length(sub.pops) - 1) / 4) * 3.5),
-                widths = 12) %>%
-    ggsave(filename = paste0(normalizePath(wspDir),
-                             "/ezExplorer.",
-                             basename(popOfInt_full_path),
-                             ".",
-                             fj_millis_time,
-                             ".pdf"),
-           width = 12,
-           height = 4 + (ceiling((length(sub.pops) - 1) / 4) * 3.5),
-           units = "in",
-           useDingbats = FALSE)
+  gridExtra::arrangeGrob(UMAP.p,
+                         top.prot.HM[[4]],
+                         ncol = 2) %>%
+    gridExtra::arrangeGrob(sc.dims.hierarchy,
+                           heights = c(4, ceiling((length(sub.pops) - 1) / 4) * 3.5),
+                           widths = 12,
+                           bottom = grid::textGrob(
+                             paste0("R script in: \n",
+                                    normalizePath(wspDir),
+                                    "/",
+                                    basename(wspName) %>%
+                                      sub(pattern = ".wsp$",
+                                          replacement = "",
+                                          x = .,
+                                          fixed = FALSE),
+                                    "/ \n",
+                                    "ezDAFi/",
+                                    fj_millis_time,
+                                    "/RScript.ezDAFi.",
+                                    fj_millis_time,
+                                    ".R"),
+                             gp = grid::gpar(fontface = 3, fontsize = 10),
+                             hjust = 1,
+                             x = 1
+                           )) %>%
+    ggplot2::ggsave(filename = paste0(normalizePath(wspDir),
+                                      "/ezExplorer.",
+                                      basename(popOfInt_full_path),
+                                      ".seed_",
+                                      fj_par_ezExp_seed,
+                                      ".pdf"),
+                    width = 12,
+                    height = 4 + (ceiling((length(sub.pops) - 1) / 4) * 3.5),
+                    units = "in",
+                    useDingbats = FALSE)
   
 } else {
   
@@ -1148,6 +1174,7 @@ if(FJ_PAR_EX){
               keep.marker <- length(markers.t)
             } else {
               keep.marker <- elbow_finder(markers.t[1:10])[1]
+              if(keep.marker < 5) { keep.marker <- 5 }
             }
             
             top.nPar <- markers.t[1:keep.marker] %>%
@@ -1430,7 +1457,8 @@ if(FJ_PAR_EX){
           
           #### gate centroids ####
           
-          codes <- codes[,gate_par]
+          codes <- codes[,gate_par] %>%
+            as.matrix()
           colnames(codes) <- pData.asDF$name[match(gate_par, pData.asDF$desc)]
           
           ls_fSOM <- list(codes)
@@ -1566,6 +1594,7 @@ if(FJ_PAR_EX){
     unlist(.)
   ezDAFi_nodes <- ezDAFi_nodes[order(tree_pos_ezDAFi_gate_to_SOM)] #order is very important to ensure hierarchy of gates
   
+  # nonezDAFi_nodes are used only to have them saved to the disk and easy to import into R for later analysis
   nonezDAFi_nodes <- gsub(pattern = "ezDAFi_",
                           replacement = "",
                           x = ezDAFi_nodes,
@@ -2430,6 +2459,9 @@ if(FJ_PAR_EX){
   flowEnv <- new.env()
   
   for(pop in seq_along(colnames(all.labels))) {
+    # test if ezDAFi is not direct child of pop of interest
+    # if it is, add gate directly to flowEnv
+    # if it is a grandchild, get name of ezDAFi parent and add it to flowEnv hierarchically
     if(!(strsplit(x =  colnames(all.labels)[pop],
                   split = "_ezDAFi_",
                   fixed = TRUE) %>%
@@ -2441,9 +2473,6 @@ if(FJ_PAR_EX){
                                     colnames(all.labels)[pop]))
       rg <- rectangleGate(filterId = colnames(all.labels)[pop],
                           .gate = mat)
-      # test if ezDAFi is not direct child of pop of interest
-      # if it is, add gate directly to flowEnv
-      # if it is a grandchild, get name of ezDAFi parent and add it to flowEnv hierarchically
       flowEnv[[as.character(colnames(all.labels)[pop])]] <- rg
     } else { # from: https://rdrr.io/github/RGLab/CytoML/src/R/gate-methods.R
       ezDAFi_gates_v <- hierarc.str(ezDAFi_gate_name = colnames(all.labels)[pop],
@@ -3398,23 +3427,6 @@ if(FJ_PAR_EX){
     }
   }
   
-  #write ezDAFi gates
-  modified.write.gatingML(flowEnv, outputFile)
-  #write derived parameters
-  write.csv(ezDAFi_labels,
-            file = fj_csv_ouput_file,
-            row.names = FALSE,
-            quote = TRUE)
-  write.csv(nonezDAFi_labels,
-            file = sub(pattern = ".csv.ezDAFi.csv$",
-                       replacement = ".csv.nonezDAFi.csv",
-                       x = fj_csv_ouput_file,
-                       fixed = FALSE),
-            row.names = FALSE,
-            quote = TRUE)
-  
-  
-  
   ##################################
   ## WRITE OUT THE PARAMETER SETS ##
   
@@ -3437,4 +3449,19 @@ if(FJ_PAR_EX){
   ##################################
   ##################################
   
+  #write ezDAFi gates
+  modified.write.gatingML(flowEnv = flowEnv, 
+                          file = outputFile)
+  #write derived parameters
+  write.csv(ezDAFi_labels,
+            file = fj_csv_ouput_file,
+            row.names = FALSE,
+            quote = TRUE)
+  write.csv(nonezDAFi_labels,
+            file = sub(pattern = ".csv.ezDAFi.csv$",
+                       replacement = ".csv.nonezDAFi.csv",
+                       x = fj_csv_ouput_file,
+                       fixed = FALSE),
+            row.names = FALSE,
+            quote = TRUE)
 }
