@@ -97,7 +97,7 @@ The algorithm works like this:
 ![](figures/Fig1.png) **Fig1**: How DAFi aims at bridging manual gating
 and automated clustering techniques.
 
-Reported advantages of DAFi
+Advantages of DAFi
 ---------------------------
 
 Several advantages of DAFi have been reported (see [original
