@@ -88,7 +88,7 @@ public class ezDAFi extends R_Algorithm {
 
 
     private RangedIntegerTextField fDimXField = null, fDimYField = null;
-    private RangedIntegerTextField fEzExpSeedField = null;
+    //private RangedIntegerTextField fEzExpSeedField = null;
     private RangedIntegerTextField fMinDimField = null;
     private RangedIntegerTextField fMaxDimField = null;
     private FJComboBox fApplyOnPrevCombo = null;
@@ -96,7 +96,7 @@ public class ezDAFi extends R_Algorithm {
     //private FJCheckBox fPlotStatsOptionCheckbox = null;
     //private FJCheckBox fTransOptionCheckbox = null;
     private FJCheckBox fBatchOptionCheckbox = null;
-    private FJCheckBox fEzExpCheckbox = null;
+    //private FJCheckBox fEzExpCheckbox = null;
     private FJCheckBox fNaiveCheckbox = null;
     private FJCheckBox fKMeansSomOptionCheckbox = null;
     private FJCheckBox fMultiOptionCheckbox = null;
@@ -122,8 +122,8 @@ public class ezDAFi extends R_Algorithm {
     private static final String dimXLabel = "SOM grid size (W x H)";
     private static final String dimXTooltip = "Width of the grid for building the self-organizing map.";
     private static final String dimYTooltip = "Height of the grid for building the self-organizing map.";
-    private static final String ezExpSeedLabel = "          Reproducible seed:";
-    private static final String ezExpSeedTooltip = "Used as seed generator for random numbers to ensure reproducibility. Compare results across several seeds to ensure results are stable.";
+    //private static final String ezExpSeedLabel = "          Reproducible seed:";
+    //private static final String ezExpSeedTooltip = "Used as seed generator for random numbers to ensure reproducibility. Compare results across several seeds to ensure results are stable.";
     private static final String minDimLabel = "# of dimensions: min";
     private static final String maxDimLabel = "Additional Clustering Dimensions:";
     //private static final String mustBeMinDimLabel = "(use min AND max = 1 for auto-selection)";
@@ -139,8 +139,8 @@ public class ezDAFi extends R_Algorithm {
     //private static final String transTooltip = "If not working with raw FCS files but pre-processed CSV files from other applications such as CITE-seq or histo-cytometry, the data may already have been transformed and this box should be unchecked.";
     private static final String batchLabel = "Advanced (results not re-imported to FlowJo; batch mode).";
     private static final String batchTooltip = "ezDAFi all samples, plot back-gating results and continue analysis in R. Gates will not be re-imported to FlowJo.";
-    private static final String ezExpLabel = "Data exploration with ezExplorer.";
-    private static final String ezExpTooltip = "Help to guide manual gating. This function provides a quick overview of population structure with ultra-fast automated clustering, dimensionality reduction and suggested dimensions and hierarchy.";
+    //private static final String ezExpLabel = "Data exploration with ezExplorer.";
+    //private static final String ezExpTooltip = "Help to guide manual gating. This function provides a quick overview of population structure with ultra-fast automated clustering, dimensionality reduction and suggested dimensions and hierarchy.";
     private static final String naiveLabel = "Use naive DAFi algorithm.";
     private static final String naiveTooltip = "Select this only if all dimensions should be used in clustering. Leave unchecked for automated dimension selection, which reduces the number of false positives and negatives.";
     private static final String kMeansSomLabel = "Cluster with self organizing maps (SOM; uncheck for k-means).";
@@ -166,7 +166,7 @@ public class ezDAFi extends R_Algorithm {
     //public static final String plotStatsOptionName = "plotStats";
     //public static final String transOptionName = "trans";
     public static final String batchOptionName = "batch";
-    public static final String ezExpOptionName = "ezExp";
+    //public static final String ezExpOptionName = "ezExp";
     public static final String naiveOptionName = "naive";
     public static final String kMeansSomOptionName = "kMeansSom";
     public static final String multiOptionName = "multi";
@@ -175,7 +175,7 @@ public class ezDAFi extends R_Algorithm {
     public static final String applyOnChildrenOptionName = "childrenOnly";
     public static final String xDimOptionName = "xdim";
     public static final String yDimOptionName = "ydim";
-    public static final String ezExpSeedOptionName = "ezExpSeed";
+    //public static final String ezExpSeedOptionName = "ezExpSeed";
     public static final String minDimOptionName = "minDim";
     public static final String maxDimOptionName = "maxDim";
     public static final String applyOnPrevOptionName = "applyOn"; // "None" or file path to an RData file with a ezDAFi object
@@ -193,7 +193,7 @@ public class ezDAFi extends R_Algorithm {
 
     public static final int defaultXDim = 10;
     public static final int defaultYDim = 10;
-    public static final int defaultEzExpSeed = 42;
+    //public static final int defaultEzExpSeed = 42;
     public static final int defaultMinDim = 1;
     public static final int defaultMaxDim = 3;
     public static final String defaultApplyOnPrev = "None";
@@ -201,7 +201,7 @@ public class ezDAFi extends R_Algorithm {
     public static final boolean defaultPlotStats = false;
     //public static final boolean defaultTrans = true;
     public static final boolean defaultBatch = false;
-    public static final boolean defaultEzExp = false;
+    //public static final boolean defaultEzExp = false;
     public static final boolean defaultNaive = false;
     public static final boolean defaultKMeansSom = true;
     public static final boolean defaultMulti = false;
@@ -216,7 +216,7 @@ public class ezDAFi extends R_Algorithm {
     //private boolean fPlotStats = defaultPlotStats;
     //private boolean fTrans = defaultTrans;
     private boolean fBatch = defaultBatch;
-    private boolean fEzExp = defaultEzExp;
+    //private boolean fEzExp = defaultEzExp;
     private boolean fNaive = defaultNaive;
     private boolean fKMeansSom = defaultKMeansSom;
     private boolean fMulti = defaultMulti;
@@ -229,7 +229,7 @@ public class ezDAFi extends R_Algorithm {
 
 
     private int fndimx = defaultXDim, fndimy = defaultYDim;
-    private int fnEzExpSeed = defaultEzExpSeed;
+    //private int fnEzExpSeed = defaultEzExpSeed;
     private int fnMinDim = defaultMinDim;
     private int fnMaxDim = defaultMaxDim;
     private String fAnalysisPathSampleURI = "test1";
@@ -239,8 +239,8 @@ public class ezDAFi extends R_Algorithm {
     private static final String channelsLabelLine0 = "Make sure the selected population has at least one child gate.";
     private static final String channelsLabelLine1 = "";
 
-    private static final String channelsLabelLineEzExp0 = "The following options are meant only for data exploration (gates are not returned).";
-    private static final String channelsLabelLineEzExp1 = "";
+    //private static final String channelsLabelLineEzExp0 = "The following options are meant only for data exploration (gates are not returned).";
+    //private static final String channelsLabelLineEzExp1 = "";
     //private static final String channelsLabelLineEzExp2 = "";
 
     private static final String channelsLabelLineCITESeq0 = "The following option applies to CITE-Seq only.";
@@ -427,36 +427,36 @@ public class ezDAFi extends R_Algorithm {
             //Try to read the results (import derived parameters and gatingML files), and, if requested, print the Rscript.
             //If this fails, print only the last 30 lines of the Rscript to make the error visible to the user.
 
-            String sParEzExp = fOptions.get(ezExpOptionName);
+            //String sParEzExp = fOptions.get(ezExpOptionName);
 
-            System.out.println("sParEzExp: " + sParEzExp);
+            //System.out.println("sParEzExp: " + sParEzExp);
 
-            if (sParEzExp == null || sParEzExp.isEmpty() || ezDAFi.One.equals(sParEzExp) || ezDAFi.True.equals(sParEzExp)){
-                fEzExp = true;
-            } else {
-                fEzExp = false;
-            }
+            //if (sParEzExp == null || sParEzExp.isEmpty() || ezDAFi.One.equals(sParEzExp) || ezDAFi.True.equals(sParEzExp)){
+            //  fEzExp = true;
+            //} else {
+            //  fEzExp = false;
+            //}
 
-            System.out.println("fEzExp: " + fEzExp);
+            //System.out.println("fEzExp: " + fEzExp);
 
             try {
 
-                if (fEzExp) {
-                    String sParEzExpSeed = fOptions.get(ezExpSeedOptionName);
-                    System.out.println("sParEzExpSeed: " + sParEzExpSeed);
-                    try {
-                        String ezExpPDF = "ezExplorer." + thisSamplePopNode + ".seed_" + sParEzExpSeed + ".pdf";
+                //if (fEzExp) {
+                    //String sParEzExpSeed = fOptions.get(ezExpSeedOptionName);
+                    //System.out.println("sParEzExpSeed: " + sParEzExpSeed);
+                    //try {
+                        //String ezExpPDF = "ezExplorer." + thisSamplePopNode + ".seed_" + sParEzExpSeed + ".pdf";
 
-                        System.out.println("ezExpPDF: " + ezExpPDF);
+                        //System.out.println("ezExpPDF: " + ezExpPDF);
 
-                        File ezExpPDFFile = new File(wsDir, ezExpPDF);
+                        //File ezExpPDFFile = new File(wsDir, ezExpPDF);
                         //Desktop.getDesktop().open(ezExpPDFFile.getParentFile());
-                        Desktop.getDesktop().open(ezExpPDFFile);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
+                        //Desktop.getDesktop().open(ezExpPDFFile);
+                        //} catch (IOException e) {
+                        //    e.printStackTrace();
+                        //}
 
-                } else {
+                    //} else {
 
 
                     mergeCSVFile(fcmlQueryElement, results, ezDAFiResult, sampleFile, outputFolder);
@@ -478,7 +478,7 @@ public class ezDAFi extends R_Algorithm {
                         invFlag = true;
                     }
 
-                }
+                    //}
 
             } catch (Exception error) {
                 try{
@@ -949,8 +949,8 @@ public class ezDAFi extends R_Algorithm {
         FJLabel fjLabel0 = new FJLabel(channelsLabelLine0);
         FJLabel fjLabel1 = new FJLabel(channelsLabelLine1);
 
-        FJLabel fjLabelEzExp0 = new FJLabel(channelsLabelLineEzExp0);
-        FJLabel fjLabelEzExp1 = new FJLabel(channelsLabelLineEzExp1);
+        //FJLabel fjLabelEzExp0 = new FJLabel(channelsLabelLineEzExp0);
+        //FJLabel fjLabelEzExp1 = new FJLabel(channelsLabelLineEzExp1);
         //FJLabel fjLabelEzExp2 = new FJLabel(channelsLabelLineEzExp2);
 
         FJLabel fjLabelCITESeq0 = new FJLabel(channelsLabelLineCITESeq0);
@@ -996,14 +996,14 @@ public class ezDAFi extends R_Algorithm {
         //fPlotStats = defaultPlotStats;
         //fTrans = defaultTrans;
         fBatch = defaultBatch;
-        fEzExp = defaultEzExp;
+        //fEzExp = defaultEzExp;
         fNaive = defaultNaive;
         fKMeansSom = defaultKMeansSom;
         fMulti = defaultMulti;
         //fPLS = defaultPLS;
         //fMeta = defaultMeta;
         fApplyOnChildren = defaultApplyOnChildren;
-        fnEzExpSeed = defaultEzExpSeed;
+        //fnEzExpSeed = defaultEzExpSeed;
         fnMinDim = defaultMinDim;
         fnMaxDim = defaultMaxDim;
 
@@ -1078,16 +1078,16 @@ public class ezDAFi extends R_Algorithm {
             if (savedBatch != null && !savedBatch.isEmpty())
                 fBatch = One.equals(savedBatch) || True.equals(savedBatch);
 
-            String savedEzExp = option.getAttributeValue(ezExpOptionName);
-            if (savedEzExp != null && !savedEzExp.isEmpty())
-                fEzExp = One.equals(savedEzExp) || True.equals(savedEzExp);
+            //String savedEzExp = option.getAttributeValue(ezExpOptionName);
+            //if (savedEzExp != null && !savedEzExp.isEmpty())
+            //  fEzExp = One.equals(savedEzExp) || True.equals(savedEzExp);
 
             String savedNaive = option.getAttributeValue(naiveOptionName);
             if (savedNaive != null && !savedNaive.isEmpty())
                 fNaive = One.equals(savedNaive) || True.equals(savedNaive);
 
-            int savedEzExpSeed = option.getInt(ezExpSeedOptionName, -1);
-            if (savedEzExpSeed >= 0 && savedEzExpSeed <= 999) fnEzExpSeed = savedEzExpSeed;
+            //int savedEzExpSeed = option.getInt(ezExpSeedOptionName, -1);
+            //if (savedEzExpSeed >= 0 && savedEzExpSeed <= 999) fnEzExpSeed = savedEzExpSeed;
 
             int savedMinDim = option.getInt(minDimOptionName, -1);
             if (savedMinDim >= 1 && savedMinDim <= 999999) fnMinDim = savedMinDim;
@@ -1207,28 +1207,28 @@ public class ezDAFi extends R_Algorithm {
         fNaiveCheckbox.setSelected(fNaive);
         componentList.add(new HBox(new Component[]{fNaiveCheckbox}));
 
-        FJLabel hSpaceLabelEzExp = new FJLabel("");
-        GuiFactory.setSizes(hSpaceLabelEzExp, new Dimension(fixedLabelWidth, hSpaceHeigth));
-        componentList.add(hSpaceLabelEzExp);
+        //FJLabel hSpaceLabelEzExp = new FJLabel("");
+        //GuiFactory.setSizes(hSpaceLabelEzExp, new Dimension(fixedLabelWidth, hSpaceHeigth));
+        //componentList.add(hSpaceLabelEzExp);
 
-        componentList.add(fjLabelEzExp0);
-        componentList.add(fjLabelEzExp1);
+        //componentList.add(fjLabelEzExp0);
+        //componentList.add(fjLabelEzExp1);
         //componentList.add(fjLabelEzExp2);
 
-        fEzExpCheckbox = new FJCheckBox(ezExpLabel);
-        fEzExpCheckbox.setToolTipText("<html><p width=\"" + fixedToolTipWidth + "\">" + ezExpTooltip + "</p></html>");
-        fEzExpCheckbox.setSelected(fEzExp);
-        componentList.add(new HBox(new Component[]{fEzExpCheckbox}));
+        //fEzExpCheckbox = new FJCheckBox(ezExpLabel);
+        //fEzExpCheckbox.setToolTipText("<html><p width=\"" + fixedToolTipWidth + "\">" + ezExpTooltip + "</p></html>");
+        //fEzExpCheckbox.setSelected(fEzExp);
+        //componentList.add(new HBox(new Component[]{fEzExpCheckbox}));
 
-        FJLabel fjLabelEzExpSeed = new FJLabel(ezExpSeedLabel);
-        fEzExpSeedField = new RangedIntegerTextField(0, 999);
-        fEzExpSeedField.setInt(fnEzExpSeed);
-        fEzExpSeedField.setToolTipText("<html><p width=\"" + fixedToolTipWidth + "\">" + ezExpSeedTooltip + "</p></html>");
-        GuiFactory.setSizes(fEzExpSeedField, new Dimension(fixedFieldWidth, fixedFieldHeigth));
-        GuiFactory.setSizes(fjLabelEzExpSeed, new Dimension(fixedLabelWidth, fixedLabelHeigth));
+        //FJLabel fjLabelEzExpSeed = new FJLabel(ezExpSeedLabel);
+        //fEzExpSeedField = new RangedIntegerTextField(0, 999);
+        //fEzExpSeedField.setInt(fnEzExpSeed);
+        //fEzExpSeedField.setToolTipText("<html><p width=\"" + fixedToolTipWidth + "\">" + ezExpSeedTooltip + "</p></html>");
+        //GuiFactory.setSizes(fEzExpSeedField, new Dimension(fixedFieldWidth, fixedFieldHeigth));
+        //GuiFactory.setSizes(fjLabelEzExpSeed, new Dimension(fixedLabelWidth, fixedLabelHeigth));
 
-        HBox hboxEzExpSeed = new HBox(new Component[]{fjLabelEzExpSeed, fEzExpSeedField});
-        componentList.add(hboxEzExpSeed);
+        //HBox hboxEzExpSeed = new HBox(new Component[]{fjLabelEzExpSeed, fEzExpSeedField});
+        //componentList.add(hboxEzExpSeed);
 
         FJLabel hSpaceLabelCITESeq = new FJLabel("");
         GuiFactory.setSizes(hSpaceLabelCITESeq, new Dimension(fixedLabelWidth, hSpaceHeigth));
@@ -1336,7 +1336,7 @@ public class ezDAFi extends R_Algorithm {
                 //if (fPlotStatsOptionCheckbox != null) fPlotStatsOptionCheckbox.setEnabled(false);
                 //if (fTransOptionCheckbox != null) fTransOptionCheckbox.setEnabled(false);
                 if (fBatchOptionCheckbox != null) fBatchOptionCheckbox.setEnabled(false);
-                if (fEzExpCheckbox != null) fEzExpCheckbox.setEnabled(false);
+                //if (fEzExpCheckbox != null) fEzExpCheckbox.setEnabled(false);
                 if (fNaiveCheckbox != null) fNaiveCheckbox.setEnabled(false);
                 if (fKMeansSomOptionCheckbox != null) fKMeansSomOptionCheckbox.setEnabled(false);
                 if (fMultiOptionCheckbox != null) fMultiOptionCheckbox.setEnabled(false);
@@ -1399,7 +1399,7 @@ public class ezDAFi extends R_Algorithm {
                 //if (fPlotStatsOptionCheckbox != null) fPlotStatsOptionCheckbox.setEnabled(true);
                 //if (fTransOptionCheckbox != null) fTransOptionCheckbox.setEnabled(true);
                 //if (fBatchOptionCheckbox != null) fBatchOptionCheckbox.setEnabled(true);
-                if (fEzExpCheckbox != null) fEzExpCheckbox.setEnabled(true);
+                //if (fEzExpCheckbox != null) fEzExpCheckbox.setEnabled(true);
                 if (fNaiveCheckbox != null) fNaiveCheckbox.setEnabled(true);
                 if (fKMeansSomOptionCheckbox != null) fKMeansSomOptionCheckbox.setEnabled(true);
                 if (fMultiOptionCheckbox != null) fMultiOptionCheckbox.setEnabled(true);
@@ -1441,7 +1441,7 @@ public class ezDAFi extends R_Algorithm {
         fOptions.put(sampleURISlot, fAnalysisPathSampleURI);
         fOptions.put(samplePopNodeSlot, fAnalysisPathSamplePopNode);
         fOptions.put(sampleFileSlot, fAnalysisPathSampleFile);
-        fOptions.put(ezExpSeedOptionName, Integer.toString(fEzExpSeedField.getInt()));
+        //fOptions.put(ezExpSeedOptionName, Integer.toString(fEzExpSeedField.getInt()));
         fOptions.put(minDimOptionName, Integer.toString(fMinDimField.getInt()));
         fOptions.put(maxDimOptionName, Integer.toString(fMaxDimField.getInt()));
         fOptions.put(xDimOptionName, Integer.toString(fDimXField.getInt()));
@@ -1450,7 +1450,7 @@ public class ezDAFi extends R_Algorithm {
         //fOptions.put(plotStatsOptionName, fPlotStatsOptionCheckbox.isSelected() ? One : Zero);
         //fOptions.put(transOptionName, fTransOptionCheckbox.isSelected() ? One : Zero);
         fOptions.put(batchOptionName, fBatchOptionCheckbox.isSelected() ? One : Zero);
-        fOptions.put(ezExpOptionName, fEzExpCheckbox.isSelected() ? One : Zero);
+        //fOptions.put(ezExpOptionName, fEzExpCheckbox.isSelected() ? One : Zero);
         fOptions.put(naiveOptionName, fNaiveCheckbox.isSelected() ? One : Zero);
         fOptions.put(kMeansSomOptionName, fKMeansSomOptionCheckbox.isSelected() ? One : Zero);
         fOptions.put(multiOptionName, fMultiOptionCheckbox.isSelected() ? One : Zero);

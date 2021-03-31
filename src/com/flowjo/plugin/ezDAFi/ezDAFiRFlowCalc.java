@@ -81,12 +81,12 @@ public class ezDAFiRFlowCalc extends RFlowCalculator {
         String sParBatch = options.get(ezDAFi.batchOptionName);
         String sParkMeansSom = options.get(ezDAFi.kMeansSomOptionName);
         String sParMulti = options.get(ezDAFi.multiOptionName);
-        String sParEzExp = options.get(ezDAFi.ezExpOptionName);
+        //String sParEzExp = options.get(ezDAFi.ezExpOptionName);
         String sParNaive = options.get(ezDAFi.naiveOptionName);
         //String sParPLS = options.get(ezDAFi.PLSOptionName);
         //String sParMeta = options.get(ezDAFi.metaOptionName);
         String sParApplyOnChildren = options.get(ezDAFi.applyOnChildrenOptionName);
-        String sParEzExpSeed = options.get(ezDAFi.ezExpSeedOptionName);
+        //String sParEzExpSeed = options.get(ezDAFi.ezExpSeedOptionName);
         String sParMinDim = options.get(ezDAFi.minDimOptionName);
         String sParMaxDim = options.get(ezDAFi.maxDimOptionName);
         String sParXDim = options.get(ezDAFi.xDimOptionName);
@@ -97,8 +97,8 @@ public class ezDAFiRFlowCalc extends RFlowCalculator {
         String parameterName = ezDAFi.pluginName;
 
         //Integer sParEzExpInteger = Integer.parseInt(sParEzExp);
-        System.out.println("sParEzExpSeed:" + sParEzExpSeed);
-        System.out.println("sParEzExpSeed.getClass:" + sParEzExpSeed.getClass());
+        //System.out.println("sParEzExpSeed:" + sParEzExpSeed);
+        //System.out.println("sParEzExpSeed.getClass:" + sParEzExpSeed.getClass());
 
 
         //if (sParScale == null || sParScale.isEmpty() || com.flowjo.plugin.ezDAFi.ezDAFi.One.equals(sParScale) || com.flowjo.plugin.ezDAFi.ezDAFi.True.equals(sParScale))
@@ -121,10 +121,10 @@ public class ezDAFiRFlowCalc extends RFlowCalculator {
         else
             sParBatch = FALSE;
 
-        if(sParEzExp == null || sParEzExp.isEmpty() || ezDAFi.Zero.equals(sParEzExp) || ezDAFi.False.equals(sParEzExp))
-            sParEzExp = FALSE; // FALSE is the default
-        else
-            sParEzExp = TRUE;
+        //if(sParEzExp == null || sParEzExp.isEmpty() || ezDAFi.Zero.equals(sParEzExp) || ezDAFi.False.equals(sParEzExp))
+        //    sParEzExp = FALSE; // FALSE is the default
+        //else
+        //   sParEzExp = TRUE;
 
         if (sParkMeansSom == null || sParkMeansSom.isEmpty() || ezDAFi.One.equals(sParkMeansSom) || ezDAFi.True.equals(sParkMeansSom))
             sParkMeansSom = TRUE; // TRUE is the default
@@ -161,12 +161,12 @@ public class ezDAFiRFlowCalc extends RFlowCalculator {
         if(EngineManager.isWindows()) wsName = wsName.replaceAll("\\\\", "/");
         if(EngineManager.isWindows()) thisSampleURI = thisSampleURI.replaceAll("\\\\", "/");
 
-        try {
-            if ((Integer.parseInt(sParEzExpSeed) < 0) || (Integer.parseInt(sParEzExpSeed) > 999))
-              sParEzExpSeed= Integer.toString(ezDAFi.defaultEzExpSeed);
-        } catch (Exception e) {
-          sParEzExpSeed = Integer.toString(ezDAFi.defaultEzExpSeed);
-        }
+        //try {
+        //  if ((Integer.parseInt(sParEzExpSeed) < 0) || (Integer.parseInt(sParEzExpSeed) > 999))
+        //    sParEzExpSeed= Integer.toString(ezDAFi.defaultEzExpSeed);
+        //} catch (Exception e) {
+        //sParEzExpSeed = Integer.toString(ezDAFi.defaultEzExpSeed);
+        //}
 
         try {
             if ((Integer.parseInt(sParMinDim) < 1) || (Integer.parseInt(sParMinDim) > 999999))
@@ -237,12 +237,12 @@ public class ezDAFiRFlowCalc extends RFlowCalculator {
                 scriptLine = scriptLine.replace("FJ_BATCH_MODE", sParBatch);
                 scriptLine = scriptLine.replace("FJ_PAR_SOM", sParkMeansSom);
                 scriptLine = scriptLine.replace("FJ_PAR_MULTI", sParMulti);
-                scriptLine = scriptLine.replace("FJ_PAR_EX", sParEzExp);
+                //scriptLine = scriptLine.replace("FJ_PAR_EX", sParEzExp);
                 scriptLine = scriptLine.replace("FJ_PAR_NAIVE", sParNaive);
                 //scriptLine = scriptLine.replace("FJ_PAR_PLSDA", sParPLS);
                 //scriptLine = scriptLine.replace("FJ_PAR_META", sParMeta);
                 scriptLine = scriptLine.replace("FJ_PAR_CHILDREN", sParApplyOnChildren);
-                scriptLine = scriptLine.replace("FJ_PAR_EZEXP_SEED", sParEzExpSeed);
+                //scriptLine = scriptLine.replace("FJ_PAR_EZEXP_SEED", sParEzExpSeed);
                 scriptLine = scriptLine.replace("FJ_MIN_N_PAR", sParMinDim);
                 scriptLine = scriptLine.replace("FJ_MAX_N_PAR", sParMaxDim);
                 scriptLine = scriptLine.replace("FJ_PAR_XDIM", sParXDim);
